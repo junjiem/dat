@@ -1,0 +1,341 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "dat schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ],
+      "default": 1,
+      "description": "dat schema 文件版本，当前仅支持 1"
+    },
+    "semantic_models": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "model",
+          "defaults",
+          "entities",
+          "dimensions"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][A-Za-z0-9_\\-]*$",
+            "description": "唯一的语义模型名称"
+          },
+          "description": {
+            "type": "string",
+            "description": "语义模型的详细描述"
+          },
+          "alias": {
+            "type": "string",
+            "description": "语义模型的别名"
+          },
+          "model": {
+            "type": "string",
+            "description": "数据模型"
+          },
+          "defaults": {
+            "type": "object",
+            "properties": {
+              "agg_time_dimension": {
+                "type": "string",
+                "description": "指定度量的默认时间维度（如 transaction_date）"
+              }
+            },
+            "required": [
+              "agg_time_dimension"
+            ],
+            "additionalProperties": false,
+            "description": "语义模型的默认配置，目前仅支持 agg_time_dimension"
+          },
+          "entities": {
+            "type": "array",
+            "uniqueItems": true,
+            "description": "实体是商业中真实存在的概念，例如客户、交易和广告活动",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "description",
+                "type"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_]+$",
+                  "description": "实体名称，唯一标识"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "实体描述"
+                },
+                "alias": {
+                  "type": "string",
+                  "description": "实体别名"
+                },
+                "expr": {
+                  "type": [
+                    "number",
+                    "string"
+                  ],
+                  "description": "引用表中的现有列或使用 SQL 表达式来创建或派生新列，如果未指定，默认为name的值"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "primary",
+                    "unique",
+                    "foreign"
+                  ],
+                  "description": "实体类型，可选 primary、unique、foreign"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "dimensions": {
+            "type": "array",
+            "uniqueItems": true,
+            "description": "维度表示数据集中不可聚合的列，它们是描述或分类数据的属性、特征或特性",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "description",
+                "type"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_]+$",
+                  "description": "维度名称，唯一标识"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "维度描述"
+                },
+                "alias": {
+                  "type": "string",
+                  "description": "维度别名"
+                },
+                "expr": {
+                  "type": [
+                    "number",
+                    "string"
+                  ],
+                  "description": "引用表中的现有列或使用 SQL 表达式来创建或派生新列"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "categorical",
+                    "time"
+                  ],
+                  "description": "维度类型，categorical 或 time"
+                },
+                "type_params": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {},
+                      "additionalProperties": false,
+                      "description": "categorical类型不需要type_params"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "time_granularity"
+                      ],
+                      "properties": {
+                        "time_granularity": {
+                          "type": "string",
+                          "enum": [
+                            "second",
+                            "minute",
+                            "hour",
+                            "day",
+                            "week",
+                            "month",
+                            "quarter",
+                            "year"
+                          ],
+                          "description": "时间粒度，指定时间维度的聚合级别"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "description": "time类型需要指定time_granularity"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "const": "categorical"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "type_params": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": false
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "const": "time"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "type_params"
+                    ],
+                    "properties": {
+                      "type_params": {
+                        "type": "object",
+                        "required": [
+                          "time_granularity"
+                        ],
+                        "properties": {
+                          "time_granularity": {
+                            "type": "string",
+                            "enum": [
+                              "second",
+                              "minute",
+                              "hour",
+                              "day",
+                              "week",
+                              "month",
+                              "quarter",
+                              "year"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "measures": {
+            "type": "array",
+            "uniqueItems": true,
+            "description": "度量是对模型中的列执行的聚合操作",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "description"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_]+$",
+                  "description": "度量名称，唯一标识"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "度量描述"
+                },
+                "alias": {
+                  "type": "string",
+                  "description": "度量别名"
+                },
+                "expr": {
+                  "type": [
+                    "number",
+                    "string"
+                  ],
+                  "description": "引用表中的现有列或使用 SQL 表达式来创建或派生新列"
+                },
+                "agg": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "sum",
+                    "max",
+                    "min",
+                    "avg",
+                    "count",
+                    "median",
+                    "count_distinct",
+                    "sum_boolean"
+                  ],
+                  "default": "none",
+                  "description": "聚合类型"
+                },
+                "non_additive_dimension": {
+                  "type": "object",
+                  "description": "可以为无法按某些维度进行聚合的度量（例如银行账户余额）指定非加性维度，以避免产生不正确的结果",
+                  "required": [
+                    "name",
+                    "window_choice"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "这将是不应聚合度量的时间维度的名称"
+                    },
+                    "window_choice": {
+                      "type": "string",
+                      "enum": [
+                        "min",
+                        "max"
+                      ],
+                      "description": "选择 min 或 max ，其中 min 反映时间段的开始， max 反映时间段的结束"
+                    },
+                    "window_groupings": {
+                      "type": "array",
+                      "minItems": 1,
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "提供您想要分组的实体"
+                    }
+                  }
+                },
+                "agg_time_dimension": {
+                  "type": "string",
+                  "description": "时间字段，默认为语义模型的默认聚合时间维度"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "semantic_models"
+  ]
+}

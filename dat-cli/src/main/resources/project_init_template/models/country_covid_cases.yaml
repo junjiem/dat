@@ -1,0 +1,42 @@
+version: 1
+
+semantic_models:
+  - name: country_covid_cases
+    defaults:
+      agg_time_dimension: report_date
+    description: 各个国家的covid病例情况。
+    model: ref('country_covid_cases')
+    entities:
+      - name: country_id
+        description: 国家代码
+        expr: geo_id
+        type: primary
+    dimensions:
+      - name: report_date
+        description: 报告日期
+        type: time
+        type_params:
+          time_granularity: day
+      - name: country
+        description: 国家
+        type: categorical
+    measures:
+      - name: cases
+        description: 病历数
+      - name: deaths
+        description: 死亡数
+      - name: not_deaths
+        description: 未死亡数
+        expr: cases - deaths
+      - name: cases_total
+        description: 病历总数
+        agg: sum
+        expr: cases
+      - name: deaths_total
+        description: 死亡总数
+        agg: sum
+        expr: deaths
+      - name: country_count
+        description: 国家的数量
+        agg: count_distinct
+        expr: country

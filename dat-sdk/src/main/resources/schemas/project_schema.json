@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "dat project schema",
+  "type": "object",
+  "required": [
+    "name",
+    "db",
+    "llms",
+    "agents"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ],
+      "default": 1,
+      "description": "dat project schema 文件版本，当前仅支持 1"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][A-Za-z0-9_\\-]*$",
+      "description": "项目名称"
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "项目的详细描述"
+    },
+    "db": {
+      "type": "object",
+      "description": "关系型数据库的上下文",
+      "required": [
+        "provider",
+        "configuration"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_\\-]+$",
+          "description": "数据库提供者"
+        },
+        "configuration": {
+          "type": "object",
+          "description": "数据库的配置",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "embedding": {
+      "type": "object",
+      "description": "Embedding的上下文",
+      "required": [
+        "provider"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_\\-]+$",
+          "default": "bge-small-zh",
+          "description": "Embedding提供者"
+        },
+        "configuration": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Embedding的配置",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "embedding_store": {
+      "type": "object",
+      "description": "Embedding Store的上下文",
+      "required": [
+        "provider"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_\\-]+$",
+          "default": "duckdb",
+          "description": "Embedding Store提供者"
+        },
+        "configuration": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Embedding Store的配置",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "llms": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "LLM的上下文集合",
+      "items": {
+        "type": "object",
+        "required": [
+          "provider",
+          "configuration"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": "default",
+            "description": "LLM名称"
+          },
+          "provider": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_\\-]+$",
+            "description": "LLM提供者"
+          },
+          "configuration": {
+            "type": "object",
+            "description": "LLM的配置",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "content_store": {
+      "type": "object",
+      "description": "Content Store的上下文",
+      "required": [
+        "provider"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_\\-]+$",
+          "default": "default",
+          "description": "Content Store提供者"
+        },
+        "llm": {
+          "type": "string",
+          "default": "default",
+          "description": "Content Store依赖的LLM名称"
+        },
+        "configuration": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Content Store的配置",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Agent的上下文集合",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "provider"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": "default",
+            "description": "Agent名称"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Agent的详细描述"
+          },
+          "provider": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_\\-]+$",
+            "default": "default",
+            "description": "Agent提供者"
+          },
+          "llm": {
+            "type": "string",
+            "default": "default",
+            "description": "Agent依赖的LLM名称"
+          },
+          "semantic_models": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "uniqueItems": true,
+            "description": "Agent依赖的Semantic models名称集合"
+          },
+          "configuration": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Agent的配置",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,31 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ai.dat</groupId>
+        <artifactId>dat-embedders</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
+    <name>DAT : Embedders : In-process bge-small-zh-v1.5 (quantized)</name>
+
+    <properties>
+        <langchain4j-embeddings.version>1.1.0-beta7</langchain4j-embeddings.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-bge-small-zh-v15-q</artifactId>
+            <version>${langchain4j-embeddings.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>

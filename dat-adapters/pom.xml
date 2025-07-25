@@ -1,0 +1,21 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>dat-parent</artifactId>
+        <groupId>ai.dat</groupId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>dat-adapters</artifactId>
+    <packaging>pom</packaging>
+    <name>DAT : Adapters :</name>
+
+    <modules>
+        <module>dat-adapter-mysql</module>
+        <module>dat-adapter-postgresql</module>
+        <module>dat-adapter-oracle</module>
+    </modules>
+
+</project>

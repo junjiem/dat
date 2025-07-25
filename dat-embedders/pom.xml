@@ -1,0 +1,23 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>dat-parent</artifactId>
+        <groupId>ai.dat</groupId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>dat-embedders</artifactId>
+    <packaging>pom</packaging>
+    <name>DAT : Embedders :</name>
+
+    <modules>
+        <module>dat-embedder-bge-small-zh</module>
+        <module>dat-embedder-bge-small-zh-q</module>
+        <module>dat-embedder-bge-small-zh-v15</module>
+        <module>dat-embedder-bge-small-zh-v15-q</module>
+        <module>dat-embedder-openai</module>
+    </modules>
+
+</project>

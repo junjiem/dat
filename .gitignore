@@ -1,0 +1,25 @@
+.DS_Store
+**/*.log
+*.iml
+target/
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.local
+
+.gradle/
+tmp/
+build/
+.flattened-pom.xml
+dependency-reduced-pom.xml
+
+logs/
+
+.cursor
+.cursorrules
+**/src/test

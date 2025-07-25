@@ -1,0 +1,11 @@
+### SEMANTIC MODELS ###
+{% for semantic_model in semantic_models %}
+{{ semantic_model }}
+{% endfor %}
+
+### INPUT ###
+Current time: {{ query_time }}
+User's question: {{ query }}
+Language: {{ language }}
+
+Please think step by step

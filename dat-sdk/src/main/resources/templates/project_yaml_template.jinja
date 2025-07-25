@@ -1,0 +1,109 @@
+# You should rename this file to dat_project.yaml
+# Please pay attention to the comments starting with # and adjust the config accordingly, 3 steps basically:
+# 1.  you need to use your own db, embedding model, embedding store and LLMs
+# 2.  you need to fill in correct llm in the content_store section
+# 3.  you need to fill in correct llm in the agent definitions
+
+version: 1
+
+name: dat_project_example
+description: dat project configuration example.
+
+
+# Data source configuration
+db:
+{% for item in dbs -%}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
+    {% if item.configs -%}
+        {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
+        {% for config in item.configs -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " }}{% if not config.required -%}
+                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% endfor -%}
+    {% endif -%}
+    {% if not loop.last -%}{{ "\n" }}{% endif -%}
+{% endfor %}
+
+
+# Embedding model configuration
+embedding:
+{% for item in embeddings -%}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
+    {% if item.configs -%}
+        {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
+        {% for config in item.configs -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " }}{% if not config.required -%}
+                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% endfor -%}
+    {% endif -%}
+    {% if not loop.last -%}{{ "\n" }}{% endif -%}
+{% endfor %}
+
+
+# Embedding store configuration
+embedding_store:
+{% for item in embedding_stores -%}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
+    {% if item.configs -%}
+        {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
+        {% for config in item.configs -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " }}{% if not config.required -%}
+                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% endfor -%}
+    {% endif -%}
+    {% if not loop.last -%}{{ "\n" }}{% endif -%}
+{% endfor %}
+
+
+# Large language models configurations
+llms:
+{% for item in llms -%}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  - name: " ~ item.name }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    provider: " ~ item.provider }}
+    {% if item.configs -%}
+        {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    configuration:" }}
+        {% for config in item.configs -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "      " }}{% if not config.required -%}
+                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% endfor -%}
+    {% endif -%}
+    {% if not loop.last -%}{{ "\n" }}{% endif -%}
+{% endfor %}
+
+
+# Content store configuration
+content_store:
+{% for item in content_stores -%}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  llm: default  # You need to fill in correct llm" }}
+    {% if item.configs -%}
+        {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
+        {% for config in item.configs -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " }}{% if not config.required -%}
+                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% endfor -%}
+    {% endif -%}
+    {% if not loop.last -%}{{ "\n" }}{% endif -%}
+{% endfor %}
+
+
+# Ask data agents configurations
+agents:
+{% for item in agents -%}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  - name: " ~ item.name }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    description:  # Ask data agent description" }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    provider: " ~ item.provider }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    llm: default  # You need to fill in correct llm" }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}
+    {{ "    #semantic_models: # Optional" }}
+    {{ "      #- covid_cases  # You need to fill in correct semantic model name" }}
+    {{ "      #- country_covid_cases  # You need to fill in correct semantic model name" }}
+    {% if item.configs -%}
+        {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    configuration:" }}
+        {% for config in item.configs -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "      " }}{% if not config.required -%}
+                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% endfor -%}
+    {% endif -%}
+    {% if not loop.last -%}{{ "\n" }}{% endif -%}
+{% endfor %}

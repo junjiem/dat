@@ -1,0 +1,40 @@
+version: 1
+
+semantic_models:
+  - name: covid_cases
+    defaults:
+      agg_time_dimension: report_date
+    description: 各国的covid病例。
+    model: |
+      -- 这是一个 MySQL 方言示例查询SQL
+      select 
+        date_rep, 
+        cases, 
+        deaths, 
+        geo_id
+      from covid_cases
+    entities:
+      - name: country_id
+        description: 国家代码
+        expr: geo_id
+        type: primary
+    dimensions:
+      - name: report_date
+        description: 报告日期
+        expr: date_rep
+        type: time
+        type_params:
+          time_granularity: day
+    measures:
+      - name: cases
+        description: 病历数
+      - name: deaths
+        description: 死亡数
+      - name: cases_total
+        description: 病历总数
+        agg: sum
+        expr: cases
+      - name: deaths_total
+        description: 死亡总数
+        agg: sum
+        expr: deaths

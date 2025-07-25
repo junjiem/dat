@@ -1,0 +1,30 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ai.dat</groupId>
+        <artifactId>dat-adapters</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>dat-adapter-mysql</artifactId>
+    <name>DAT : Adapters : MySQL</name>
+
+    <properties>
+        <mysql.version>9.3.0</mysql.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql.version}</version>
+        </dependency>
+    </dependencies>
+</project>

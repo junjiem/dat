@@ -1,0 +1,15 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# DAT project
+.dat/
+target/
+logs/
+.dat_project.yml
+.dat_project.yaml

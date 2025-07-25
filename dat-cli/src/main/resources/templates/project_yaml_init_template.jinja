@@ -1,0 +1,39 @@
+version: 1
+
+name: {{ project.name }}
+description: {{ project.description }}
+
+db:
+{{ "  provider: " ~ project.dbConfig.provider }}
+{% if project.dbConfig.configs -%}
+    {{ "  configuration:" }}
+    {% for key, value in project.dbConfig.configs.items() -%}
+        {{ "    " ~ key ~ ": " ~ value }}
+    {% endfor %}
+{% endif %}
+
+llms:
+{{ "  - name: default" }}
+{{ "    provider: " ~ project.llmConfig.provider }}
+{% if project.llmConfig.configs -%}
+    {{ "    configuration:" }}
+    {% for key, value in project.llmConfig.configs.items() -%}
+        {{ "      " ~ key ~ ": " ~ value }}
+    {% endfor %}
+{% endif %}
+
+agents:
+{{ "  - name: default" }}
+{{ "    description: default ask data agent" }}
+{{ "    provider: default" }}
+{{ "    llm: default # You need to fill in correct llm" }}
+{{ "    #semantic_models: # Optional" }}
+{{ "      #- covid_cases  # You need to fill in correct semantic model name" }}
+{{ "      #- country_covid_cases  # You need to fill in correct semantic model name" }}
+{% if agentConfigs -%}
+    {{ "    configuration:" }}
+    {% for config in agentConfigs -%}
+        {{ "      " }}{% if not config.required -%}
+            {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+    {% endfor %}
+{% endif %}

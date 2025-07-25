@@ -1,0 +1,39 @@
+### SEMANTIC MODELS ###
+{% for semantic_model in semantic_models %}
+{{ semantic_model }}
+{% endfor %}
+
+{% if sql_samples %}
+### SQL SAMPLES ###
+{% for item in sql_samples %}
+Question: {{ item.question }}
+SQL: {{ item.sql }}
+{% endfor %}
+{% endif %}
+
+{% if synonyms %}
+### NOUN AND SYNONYMS ###
+{% for item in synonyms %}
+Noun: {{ item.noun }} Synonyms: {{ item.synonyms|join(', ') }}
+{% endfor %}
+{% endif %}
+
+{% if docs %}
+### BUSINESS KNOWLEDGE ###
+{% for item in docs %}
+---
+{{ item }}
+{% endfor %}
+{% endif %}
+
+### QUESTION ###
+Current time: {{ query_time }}
+User's Question: {{ query }}
+Language: {{ language }}
+
+{% if sql_generation_reasoning %}
+### REASONING PLAN ###
+{{ sql_generation_reasoning }}
+{% endif %}
+
+Let's think step by step.

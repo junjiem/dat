@@ -1,0 +1,353 @@
+package ai.dat.core.agent;
+
+import ai.dat.core.adapter.DatabaseAdapter;
+import ai.dat.core.agent.data.EventOption;
+import ai.dat.core.agent.data.StreamAction;
+import ai.dat.core.agent.data.StreamEvent;
+import ai.dat.core.contentstore.ContentStore;
+import ai.dat.core.contentstore.data.NounSynonymPair;
+import ai.dat.core.contentstore.data.QuestionSqlPair;
+import ai.dat.core.semantic.data.SemanticModel;
+import ai.dat.core.utils.SemanticModelUtil;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.output.structured.Description;
+import dev.langchain4j.service.*;
+import lombok.*;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static ai.dat.core.agent.DefaultEventOptions.*;
+
+/**
+ * @Author JunjieM
+ * @Date 2025/6/25
+ */
+public class DefaultAskdataAgent extends AbstractAskdataAgent {
+
+    private static final String TEXT_TO_SQL_RULES;
+
+    static {
+        TEXT_TO_SQL_RULES = loadText("/prompts/default/text_to_sql_rules.txt");
+    }
+
+    private static String loadText(String fromResource) {
+        try (InputStream inputStream = DefaultAskdataAgent.class.getResourceAsStream(fromResource);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            return reader.lines().collect(Collectors.joining("\n"));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load txt from resources", e);
+        }
+    }
+
+    public static final String IDENTIFIER = "default";
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final String LANGUAGE = "Simplified Chinese";
+
+    private final List<SemanticModel> semanticModels;
+    private final boolean intentClassification;
+    private final boolean sqlGenerationReasoning;
+
+    private final Assistant assistant;
+    private final Assistant streamingAssistant;
+
+    @Builder
+    private DefaultAskdataAgent(@NonNull ContentStore contentStore,
+                                @NonNull DatabaseAdapter databaseAdapter,
+                                @NonNull ChatModel chatModel,
+                                @NonNull StreamingChatModel streamingChatModel,
+                                List<SemanticModel> semanticModels,
+                                Boolean intentClassification,
+                                Boolean sqlGenerationReasoning) {
+        super(contentStore, databaseAdapter);
+        SemanticModelUtil.validateSemanticModels(semanticModels);
+        this.semanticModels = semanticModels;
+        this.intentClassification = Optional.ofNullable(intentClassification).orElse(true);
+        this.sqlGenerationReasoning = Optional.ofNullable(sqlGenerationReasoning).orElse(true);
+        this.assistant = AiServices.builder(Assistant.class)
+                .chatModel(chatModel)
+                .build();
+        this.streamingAssistant = AiServices.builder(Assistant.class)
+                .streamingChatModel(streamingChatModel)
+                .build();
+    }
+
+    @Override
+    public String identifier() {
+        return IDENTIFIER;
+    }
+
+    @Override
+    public Set<EventOption> eventOptions() {
+        return Set.of(EXCEPTION_EVENT, INTENT_CLASSIFICATION_EVENT,
+                MISLEADING_ASSISTANCE_EVENT, DATA_ASSISTANCE_EVENT,
+                SQL_GENERATION_REASONING_EVENT, SQL_GENERATE_EVENT,
+                SEMANTIC_TO_SQL_EVENT, SQL_EXECUTE_EVENT);
+    }
+
+    @Override
+    protected void ask(@NonNull String question,
+                       @NonNull StreamAction action,
+                       @NonNull List<QuestionSqlPair> histories) {
+        String userQuestion = question;
+        String questionTime = LocalDateTime.now().format(FORMATTER);
+
+        histories = histories.subList(Math.max(0, histories.size() - 20), histories.size());
+
+        ContentStore contentStore = contentStore();
+
+        List<SemanticModel> semanticModels = this.semanticModels;
+        if (semanticModels == null || semanticModels.isEmpty()) {
+            semanticModels = contentStore.retrieveMdl(question);
+            Preconditions.checkArgument(!semanticModels.isEmpty(), "retrieve semantic models is empty");
+        }
+
+        List<String> semantics = semanticModels.stream()
+                .map(SemanticModel::convertLlmSemanticModelContent)
+                .collect(Collectors.toList());
+        List<QuestionSqlPair> sqlSamples = contentStore.retrieveSql(question);
+        List<NounSynonymPair> synonyms = contentStore.retrieveSyn(question);
+        List<String> docs = contentStore.retrieveDoc(question);
+
+        if (intentClassification) {
+            IntentClassification intentClassification = intentClassification(semantics, sqlSamples,
+                    synonyms, docs, histories, questionTime, question);
+
+            StreamEvent event = StreamEvent.from(INTENT_CLASSIFICATION_EVENT)
+                    .set(INTENT, intentClassification.intent);
+            Optional.ofNullable(intentClassification.rephrased_question)
+                    .ifPresent(o -> event.set(REPHRASED_QUESTION, o));
+            Optional.ofNullable(intentClassification.reasoning)
+                    .ifPresent(o -> event.set(REASONING, o));
+            action.add(event);
+
+            String rephrasedQuestion = intentClassification.rephrased_question;
+            if (rephrasedQuestion != null && !rephrasedQuestion.isBlank()) {
+                userQuestion = rephrasedQuestion; // 问题重写
+            }
+
+            Intent intent = intentClassification.intent;
+            String userCompositeQuestion = null;
+            if (Intent.MISLEADING_QUERY == intent || Intent.GENERAL == intent) {
+                userCompositeQuestion = histories.stream()
+                        .map(QuestionSqlPair::getQuestion)
+                        .collect(Collectors.joining("\n"))
+                        + "\n" + userQuestion;
+            }
+
+            if (Intent.MISLEADING_QUERY == intent) {
+                TokenStream tokenStream = streamingAssistant.misleadingAssistance(
+                        semantics, questionTime, userCompositeQuestion, LANGUAGE);
+                CompletableFuture<Void> future = new CompletableFuture<>();
+                tokenStream.onPartialResponse(c -> action.add(StreamEvent.from(MISLEADING_ASSISTANCE_EVENT, CONTENT, c)))
+                        .onCompleteResponse(c -> future.complete(null))
+                        .onError(e -> action.add(StreamEvent.from(MISLEADING_ASSISTANCE_EVENT, ERROR, e.getMessage())))
+                        .start();
+                future.join();
+                return;
+            } else if (Intent.GENERAL == intent) {
+                TokenStream tokenStream = streamingAssistant.dataAssistance(
+                        semantics, questionTime, userCompositeQuestion, LANGUAGE);
+                CompletableFuture<Void> future = new CompletableFuture<>();
+                tokenStream.onPartialResponse(c -> action.add(StreamEvent.from(DATA_ASSISTANCE_EVENT, CONTENT, c)))
+                        .onCompleteResponse(c -> future.complete(null))
+                        .onError(e -> action.add(StreamEvent.from(DATA_ASSISTANCE_EVENT, ERROR, e.getMessage())))
+                        .start();
+                future.join();
+                return;
+            }
+        }
+
+        // 生成语义SQL
+        String semanticSql = generateSql(action, semantics, sqlSamples, synonyms, docs,
+                histories, questionTime, userQuestion);
+
+        // 转换和执行
+        try {
+            List<Map<String, Object>> results = executeQuery(semanticSql, semanticModels, action);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private IntentClassification intentClassification(List<String> semantics,
+                                                      List<QuestionSqlPair> sqlSamples,
+                                                      List<NounSynonymPair> synonyms,
+                                                      List<String> docs,
+                                                      List<QuestionSqlPair> histories,
+                                                      String questionTime,
+                                                      String question) {
+        try {
+            return assistant.intentClassification(semantics, sqlSamples,
+                    synonyms, docs, histories, questionTime, question, LANGUAGE);
+        } catch (Exception e) {
+            return new IntentClassification(Intent.TEXT_TO_SQL);
+        }
+    }
+
+    private String generateSql(StreamAction action,
+                               List<String> semanticContexts,
+                               List<QuestionSqlPair> sqlSamples,
+                               List<NounSynonymPair> synonyms,
+                               List<String> docs,
+                               List<QuestionSqlPair> histories,
+                               String questionTime,
+                               String question) {
+        AtomicReference<String> sqlGenerateReasoning = new AtomicReference<>("");
+        if (sqlGenerationReasoning) {
+            TokenStream tokenStream;
+            if (histories.isEmpty()) {
+                tokenStream = streamingAssistant.sqlGenerateReasoning(
+                        semanticContexts, sqlSamples, synonyms, docs, questionTime, question, LANGUAGE);
+            } else {
+                tokenStream = streamingAssistant.followupSqlGenerateReasoning(
+                        semanticContexts, sqlSamples, synonyms, docs, histories, questionTime, question, LANGUAGE);
+            }
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            tokenStream.onPartialResponse(c -> {
+                        action.add(StreamEvent.from(SQL_GENERATION_REASONING_EVENT, CONTENT, c));
+                        sqlGenerateReasoning.updateAndGet(s -> s + c);
+                    })
+                    .onCompleteResponse(c -> future.complete(null))
+                    .onError(e -> {
+                        action.add(StreamEvent.from(SQL_GENERATION_REASONING_EVENT, ERROR, e.getMessage()));
+                        sqlGenerateReasoning.set(""); // 异常则清空推理
+                    })
+                    .start();
+            future.join();
+        }
+
+        GenSql genSql;
+        if (histories.isEmpty()) {
+            genSql = assistant.sqlGenerate(TEXT_TO_SQL_RULES, semanticContexts,
+                    sqlSamples, synonyms, docs, questionTime, question, sqlGenerateReasoning.get());
+        } else {
+            genSql = assistant.followupSqlGenerate(TEXT_TO_SQL_RULES, semanticContexts,
+                    sqlSamples, synonyms, docs, histories, questionTime, question, sqlGenerateReasoning.get());
+        }
+
+        action.add(StreamEvent.from(SQL_GENERATE_EVENT, SQL, genSql.sql));
+
+        return genSql.sql;
+    }
+
+    private static class GenSql {
+        @Description("ANSI SQL query string")
+        private String sql;
+    }
+
+    public enum Intent {
+        MISLEADING_QUERY, // 误导性问题
+        TEXT_TO_SQL, // 文本转SQL
+        GENERAL // 一般性问题
+        ;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    private static class IntentClassification {
+        @Description("rephrased question in full standalone question if there are previous questions, " +
+                "otherwise the original question")
+        @JsonProperty("rephrased_question")
+        private String rephrased_question;
+
+        @Description("brief chain-of-thought reasoning (max 20 words)")
+        private String reasoning;
+
+        @Description("\"MISLEADING_QUERY\" | \"TEXT_TO_SQL\" | \"GENERAL\"")
+        private Intent intent;
+
+        public IntentClassification(Intent intent) {
+            this.intent = intent;
+        }
+    }
+
+    private interface Assistant {
+        @SystemMessage(fromResource = "prompts/default/intent_classification_system_prompt.txt")
+        @UserMessage(fromResource = "prompts/default/intent_classification_user_prompt_template.txt")
+        IntentClassification intentClassification(@V("semantic_models") List<String> semanticModels,
+                                                  @V("sql_samples") List<QuestionSqlPair> sqlSamples,
+                                                  @V("synonyms") List<NounSynonymPair> synonyms,
+                                                  @V("docs") List<String> docs,
+                                                  @V("histories") List<QuestionSqlPair> histories,
+                                                  @V("query_time") String queryTime,
+                                                  @V("query") String query,
+                                                  @V("language") String language);
+
+        @SystemMessage(fromResource = "prompts/default/misleading_assistance_system_prompt.txt")
+        @UserMessage(fromResource = "prompts/default/misleading_assistance_user_prompt_template.txt")
+        TokenStream misleadingAssistance(@V("semantic_models") List<String> semanticModels,
+                                         @V("query_time") String queryTime,
+                                         @V("query") String query,
+                                         @V("language") String language);
+
+        @SystemMessage(fromResource = "prompts/default/data_assistance_system_prompt.txt")
+        @UserMessage(fromResource = "prompts/default/data_assistance_user_prompt_template.txt")
+        TokenStream dataAssistance(@V("semantic_models") List<String> semanticModels,
+                                   @V("query_time") String queryTime,
+                                   @V("query") String query,
+                                   @V("language") String language);
+
+        @SystemMessage(fromResource = "prompts/default/sql_generation_reasoning_system_prompt.txt")
+        @UserMessage(fromResource = "prompts/default/sql_generation_reasoning_user_prompt_template.txt")
+        TokenStream sqlGenerateReasoning(@V("semantic_models") List<String> semanticModels,
+                                         @V("sql_samples") List<QuestionSqlPair> sqlSamples,
+                                         @V("synonyms") List<NounSynonymPair> synonyms,
+                                         @V("docs") List<String> docs,
+                                         @V("query_time") String queryTime,
+                                         @V("query") String query,
+                                         @V("language") String language);
+
+        @SystemMessage(fromResource = "prompts/default/sql_generation_reasoning_system_prompt.txt")
+        @UserMessage(fromResource = "prompts/default/sql_generation_reasoning_with_followup_user_prompt_template.txt")
+        TokenStream followupSqlGenerateReasoning(@V("semantic_models") List<String> semanticModels,
+                                                 @V("sql_samples") List<QuestionSqlPair> sqlSamples,
+                                                 @V("synonyms") List<NounSynonymPair> synonyms,
+                                                 @V("docs") List<String> docs,
+                                                 @V("histories") List<QuestionSqlPair> histories,
+                                                 @V("query_time") String queryTime,
+                                                 @V("query") String query,
+                                                 @V("language") String language);
+
+        @SystemMessage(fromResource = "prompts/default/sql_generation_system_prompt.txt")
+        @UserMessage(fromResource = "prompts/default/sql_generation_user_prompt_template.txt")
+        GenSql sqlGenerate(@V("TEXT_TO_SQL_RULES") String textToSqlRules,
+                           @V("semantic_models") List<String> semanticModels,
+                           @V("sql_samples") List<QuestionSqlPair> sqlSamples,
+                           @V("synonyms") List<NounSynonymPair> synonyms,
+                           @V("docs") List<String> docs,
+                           @V("query_time") String queryTime,
+                           @V("query") String query,
+                           @V("sql_generation_reasoning") String sqlGenerationReasoning);
+
+        @SystemMessage(fromResource = "prompts/default/sql_generation_system_prompt.txt")
+        @UserMessage(fromResource = "prompts/default/sql_generation_with_followup_user_prompt_template.txt")
+        GenSql followupSqlGenerate(@V("TEXT_TO_SQL_RULES") String textToSqlRules,
+                                   @V("semantic_models") List<String> semanticModels,
+                                   @V("sql_samples") List<QuestionSqlPair> sqlSamples,
+                                   @V("synonyms") List<NounSynonymPair> synonyms,
+                                   @V("docs") List<String> docs,
+                                   @V("histories") List<QuestionSqlPair> histories,
+                                   @V("query_time") String queryTime,
+                                   @V("query") String query,
+                                   @V("sql_generation_reasoning") String sqlGenerationReasoning);
+    }
+}

@@ -1,0 +1,27 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ai.dat</groupId>
+        <artifactId>dat-llms</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>dat-llm-openai</artifactId>
+    <name>DAT : LLMs : OpenAi</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+            <version>${langchain4j.vserion}</version>
+        </dependency>
+    </dependencies>
+
+</project>
