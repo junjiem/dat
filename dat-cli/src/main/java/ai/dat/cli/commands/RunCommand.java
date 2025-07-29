@@ -2,6 +2,7 @@ package ai.dat.cli.commands;
 
 import ai.dat.cli.processor.InputProcessor;
 import ai.dat.cli.processor.InputProcessorUtil;
+import ai.dat.cli.utils.TablePrinter;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
@@ -132,15 +133,9 @@ public class RunCommand implements Callable<Integer> {
                 System.out.println(Ansi.ON.string("@|fg(blue) " + content + "|@")));
         event.getQuerySql().ifPresent(content ->
                 System.out.println(Ansi.ON.string("@|fg(blue) " + content + "|@")));
-        event.getQueryData().ifPresent(data ->
-        {
-            try {
-                System.out.println(Ansi.ON.string("@|fg(blue) "
-                        + JSON_MAPPER.writeValueAsString(data) + "|@"));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to serialize query data to JSON: "
-                        + e.getMessage(), e);
-            }
+        event.getQueryData().ifPresent(data -> {
+            System.out.println(Ansi.ON.string("@|fg(cyan) 📊 Query Results:|@"));
+            TablePrinter.printTable(data);
         });
         event.getMessages().forEach((k, v) -> print(event, k, v));
     }
