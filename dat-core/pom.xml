@@ -23,12 +23,6 @@
             <optional>true</optional>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>org.apache.commons</groupId>-->
-<!--            <artifactId>commons-configuration2</artifactId>-->
-<!--            <version>2.10.1</version>-->
-<!--        </dependency>-->
-
         <!-- YAML & JSON -->
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>

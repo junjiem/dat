@@ -30,7 +30,7 @@ public class TablePrinter {
      */
     public static void printTable(Object data) {
         if (data == null) {
-            System.out.println(Ansi.ON.string("@|fg(red) No data to display|@"));
+            System.out.println(AnsiUtil.string("@|fg(red) No data to display|@"));
             return;
         }
         try {
@@ -53,7 +53,7 @@ public class TablePrinter {
      */
     private static void printArrayTable(JsonNode arrayNode) {
         if (arrayNode.isEmpty()) {
-            System.out.println(Ansi.ON.string("@|fg(yellow) Empty result set|@"));
+            System.out.println(AnsiUtil.string("@|fg(yellow) Empty result set|@"));
             return;
         }
         List<String> columns = new ArrayList<>();
@@ -105,7 +105,7 @@ public class TablePrinter {
      * 打印简单值
      */
     private static void printSimpleValue(Object data) {
-        System.out.println(Ansi.ON.string("@|fg(blue) " + data.toString() + "|@"));
+        System.out.println(AnsiUtil.string("@|fg(blue) " + data.toString() + "|@"));
     }
 
     /**
@@ -138,7 +138,7 @@ public class TablePrinter {
      */
     private static void printFormattedTable(List<String> columns, List<List<String>> rows) {
         if (columns.isEmpty()) {
-            System.out.println(Ansi.ON.string("@|fg(yellow) No columns to display|@"));
+            System.out.println(AnsiUtil.string("@|fg(yellow) No columns to display|@"));
             return;
         }
         // 计算每列的最大宽度
@@ -164,23 +164,23 @@ public class TablePrinter {
         // 打印表尾
         printTableSeparator(columnWidths);
         // 打印统计信息
-        System.out.println(Ansi.ON.string("@|fg(green) " + rows.size() + " row(s) returned|@"));
+        System.out.println(AnsiUtil.string("@|fg(green) " + rows.size() + " row(s) returned|@"));
     }
 
     /**
      * 打印表格行
      */
     private static void printTableRow(List<String> row, List<Integer> columnWidths, boolean isHeader) {
-        StringBuilder line = new StringBuilder(Ansi.ON.string("@|fg(green) ||@"));
+        StringBuilder line = new StringBuilder(AnsiUtil.string("@|fg(green) ||@"));
         for (int i = 0; i < columnWidths.size(); i++) {
             String cell = i < row.size() ? row.get(i) : "";
             String formattedCell = padRight(cell, columnWidths.get(i));
             if (isHeader) {
-                line.append(Ansi.ON.string("@|bold,fg(cyan) " + formattedCell + "|@"));
+                line.append(AnsiUtil.string("@|bold,fg(cyan) " + formattedCell + "|@"));
             } else {
-                line.append(Ansi.ON.string("@|fg(white) " + formattedCell + "|@"));
+                line.append(AnsiUtil.string("@|fg(white) " + formattedCell + "|@"));
             }
-            line.append(Ansi.ON.string("@|fg(green) ||@"));
+            line.append(AnsiUtil.string("@|fg(green) ||@"));
         }
         System.out.println(line);
     }
@@ -193,7 +193,7 @@ public class TablePrinter {
         for (Integer width : columnWidths) {
             separator.append("-".repeat(width)).append("+");
         }
-        System.out.println(Ansi.ON.string("@|fg(green) " + separator + "|@"));
+        System.out.println(AnsiUtil.string("@|fg(green) " + separator + "|@"));
     }
 
     /**

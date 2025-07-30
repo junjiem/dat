@@ -2,17 +2,17 @@ package ai.dat.cli.commands;
 
 import ai.dat.cli.processor.InputProcessor;
 import ai.dat.cli.processor.InputProcessorUtil;
+import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.cli.utils.TablePrinter;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
-import ai.dat.core.project.run.ProjectRunner;
+import ai.dat.core.project.ProjectRunner;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 
 import java.nio.file.Path;
@@ -65,7 +65,7 @@ public class RunCommand implements Callable<Integer> {
             ProjectRunner runner = new ProjectRunner(path, agentName);
             // 交互模式
             System.out.println("🤖 DAT interaction mode has been activated");
-            System.out.println(Ansi.ON.string(
+            System.out.println(AnsiUtil.string(
                     "💡 Enter the question to start the conversation. " +
                     "@|fg(red) Enter 'quit' or 'exit' to exit|@"));
             System.out.println("📁 Project path: " + path);
@@ -73,10 +73,10 @@ public class RunCommand implements Callable<Integer> {
             InputProcessor processor = InputProcessorUtil.createInputProcessor();
             int round = 1;
             while (true) {
-                System.out.println(Ansi.ON.string("@|fg(green) "
+                System.out.println(AnsiUtil.string("@|fg(green) "
                         + ("─".repeat(50)) + "|@ @|bold,fg(yellow) Round " + (round++)
                         + "|@ @|fg(green) " + ("─".repeat(50)) + "|@"));
-                String question = processor.readLine(Ansi.ON.string(
+                String question = processor.readLine(AnsiUtil.string(
                         "@|fg(yellow) ❓ Please enter the question:|@ "));
                 if (question == null || question.isEmpty()) {
                     continue;
@@ -90,12 +90,12 @@ public class RunCommand implements Callable<Integer> {
                 StreamAction action = runner.ask(question, histories);
                 histories.add(print(question, action));
             }
-            System.out.println(Ansi.ON.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
+            System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
             processor.close();
             return 0;
         } catch (Exception e) {
             log.error("Run project failed", e);
-            System.err.println(Ansi.ON.string(
+            System.err.println(AnsiUtil.string(
                     "@|fg(red) ❌ Run failed: " + e.getMessage() + "|@"));
             return 1;
         }
@@ -116,7 +116,7 @@ public class RunCommand implements Callable<Integer> {
                 lastEvent = eventName;
                 lastIncremental = event.getIncrementalContent().isPresent();
                 String fg = isException(eventName) ? "red" : "blue";
-                System.out.println(Ansi.ON.string(
+                System.out.println(AnsiUtil.string(
                         "--------------------- @|bold,underline,fg(" + fg + ") "
                                 + eventName + "|@ ---------------------"));
             }
@@ -128,13 +128,13 @@ public class RunCommand implements Callable<Integer> {
 
     private static void print(StreamEvent event) {
         event.getIncrementalContent().ifPresent(content ->
-                System.out.print(Ansi.ON.string("@|fg(blue) " + content + "|@")));
+                System.out.print(AnsiUtil.string("@|fg(blue) " + content + "|@")));
         event.getSemanticSql().ifPresent(content ->
-                System.out.println(Ansi.ON.string("@|fg(blue) " + content + "|@")));
+                System.out.println(AnsiUtil.string("@|fg(blue) " + content + "|@")));
         event.getQuerySql().ifPresent(content ->
-                System.out.println(Ansi.ON.string("@|fg(blue) " + content + "|@")));
+                System.out.println(AnsiUtil.string("@|fg(blue) " + content + "|@")));
         event.getQueryData().ifPresent(data -> {
-            System.out.println(Ansi.ON.string("@|fg(cyan) 📊 Query Results:|@"));
+            System.out.println(AnsiUtil.string("@|fg(cyan) 📊 Query Results:|@"));
             TablePrinter.printTable(data);
         });
         event.getMessages().forEach((k, v) -> print(event, k, v));
@@ -153,7 +153,7 @@ public class RunCommand implements Callable<Integer> {
             }
         }
         String fg = isException(event.name()) || isException(key) ? "red" : "blue";
-        System.out.println(Ansi.ON.string("@|fg(" + fg + ") " + key + ": " + valueStr + "|@"));
+        System.out.println(AnsiUtil.string("@|fg(" + fg + ") " + key + ": " + valueStr + "|@"));
     }
 
     public static boolean isException(String key) {

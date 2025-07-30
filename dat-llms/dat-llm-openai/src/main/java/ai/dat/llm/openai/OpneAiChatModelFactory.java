@@ -5,16 +5,18 @@ import ai.dat.core.configuration.ConfigOptions;
 import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.factories.ChatModelFactory;
 import ai.dat.core.utils.FactoryUtil;
+import com.google.common.base.Preconditions;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.openai.internal.OpenAiUtils;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -97,6 +99,20 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                     .defaultValue(false)
                     .withDescription("Whether to output strict json schema");
 
+    public static final ConfigOption<Boolean> ONLY_SUPPORT_STREAM_OUTPUT =
+            ConfigOptions.key("only-support-stream-output")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Is streaming output reply only supported. " +
+                            "For example, Qwen3 Business Edition (Thinking Mode), Qwen3 Open Source Edition, QwQ, and QVQ only support streaming output.");
+
+    public static final ConfigOption<Map<String, Object>> CUSTOM_PARAMETERS =
+            ConfigOptions.key("custom-parameters")
+                    .mapObjectType()
+                    .noDefaultValue()
+                    .withDescription("Custom parameters, format Map<String, Object>. " +
+                            "Alternatively, custom parameters can also be specified as a structure of nested maps.");
+
     @Override
     public String factoryIdentifier() {
         return IDENTIFIER;
@@ -111,17 +127,24 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
     public Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(TEMPERATURE, TIMEOUT,
                 MAX_RETRIES, MAX_TOKENS, MAX_COMPLETION_TOKENS,
-                LOG_REQUESTS, LOG_RESPONSES, RESPONSE_FORMAT, STRICT_JSON_SCHEMA));
+                LOG_REQUESTS, LOG_RESPONSES, RESPONSE_FORMAT, STRICT_JSON_SCHEMA,
+                ONLY_SUPPORT_STREAM_OUTPUT, CUSTOM_PARAMETERS));
     }
 
     @Override
     public ChatModel create(ReadableConfig config) {
         FactoryUtil.validateFactoryOptions(this, config);
+        validateConfigOptions(config);
 
         String modelName = config.get(MODEL_NAME);
         Boolean logRequests = config.get(LOG_REQUESTS);
         Boolean logResponses = config.get(LOG_RESPONSES);
         Boolean strictJsonSchema = config.get(STRICT_JSON_SCHEMA);
+        Boolean onlySupportStreamOutput = config.get(ONLY_SUPPORT_STREAM_OUTPUT);
+
+        if (onlySupportStreamOutput) {
+            return new OpenAiStreamingToChatModel(createStream(config));
+        }
 
         OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .modelName(modelName)
@@ -138,12 +161,18 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
         config.getOptional(MAX_COMPLETION_TOKENS).ifPresent(builder::maxCompletionTokens);
         config.getOptional(RESPONSE_FORMAT).ifPresent(builder::responseFormat);
 
+        config.getOptional(CUSTOM_PARAMETERS)
+                .ifPresent(customParameters ->
+                        builder.defaultRequestParameters(OpenAiChatRequestParameters.builder()
+                                .customParameters(customParameters).build()));
+
         return builder.build();
     }
 
     @Override
     public StreamingChatModel createStream(ReadableConfig config) {
         FactoryUtil.validateFactoryOptions(this, config);
+        validateConfigOptions(config);
 
         String modelName = config.get(MODEL_NAME);
         Boolean logRequests = config.get(LOG_REQUESTS);
@@ -163,6 +192,27 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
         config.getOptional(MAX_TOKENS).ifPresent(builder::maxTokens);
         config.getOptional(RESPONSE_FORMAT).ifPresent(builder::responseFormat);
 
+        config.getOptional(CUSTOM_PARAMETERS)
+                .ifPresent(customParameters ->
+                        builder.defaultRequestParameters(OpenAiChatRequestParameters.builder()
+                                .customParameters(customParameters).build()));
+
         return builder.build();
     }
+
+    private void validateConfigOptions(ReadableConfig config) {
+        config.getOptional(TEMPERATURE)
+                .ifPresent(t -> Preconditions.checkArgument(t >= 0.0 && t <= 2.0,
+                        "'" + TEMPERATURE.key() + "' value must be between 0.0 and 2.0"));
+        Integer maxRetries = config.get(MAX_RETRIES);
+        Preconditions.checkArgument(maxRetries >= 0,
+                "'" + MAX_RETRIES.key() + "' value must be greater than or equal to 0");
+        Integer maxTokens = config.get(MAX_TOKENS);
+        Preconditions.checkArgument(maxTokens > 0,
+                "'" + MAX_TOKENS.key() + "' value must be greater than 0");
+        Integer maxCompletionTokens = config.get(MAX_COMPLETION_TOKENS);
+        Preconditions.checkArgument(maxCompletionTokens > 0,
+                "'" + MAX_COMPLETION_TOKENS.key() + "' value must be greater than 0");
+    }
+
 }

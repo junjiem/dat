@@ -2,7 +2,6 @@ package ai.dat.core.data.project;
 
 import ai.dat.core.configuration.Configuration;
 import ai.dat.core.configuration.ReadableConfig;
-import ai.dat.core.utils.ConfigurationConverter;
 import ai.dat.storer.weaviate.duckdb.DuckDBEmbeddingStoreFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,12 +23,7 @@ public class EmbeddingStoreConfig {
     private ReadableConfig configuration = new Configuration();
 
     @JsonProperty("configuration")
-    public Map<String, Object> getConfigurationMap() {
-        return ConfigurationConverter.toNestedMap(configuration);
-    }
-
-    @JsonProperty("configuration")
     public void setConfigurationMap(Map<String, Object> configMap) {
-        this.configuration = ConfigurationConverter.fromMap(configMap);
+        this.configuration = Configuration.fromMap(configMap);
     }
 }

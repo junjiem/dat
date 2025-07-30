@@ -65,9 +65,13 @@ public class ConfigurationUtils {
     }
 
     @SuppressWarnings("unchecked")
-    static Map<String, String> convertToProperties(Object o) {
-        if (o instanceof Map) {
-            return (Map<String, String>) o;
+    static Map<String, Object> convertToProperties(Object o) {
+        if (o instanceof Map<?, ?> map) {
+            return map.entrySet().stream()
+                    .collect(Collectors.toMap(
+                            e -> e.getKey().toString(),
+                            Map.Entry::getValue
+                    ));
         } else {
             List<String> listOfRawProperties =
                     StructuredOptionsSplitter.splitEscaped(o.toString(), ',');

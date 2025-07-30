@@ -3,6 +3,7 @@ package ai.dat.core.factories;
 import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.agent.AskdataAgent;
 import ai.dat.core.configuration.ReadableConfig;
+import ai.dat.core.configuration.description.Description;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.semantic.data.SemanticModel;
 import dev.langchain4j.model.chat.ChatModel;
@@ -17,6 +18,8 @@ import java.util.List;
  * @Date 2025/6/30
  */
 public interface AskdataAgentFactory extends Factory {
+    String factoryDescription();
+
     AskdataAgent create(ReadableConfig config,
                         List<SemanticModel> semanticModels,
                         ContentStore contentStore,

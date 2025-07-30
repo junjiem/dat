@@ -3,6 +3,7 @@ package ai.dat.core.configuration;
 
 import ai.dat.core.configuration.description.Description;
 import com.google.common.base.Preconditions;
+import lombok.Getter;
 
 
 /**
@@ -44,15 +45,12 @@ public class ConfigOption<T> {
      *   <li>typeClass == atomic class and isList == true for {@code ConfigOption<List<Integer>>}
      * </ul>
      */
+    @Getter
     private final Class<?> clazz;
 
     private final boolean isList;
 
     // ------------------------------------------------------------------------
-
-    Class<?> getClazz() {
-        return clazz;
-    }
 
     boolean isList() {
         return isList;

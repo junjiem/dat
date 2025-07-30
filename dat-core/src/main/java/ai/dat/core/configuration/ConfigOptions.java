@@ -152,9 +152,6 @@ public class ConfigOptions {
             return new TypedConfigOptionBuilder<>(key, PROPERTIES_MAP_OBJECT_CLASS);
         }
 
-        public <K, V> TypedConfigOptionBuilder<Map<K, V>> mapType(Class<Map<K, V>> mapClass) {
-            return new TypedConfigOptionBuilder<>(key, mapClass);
-        }
     }
 
     /**

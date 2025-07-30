@@ -9,7 +9,6 @@ import ai.dat.core.utils.FactoryUtil;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.weaviate.WeaviateEmbeddingStore;
-import lombok.NonNull;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -77,9 +76,9 @@ public class WeaviateEmbeddingStoreFactory implements EmbeddingStoreFactory {
     }
 
     @Override
-    public EmbeddingStore<TextSegment> create(@NonNull String storeId,
-                                              @NonNull ContentType contentType,
-                                              @NonNull ReadableConfig config) {
+    public EmbeddingStore<TextSegment> create(String storeId,
+                                              ContentType contentType,
+                                              ReadableConfig config) {
         FactoryUtil.validateFactoryOptions(this, config);
 
         String scheme = config.get(SCHEME);

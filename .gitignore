@@ -14,7 +14,6 @@ target/
 
 .gradle/
 tmp/
-build/
 .flattened-pom.xml
 dependency-reduced-pom.xml
 

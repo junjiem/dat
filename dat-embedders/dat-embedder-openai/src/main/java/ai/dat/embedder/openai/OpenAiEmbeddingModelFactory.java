@@ -86,11 +86,14 @@ public class OpenAiEmbeddingModelFactory implements EmbeddingModelFactory {
     @Override
     public EmbeddingModel create(ReadableConfig config) {
         FactoryUtil.validateFactoryOptions(this, config);
+        validateConfigOptions(config);
 
         String modelName = config.get(MODEL_NAME);
         Integer dimensions = config.getOptional(DIMENSIONS)
                 .orElse(OpenAiEmbeddingModelName.knownDimension(modelName));
         Preconditions.checkNotNull(dimensions, "'" + DIMENSIONS.key() + "' cannot be empty");
+        Preconditions.checkArgument(dimensions > 0,
+                "'" + DIMENSIONS.key() + "' value must be greater than 0");
         Boolean logRequests = config.get(LOG_REQUESTS);
         Boolean logResponses = config.get(LOG_RESPONSES);
 
@@ -105,6 +108,15 @@ public class OpenAiEmbeddingModelFactory implements EmbeddingModelFactory {
         config.getOptional(MAX_RETRIES).ifPresent(builder::maxRetries);
         config.getOptional(MAX_SEGMENTS_PER_BATCH).ifPresent(builder::maxSegmentsPerBatch);
         return builder.build();
+    }
+
+    private void validateConfigOptions(ReadableConfig config) {
+        Integer maxRetries = config.get(MAX_RETRIES);
+        Preconditions.checkArgument(maxRetries >= 0,
+                "'" + MAX_RETRIES.key() + "' value must be greater than or equal to 0");
+        Integer maxSegmentsPerBatch = config.get(MAX_SEGMENTS_PER_BATCH);
+        Preconditions.checkArgument(maxSegmentsPerBatch > 0,
+                "'" + MAX_SEGMENTS_PER_BATCH.key() + "' value must be greater than 0");
     }
 
     @Override

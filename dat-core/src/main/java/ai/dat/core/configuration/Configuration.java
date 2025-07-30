@@ -39,9 +39,11 @@ public class Configuration implements ReadableConfig, WritableConfig {
     /**
      * Creates a new configuration that is initialized with the options of the given map.
      */
-    public static Configuration fromMap(Map<String, String> map) {
+    public static Configuration fromMap(Map<String, Object> map) {
         final Configuration configuration = new Configuration();
-        map.forEach(configuration::setString);
+        if (map != null && !map.isEmpty()) {
+            map.forEach(configuration::setValueInternal);
+        }
         return configuration;
     }
 
@@ -572,6 +574,12 @@ public class Configuration implements ReadableConfig, WritableConfig {
                 ret.put(entry.getKey(), ConfigurationUtils.convertToString(entry.getValue()));
             }
             return ret;
+        }
+    }
+
+    public Map<String, Object> toConfMap() {
+        synchronized (this.confData) {
+            return new HashMap<>(confData);
         }
     }
 

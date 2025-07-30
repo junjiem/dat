@@ -2,6 +2,7 @@ package ai.dat.cli;
 
 import ai.dat.cli.commands.*;
 import lombok.extern.slf4j.Slf4j;
+import org.fusesource.jansi.AnsiConsole;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
@@ -55,9 +56,9 @@ public class DatCli implements Callable<Integer> {
 //        System.setProperty("file.encoding", "UTF-8");
 //        System.setProperty("sun.jnu.encoding", "UTF-8");
         printBanner();
-//        AnsiConsole.systemInstall(); // enable colors on Windows
+        AnsiConsole.systemInstall(); // enable colors on Windows
         int exitCode = new CommandLine(new DatCli()).execute(args);
-//        AnsiConsole.systemUninstall(); // cleanup when done
+        AnsiConsole.systemUninstall(); // cleanup when done
         System.exit(exitCode);
     }
 }

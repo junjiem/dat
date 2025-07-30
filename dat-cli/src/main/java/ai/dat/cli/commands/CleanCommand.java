@@ -1,11 +1,10 @@
 package ai.dat.cli.commands;
 
-import ai.dat.core.project.build.ProjectBuilder;
+import ai.dat.cli.utils.AnsiUtil;
+import ai.dat.core.project.ProjectBuilder;
 import lombok.extern.slf4j.Slf4j;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Help.Ansi;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,18 +47,18 @@ public class CleanCommand implements Callable<Integer> {
             if (cleanAll) {
                 log.info("Clear all state files...");
                 builder.cleanAllStates();
-                System.out.println(Ansi.ON.string(
+                System.out.println(AnsiUtil.string(
                         "@|fg(green) ✅ All state files have been cleared|@"));
             } else {
                 log.info("Clear the expired state files, keep count: {}", keepCount);
                 builder.cleanOldStates(keepCount);
-                System.out.println(Ansi.ON.string(
+                System.out.println(AnsiUtil.string(
                         "@|fg(green) ✅ The expired state files has been cleared|@"));
             }
             return 0;
         } catch (Exception e) {
             log.error("Clean project failed", e);
-            System.err.println(Ansi.ON.string(
+            System.err.println(AnsiUtil.string(
                     "@|fg(red) ❌ Clean failed: " + e.getMessage() + "|@"));
             return 1;
         }

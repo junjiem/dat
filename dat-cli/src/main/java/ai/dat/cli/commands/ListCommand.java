@@ -1,5 +1,6 @@
 package ai.dat.cli.commands;
 
+import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.data.project.AgentConfig;
 import ai.dat.core.data.project.DatProject;
 import ai.dat.core.project.utils.ProjectUtil;
@@ -39,7 +40,7 @@ public class ListCommand implements Callable<Integer> {
             System.out.println("📁 Project path: " + path);
             DatProject project = ProjectUtil.loadProject(path);
             // 列出Project配置
-            System.out.println(Ansi.ON.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
+            System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
             System.out.println(" Name: " + project.getName());
             System.out.println(" Description: " +
                     (project.getDescription() == null ? "<none>" : project.getDescription()));
@@ -56,11 +57,11 @@ public class ListCommand implements Callable<Integer> {
                         + (agent.getSemanticModels().isEmpty() ? "<none>" :
                         String.join(", ", agent.getSemanticModels())));
             }
-            System.out.println(Ansi.ON.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
+            System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
             return 0;
         } catch (Exception e) {
             log.error("List project information failed", e);
-            System.err.println(Ansi.ON.string(
+            System.err.println(AnsiUtil.string(
                     "@|fg(red) ❌ List information failed: " + e.getMessage() + "|@"));
             return 1;
         }

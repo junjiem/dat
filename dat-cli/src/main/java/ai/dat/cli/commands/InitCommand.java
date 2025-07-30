@@ -2,6 +2,7 @@ package ai.dat.cli.commands;
 
 import ai.dat.cli.processor.InputProcessor;
 import ai.dat.cli.processor.InputProcessorUtil;
+import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigurationUtils;
 import ai.dat.core.factories.*;
@@ -110,22 +111,22 @@ public class InitCommand implements Callable<Integer> {
             // 交互模式
             System.out.println("📁 Workspace path: " + path);
             System.out.println("Edit profile of the DAT project");
-            System.out.println(Ansi.ON.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
+            System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
             projectBasicConfiguration();
             if (projectConfig.isBootMode()) { // 进入配置引导模式
                 projectDbConfiguration();
                 projectLlmConfiguration();
             }
-            System.out.println(Ansi.ON.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
-            System.out.println(Ansi.ON.string("@|fg(red) 📢 For more project configurations, " +
+            System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
+            System.out.println(AnsiUtil.string("@|fg(red) 📢 For more project configurations, " +
                     "please refer to '" + PROJECT_CONFIG_TEMPLATE_FILE_NAME + "'|@"));
             initDatProject(path); // 初始化 DAT project
-            System.out.println(Ansi.ON.string("@|fg(green) ✅ Initialization '"
+            System.out.println(AnsiUtil.string("@|fg(green) ✅ Initialization '"
                     + projectConfig.getName() + "' project completed|@"));
             return 0;
         } catch (Exception e) {
             log.error("Init project failed", e);
-            System.err.println(Ansi.ON.string(
+            System.err.println(AnsiUtil.string(
                     "@|fg(red) ❌ Init failed: " + e.getMessage() + "|@"));
             return 1;
         }
@@ -134,12 +135,12 @@ public class InitCommand implements Callable<Integer> {
     private void projectBasicConfiguration() {
         // Project name
         while (true) {
-            System.out.print(Ansi.ON.string("@|fg(cyan) Project name|@ " +
+            System.out.print(AnsiUtil.string("@|fg(cyan) Project name|@ " +
                     "[press Enter to next step]: "));
             String name = SCANNER.nextLine().trim();
             if (name.isEmpty()) continue;
             if (!isProjectName(name)) {
-                System.out.println(Ansi.ON.string("@|fg(red) ⚠️ Project name needs to conform " +
+                System.out.println(AnsiUtil.string("@|fg(red) ⚠️ Project name needs to conform " +
                         "'^[a-zA-Z][A-Za-z0-9_\\-]*$' regular!|@"));
                 continue;
             }
@@ -148,7 +149,7 @@ public class InitCommand implements Callable<Integer> {
         }
         // Whether is boot mode
         while (true) {
-            System.out.print(Ansi.ON.string(
+            System.out.print(AnsiUtil.string(
                     "@|fg(yellow) Use boot mode to initialize project configuration? (y/n)|@ " +
                             "[User input/press Enter to use the y]: "));
             String choice = SCANNER.nextLine().trim();
@@ -162,7 +163,7 @@ public class InitCommand implements Callable<Integer> {
         if (projectConfig.isBootMode()) {
             System.out.println("---------- Project basic information ----------");
             // Project description
-            String description = PROCESSOR.readLine(Ansi.ON.string(
+            String description = PROCESSOR.readLine(AnsiUtil.string(
                     "@|fg(cyan) Project description|@ [press Enter to next step]: "));
             projectConfig.setDescription(description);
         }
@@ -191,13 +192,13 @@ public class InitCommand implements Callable<Integer> {
         Map<String, String> providerMap = IntStream.range(0, providers.size()).boxed()
                 .collect(Collectors.toMap(i -> (i + 1) + "",
                         providers::get, (o1, o2) -> o1, LinkedHashMap::new));
-        providerMap.forEach((k, v) -> System.out.printf(Ansi.ON.string(
+        providerMap.forEach((k, v) -> System.out.printf(AnsiUtil.string(
                 "@|fg(cyan) %s|@. %s%n"), k, v));
         String hint = providers.size() > 1
                 ? " @|fg(green) (1-" + providers.size() + ")|@ [User input]"
                 : " [press Enter to use the 1]";
         while (true) {
-            System.out.print(Ansi.ON.string(
+            System.out.print(AnsiUtil.string(
                     "@|fg(yellow) Please select a provider|@" + hint + ": "));
             String choice = SCANNER.nextLine().trim();
             if (providers.size() == 1 && choice.isEmpty()) {
@@ -214,7 +215,7 @@ public class InitCommand implements Callable<Integer> {
         DatabaseAdapterFactory factory = DatabaseAdapterFactoryManager.getFactory(provider);
         Set<ConfigOption<?>> requiredOptions = factory.requiredOptions();
         if (!requiredOptions.isEmpty()) {
-            System.out.println(Ansi.ON.string(
+            System.out.println(AnsiUtil.string(
                     "===== DB provider '@|fg(cyan) " + provider + "|@' configuration ====="));
             projectConfig.getDbConfig().setConfigs(toConfigs(requiredOptions));
         }
@@ -226,7 +227,7 @@ public class InitCommand implements Callable<Integer> {
         ChatModelFactory factory = ChatModelFactoryManager.getFactory(provider);
         Set<ConfigOption<?>> requiredOptions = factory.requiredOptions();
         if (!requiredOptions.isEmpty()) {
-            System.out.println(Ansi.ON.string(
+            System.out.println(AnsiUtil.string(
                     "===== LLM provider '@|fg(cyan) " + provider + "|@' configuration ====="));
             projectConfig.getLlmConfig().setConfigs(toConfigs(requiredOptions));
         }
@@ -242,7 +243,7 @@ public class InitCommand implements Callable<Integer> {
                 hint = " @|fg(green) (Default: " + defaultValue + ")|@" +
                         " [User input/press Enter to use the default value]";
             }
-            System.out.print(Ansi.ON.string("@|fg(cyan) " + option.key() + "|@" + hint + ": "));
+            System.out.print(AnsiUtil.string("@|fg(cyan) " + option.key() + "|@" + hint + ": "));
             String input = SCANNER.nextLine().trim();
             Object value = input;
             if (input.isEmpty() && hasDefaultValue) {
@@ -258,7 +259,7 @@ public class InitCommand implements Callable<Integer> {
      */
     private void initDatProject(Path workspacePath) throws IOException {
         Path projectPath = workspacePath.resolve(projectConfig.getName());
-        System.out.println(Ansi.ON.string(
+        System.out.println(AnsiUtil.string(
                 "@|fg(blue) 📁 Project path: " + projectPath + "|@"));
         if (Files.exists(projectPath)) {
             throw new IOException("The project directory already exists: " + projectPath);

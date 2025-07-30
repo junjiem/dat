@@ -15,7 +15,6 @@ import java.util.Set;
  * @Date 2025/6/25
  */
 public interface AskdataAgent {
-    String identifier();
 
     ContentStore contentStore();
 

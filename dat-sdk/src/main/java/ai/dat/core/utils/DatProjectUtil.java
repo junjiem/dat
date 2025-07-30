@@ -154,12 +154,13 @@ public class DatProjectUtil {
                 .collect(Collectors.toList());
 
         AtomicInteger agentNameAtomic = new AtomicInteger(1);
-        List<MultipleItemTemplate> agents = AskdataAgentFactoryManager.getSupports().stream()
+        List<MultipleItemContainCommentTemplate> agents = AskdataAgentFactoryManager.getSupports().stream()
                 .map(identifier -> {
                     AskdataAgentFactory factory = AskdataAgentFactoryManager.getFactory(identifier);
                     boolean display = DefaultAskdataAgentFactory.IDENTIFIER.equals(identifier);
                     String name = display ? DEFAULT_NAME : DEFAULT_NAME + (agentNameAtomic.getAndIncrement());
-                    return new MultipleItemTemplate(name, identifier, display, configTemplates(factory));
+                    return new MultipleItemContainCommentTemplate(factory.factoryDescription(), name,
+                            identifier, display, configTemplates(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
                 .collect(Collectors.toList());
@@ -192,7 +193,7 @@ public class DatProjectUtil {
 
     private static ConfigTemplate configTemplate(boolean required, ConfigOption<?> configOption) {
         return new ConfigTemplate(required, configOption.key(), toValue(configOption.defaultValue()),
-                toDescription(configOption));
+                toDescription(required, configOption));
     }
 
     private static Object toValue(Object value) {
@@ -203,8 +204,13 @@ public class DatProjectUtil {
         }
     }
 
-    private static String toDescription(ConfigOption<?> configOption) {
-        return new HtmlFormatter().format(configOption.description());
+    private static String toDescription(boolean required, ConfigOption<?> configOption) {
+        return "("
+                + configOption.getClazz().getSimpleName() + ", "
+                + (required ? "[Required]" : "[Optional]")
+                + (configOption.hasDefaultValue() ? ", Default: " + toValue(configOption.defaultValue()) : "")
+                + ") "
+                + new HtmlFormatter().format(configOption.description());
     }
 
     private record SingleItemTemplate(@Getter String provider, @Getter boolean display,
@@ -213,6 +219,11 @@ public class DatProjectUtil {
 
     private record MultipleItemTemplate(@Getter String name, @Getter String provider, @Getter boolean display,
                                         @Getter List<ConfigTemplate> configs) {
+    }
+
+    private record MultipleItemContainCommentTemplate(@Getter String comment, @Getter String name,
+                                                      @Getter String provider, @Getter boolean display,
+                                                      @Getter List<ConfigTemplate> configs) {
     }
 
     private record ConfigTemplate(@Getter boolean required, @Getter String key, @Getter Object value,

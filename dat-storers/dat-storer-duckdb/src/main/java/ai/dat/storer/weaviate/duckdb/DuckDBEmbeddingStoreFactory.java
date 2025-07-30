@@ -9,7 +9,6 @@ import ai.dat.core.utils.FactoryUtil;
 import dev.langchain4j.community.store.embedding.duckdb.DuckDBEmbeddingStore;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.Set;
@@ -52,9 +51,9 @@ public class DuckDBEmbeddingStoreFactory implements EmbeddingStoreFactory {
     }
 
     @Override
-    public EmbeddingStore<TextSegment> create(@NonNull String storeId,
-                                              @NonNull ContentType contentType,
-                                              @NonNull ReadableConfig config) {
+    public EmbeddingStore<TextSegment> create(String storeId,
+                                              ContentType contentType,
+                                              ReadableConfig config) {
         FactoryUtil.validateFactoryOptions(this, config);
         String tableName = String.join("_",
                 DEFAULT_TABLE_NAME_PREFIX,

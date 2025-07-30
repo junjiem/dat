@@ -115,7 +115,7 @@ public class DefaultEventOptions {
 
     public static final ConfigOption<List<Map<String, Object>>> DATA =
             ConfigOptions.key("data")
-                    .mapType((Class<Map<String, Object>>) (Class<?>) Map.class)
+                    .mapObjectType()
                     .asList()
                     .noDefaultValue()
                     .withDescription("The data queried from the database");

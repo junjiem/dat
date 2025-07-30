@@ -71,7 +71,7 @@ public class SemanticModel {
         this.entities = entities;
         try {
             Preconditions.checkArgument(
-                    entities.stream().filter(e -> Entity.EntityType.PRIMARY == e.getType()).count() == 1,
+                    entities.stream().filter(e -> Entity.EntityType.PRIMARY == e.getType()).count() <= 1,
                     "There can be at most one primary key in the entities");
             validateNameUnique();
         } catch (Exception e) {

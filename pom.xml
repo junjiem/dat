@@ -14,6 +14,7 @@
         <module>dat-storers</module>
         <module>dat-llms</module>
         <module>dat-adapters</module>
+        <module>dat-agents</module>
         <module>dat-sdk</module>
         <module>dat-cli</module>
     </modules>
@@ -22,10 +23,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <revision>0.0.1-beta2</revision>
+        <revision>0.0.1-beta3</revision>
         <lombok.version>1.18.38</lombok.version>
         <jackson.version>2.18.3</jackson.version>
-        <langchain4j.vserion>1.1.0</langchain4j.vserion>
+        <langchain4j.vserion>1.2.0</langchain4j.vserion>
         <langchain4j-community.version>1.1.0-beta7</langchain4j-community.version>
         <junit.jupiter.version>5.10.0</junit.jupiter.version>
         <logback.version>1.5.18</logback.version>

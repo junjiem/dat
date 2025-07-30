@@ -1,14 +1,11 @@
-package ai.dat.core.project.run;
+package ai.dat.core.project;
 
 import ai.dat.core.agent.AskdataAgent;
-import ai.dat.core.agent.data.EventOption;
 import ai.dat.core.agent.data.StreamAction;
-import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
 import ai.dat.core.data.project.DatProject;
-import ai.dat.core.project.build.ProjectBuilder;
 import ai.dat.core.project.utils.ProjectUtil;
 import lombok.Getter;
 import lombok.NonNull;
@@ -17,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @Author JunjieM

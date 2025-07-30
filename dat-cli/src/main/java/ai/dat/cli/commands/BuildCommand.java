@@ -1,11 +1,10 @@
 package ai.dat.cli.commands;
 
-import ai.dat.core.project.build.ProjectBuilder;
+import ai.dat.cli.utils.AnsiUtil;
+import ai.dat.core.project.ProjectBuilder;
 import lombok.extern.slf4j.Slf4j;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Help.Ansi;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,18 +42,18 @@ public class BuildCommand implements Callable<Integer> {
             if (force) {
                 log.info("Force rebuild...");
                 builder.forceRebuild();
-                System.out.println(Ansi.ON.string(
+                System.out.println(AnsiUtil.string(
                         "@|fg(green) ✅ Force rebuild completed|@"));
             } else {
                 log.info("Incremental build...");
                 builder.build();
-                System.out.println(Ansi.ON.string(
+                System.out.println(AnsiUtil.string(
                         "@|fg(green) ✅ Incremental build completed|@"));
             }
             return 0;
         } catch (Exception e) {
             log.error("Project build failed", e);
-            System.err.println(Ansi.ON.string(
+            System.err.println(AnsiUtil.string(
                     "@|fg(red) ❌ Build failed: " + e.getMessage() + "|@"));
             return 1;
         }
