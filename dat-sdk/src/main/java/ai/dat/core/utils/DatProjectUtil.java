@@ -13,10 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.base.Preconditions;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.*;
 import jinjava.org.jsoup.helper.ValidationException;
 import lombok.Getter;
 import lombok.NonNull;
@@ -37,7 +34,10 @@ import java.util.stream.Collectors;
 public class DatProjectUtil {
 
     private static final YAMLMapper YAML_MAPPER = new YAMLMapper();
-    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
+    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory
+            .getInstance(SpecVersion.VersionFlag.V202012);
+    private static final SchemaValidatorsConfig SCHEMA_CONFIG =
+            SchemaValidatorsConfig.builder().locale(Locale.ENGLISH).build();
     private static final String SCHEMA_PATH = "schemas/project_schema.json";
     private static final String TEMPLATE_PATH = "templates/project_yaml_template.jinja";
 
@@ -66,7 +66,7 @@ public class DatProjectUtil {
             }
             try {
                 JsonNode schemaNode = new JsonMapper().readTree(stream);
-                return SCHEMA_FACTORY.getSchema(schemaNode);
+                return SCHEMA_FACTORY.getSchema(schemaNode, SCHEMA_CONFIG);
             } catch (IOException e) {
                 throw new IOException("Failed to parse project schema file: " + SCHEMA_PATH
                         + " - " + e.getMessage(), e);

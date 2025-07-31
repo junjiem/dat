@@ -56,6 +56,7 @@ public class ProjectBuilder {
      * 构建项目
      */
     public void build() throws IOException {
+        log.info("Start incremental build project ...");
         validate();
 
         if (project == null) {
@@ -76,12 +77,14 @@ public class ProjectBuilder {
                     databaseAdapter, contentStore, fingerprint, schemas, models);
             storeManager.updateStore(fileStates, changes);
         }
+        log.info("Incremental build project completed");
     }
 
     /**
      * 强制重建项目
      */
     public void forceRebuild() throws IOException {
+        log.info("Start force rebuild project ...");
         cleanState();
         build();
     }
@@ -151,6 +154,7 @@ public class ProjectBuilder {
      * 清理当前状态文件
      */
     public void cleanState() throws IOException {
+        log.info("Start clean current states ...");
         if (project == null) {
             project = ProjectUtil.loadProject(projectPath);
         }
@@ -162,6 +166,7 @@ public class ProjectBuilder {
      * 清理所有状态文件
      */
     public void cleanAllStates() throws IOException {
+        log.info("Start clean all states ...");
         stateManager.cleanAllState();
     }
 
@@ -169,6 +174,7 @@ public class ProjectBuilder {
      * 清理过期的状态文件
      */
     public void cleanOldStates(int keepCount) throws IOException {
+        log.info("Start clean the expired states ..., keep count: {}", keepCount);
         stateManager.cleanOldStates(keepCount);
     }
 }

@@ -23,18 +23,6 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- YAML & JSON -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>json-schema-validator</artifactId>
-            <version>1.5.7</version>
-        </dependency>
-
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>

@@ -7,19 +7,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.base.Preconditions;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.*;
 import jinjava.org.jsoup.helper.ValidationException;
 import lombok.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -28,7 +22,10 @@ import java.util.stream.Collectors;
 public class DatSchemaUtil {
 
     private static final YAMLMapper YAML_MAPPER = new YAMLMapper();
-    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
+    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory
+            .getInstance(SpecVersion.VersionFlag.V202012);
+    private static final SchemaValidatorsConfig SCHEMA_CONFIG =
+            SchemaValidatorsConfig.builder().locale(Locale.ENGLISH).build();
     private static final String SCHEMA_PATH = "schemas/schema.json";
 
     private static final Pattern MODEL_REF_PATTERN = Pattern.compile("ref\\(['\"]([^'\"]+)['\"]\\)");
@@ -54,7 +51,7 @@ public class DatSchemaUtil {
             }
             try {
                 JsonNode schemaNode = new JsonMapper().readTree(schemaStream);
-                return SCHEMA_FACTORY.getSchema(schemaNode);
+                return SCHEMA_FACTORY.getSchema(schemaNode, SCHEMA_CONFIG);
             } catch (IOException e) {
                 throw new IOException("Failed to parse schema file: " + SCHEMA_PATH + " - " + e.getMessage(), e);
             }

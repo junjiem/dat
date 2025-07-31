@@ -1,6 +1,7 @@
 package ai.dat.core.project;
 
 import ai.dat.core.adapter.DatabaseAdapter;
+import ai.dat.core.adapter.SemanticAdapter;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
@@ -10,9 +11,11 @@ import ai.dat.core.project.data.ModelFileState;
 import ai.dat.core.project.data.SchemaFileState;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.DatSchemaUtil;
+import ai.dat.core.utils.SemanticModelUtil;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.calcite.sql.parser.SqlParseException;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -78,8 +81,8 @@ public class ContentStoreManager {
         Map<String, List<ValidationMessage>> validations = semanticModelsCache.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         e -> e.getValue().stream().map(m -> {
-                                    SQLException sqlException;
                                     String sql = "SELECT 1 FROM (" + m.getModel() + ") AS __dat_model WHERE 1=0";
+                                    SQLException sqlException;
                                     try {
                                         databaseAdapter.executeQuery(sql);
                                         sqlException = null;
@@ -88,7 +91,7 @@ public class ContentStoreManager {
                                     }
                                     return new ValidationMessage(m.getName(), sqlException);
                                 })
-                                .filter(vm -> vm.sqlException != null)
+                                .filter(vm -> vm.exception != null)
                                 .collect(Collectors.toList())
                 ))
                 .entrySet().stream().filter(e -> !e.getValue().isEmpty())
@@ -97,9 +100,49 @@ public class ContentStoreManager {
             StringBuffer sb = new StringBuffer();
             validations.forEach((relativePath, validationMessages) -> {
                 sb.append("There has exceptions in the model SQL validation of the semantic model, " +
-                                "in the YAML file relative path: ").append(relativePath).append("\n");
+                        "in the YAML file relative path: ").append(relativePath).append("\n");
                 validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
-                        .append(": ").append(m.sqlException.getMessage()).append("\n"));
+                        .append(": ").append(m.exception.getMessage()).append("\n"));
+                sb.append("\n");
+            });
+            throw new ValidationException(sb.toString());
+        }
+    }
+
+    private void validateSemanticModelSqls() {
+        Map<String, List<ValidationMessage>> validations = semanticModelsCache.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        e -> e.getValue().stream().map(m -> {
+                                    SemanticAdapter semanticAdapter = databaseAdapter.semanticAdapter();
+                                    String semanticModelSql;
+                                    try {
+                                        semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, m);
+                                    } catch (SqlParseException ex) {
+                                        return new ValidationMessage(m.getName(), ex);
+                                    }
+                                    String sql = "SELECT 1 FROM (" + semanticModelSql
+                                            + ") AS __dat_semantic_model WHERE 1=0";
+                                    SQLException exception;
+                                    try {
+                                        databaseAdapter.executeQuery(sql);
+                                        exception = null;
+                                    } catch (SQLException ex) {
+                                        exception = ex;
+                                    }
+                                    return new ValidationMessage(m.getName(), exception);
+                                })
+                                .filter(vm -> vm.exception != null)
+                                .collect(Collectors.toList())
+                ))
+                .entrySet().stream().filter(e -> !e.getValue().isEmpty())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!validations.isEmpty()) {
+            StringBuffer sb = new StringBuffer();
+            validations.forEach((relativePath, validationMessages) -> {
+                sb.append("There has exceptions in the semantic model SQL validation of the semantic model, " +
+                        "in the YAML file relative path: ").append(relativePath).append("\n");
+                validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
+                        .append(": ").append(m.exception.getMessage()).append("\n"));
                 sb.append("\n");
             });
             throw new ValidationException(sb.toString());
@@ -110,6 +153,14 @@ public class ContentStoreManager {
                             @NonNull FileChanges changes) throws IOException {
         // 校验模型SQL
         validateModelSqls(changes);
+        // 校验语义模型SQL
+        validateSemanticModelSqls();
+        // 更新内容的状态
+        updateContentStore(fileStates, changes);
+    }
+
+    private void updateContentStore(@NonNull List<SchemaFileState> fileStates,
+                                    @NonNull FileChanges changes) throws IOException {
         Map<String, SchemaFileState> fileStateMap = fileStates.stream()
                 .collect(Collectors.toMap(SchemaFileState::getRelativePath, f -> f));
         // 未变化的文件
@@ -189,7 +240,7 @@ public class ContentStoreManager {
     @AllArgsConstructor
     static class ValidationMessage {
         private String semanticModelName;
-        private SQLException sqlException;
+        private Exception exception;
     }
 
 }

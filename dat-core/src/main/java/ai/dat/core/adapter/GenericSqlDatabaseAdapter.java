@@ -1,6 +1,5 @@
 package ai.dat.core.adapter;
 
-import ai.dat.core.exception.ValidationException;
 import ai.dat.core.semantic.SemanticSqlConverter;
 import ai.dat.core.semantic.data.SemanticModel;
 import org.apache.calcite.sql.parser.SqlParseException;
@@ -24,6 +23,11 @@ public abstract class GenericSqlDatabaseAdapter implements DatabaseAdapter {
     public GenericSqlDatabaseAdapter(SemanticAdapter semanticAdapter, DataSource dataSource) {
         this.semanticAdapter = semanticAdapter;
         this.dataSource = dataSource;
+    }
+
+    @Override
+    public SemanticAdapter semanticAdapter() {
+        return semanticAdapter;
     }
 
     @Override

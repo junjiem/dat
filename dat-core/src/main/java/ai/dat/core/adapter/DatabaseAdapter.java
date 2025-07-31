@@ -1,6 +1,5 @@
 package ai.dat.core.adapter;
 
-import ai.dat.core.exception.ValidationException;
 import ai.dat.core.semantic.data.SemanticModel;
 
 import java.sql.SQLException;
@@ -14,6 +13,8 @@ import java.util.Map;
  * @Date 2025/6/25
  */
 public interface DatabaseAdapter {
+    SemanticAdapter semanticAdapter();
+
     String generateSql(String semanticSql, List<SemanticModel> semanticModels);
 
     List<Map<String, Object>> executeQuery(String sql) throws SQLException;

@@ -1,17 +1,14 @@
 package ai.dat.core.semantic;
 
 import ai.dat.core.adapter.SemanticAdapter;
-import ai.dat.core.semantic.data.Dimension;
-import ai.dat.core.semantic.data.Entity;
-import ai.dat.core.semantic.data.Measure;
 import ai.dat.core.semantic.data.SemanticModel;
-import com.google.common.base.Preconditions;
+import ai.dat.core.utils.SemanticModelUtil;
+import lombok.NonNull;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -27,7 +24,8 @@ public class SemanticSqlConverter {
     private final SqlParserWrapper ansiSqlParser;
     private final SqlParserWrapper dialectSqlParser;
 
-    public SemanticSqlConverter(SemanticAdapter semanticAdapter, List<SemanticModel> semanticModels) {
+    public SemanticSqlConverter(@NonNull SemanticAdapter semanticAdapter,
+                                @NonNull List<SemanticModel> semanticModels) {
         this.semanticAdapter = semanticAdapter;
         this.semanticModels = semanticModels.stream()
                 .collect(Collectors.toMap(SemanticModel::getName, model -> model));
@@ -245,77 +243,17 @@ public class SemanticSqlConverter {
     private Map<String, String> getSemanticModelSqls(Set<SemanticModel> semanticModels) throws SqlParseException {
         Map<String, String> semanticModelSqls = new HashMap<>();
         for (SemanticModel semanticModel : semanticModels) {
-            String semanticModelSql = getSemanticModelSql(semanticModel);
+            String semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
             semanticModelSqls.put(quoteIdentifier(semanticModel.getName()), semanticModelSql);
         }
         return semanticModelSqls;
-    }
-
-    /**
-     * 获取语义模型的数据集SQL
-     *
-     * @param semanticModel
-     * @return
-     * @throws SqlParseException
-     */
-    public String getSemanticModelSql(SemanticModel semanticModel) throws SqlParseException {
-        String semanticModelName = semanticModel.getName();
-        StringBuilder sql = new StringBuilder();
-        sql.append("SELECT ");
-        List<String> selectFields = new ArrayList<>();
-        for (Entity entity : semanticModel.getEntities()) {
-            String name = entity.getName();
-            String expr = entity.getExpr() != null && !entity.getExpr().isEmpty() ?
-                    entity.getExpr() : name;
-            String selectField = expr + " AS " + quoteIdentifier(name);
-//            String selectField = expr2Sql(expr) + " AS " + quoteIdentifier(name);
-            selectFields.add(selectField);
-        }
-        for (Dimension dimension : semanticModel.getDimensions()) {
-            String name = dimension.getName();
-            String expr = dimension.getExpr() != null && !dimension.getExpr().isEmpty() ?
-                    dimension.getExpr() : name;
-            if (Dimension.DimensionType.TIME == dimension.getType()) {
-                expr = semanticAdapter.applyTimeGranularity(expr,
-                        dimension.getTypeParams().getTimeGranularity());
-            }
-            String selectField = expr + " AS " + quoteIdentifier(name);
-//            String selectField = expr2Sql(expr) + " AS " + quoteIdentifier(name);
-            selectFields.add(selectField);
-        }
-        for (Measure measure : semanticModel.getMeasures()) {
-            String name = measure.getName();
-            String expr = measure.getExpr() != null && !measure.getExpr().isEmpty() ?
-                    measure.getExpr() : name;
-            String selectField = expr + " AS " + quoteIdentifier(name);
-//            String selectField = expr2Sql(expr) + " AS " + quoteIdentifier(name);
-            selectFields.add(selectField);
-        }
-        sql.append(String.join(", ", selectFields));
-        String modelSql = semanticModel.getModel();
-        Preconditions.checkArgument(modelSql.trim().toUpperCase().startsWith("SELECT"),
-                String.format("The model of the semantic model '%s' must be a SELECT statement",
-                        semanticModelName));
-        Preconditions.checkArgument(!Pattern.compile(".*\\s*;\\s*$", Pattern.DOTALL)
-                        .matcher(modelSql).matches(),
-                String.format("The model of the semantic model '%s' is and can only be a SELECT statement " +
-                        "(The end of an statement cannot contain ';')", semanticModelName));
-        SqlNode sqlNode = dialectSqlParser.parseQuery(modelSql);
-        sql.append(" FROM (").append(sqlNode2Sql(sqlNode)).append(") AS ")
-                .append(quoteIdentifier("__dat_model"));
-        return sql.toString();
     }
 
     private String sqlNode2Sql(SqlNode sqlNode) {
         return sqlNode.toSqlString(sqlDialect).getSql();
     }
 
-//    private String expr2Sql(String expr) throws SqlParseException {
-//        SqlNode sqlNode = dialectSqlParser.parseExpression(expr);
-//        return sqlNode2Sql(sqlNode);
-//    }
-
     private String quoteIdentifier(String name) {
         return semanticAdapter.quoteIdentifier(name);
     }
-} 
+}

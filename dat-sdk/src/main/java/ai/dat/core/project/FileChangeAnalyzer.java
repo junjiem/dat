@@ -68,8 +68,10 @@ public class FileChangeAnalyzer {
                     hasChanged = !md5Hash.equals(fileState.getMd5Hash());
                 }
                 List<ModelFileState> dependencies = Collections.emptyList();
-                if (hasChanged || !fileState.getDependencies().isEmpty()) {
+                if (!fileState.getDependencies().isEmpty()) {
                     dependencies = resolveDependencies(relativePath, schema);
+                }
+                if (!hasChanged) {
                     hasChanged = hasDependencyChanged(dependencies, fileState.getDependencies());
                 }
                 if (hasChanged) {

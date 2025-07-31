@@ -45,12 +45,12 @@ public class CleanCommand implements Callable<Integer> {
             System.out.println("📁 Project path: " + path);
             ProjectBuilder builder = new ProjectBuilder(path);
             if (cleanAll) {
-                log.info("Clear all state files...");
+                log.info("Clean all state files...");
                 builder.cleanAllStates();
                 System.out.println(AnsiUtil.string(
                         "@|fg(green) ✅ All state files have been cleared|@"));
             } else {
-                log.info("Clear the expired state files, keep count: {}", keepCount);
+                log.info("Clean the expired state files..., keep count: {}", keepCount);
                 builder.cleanOldStates(keepCount);
                 System.out.println(AnsiUtil.string(
                         "@|fg(green) ✅ The expired state files has been cleared|@"));
