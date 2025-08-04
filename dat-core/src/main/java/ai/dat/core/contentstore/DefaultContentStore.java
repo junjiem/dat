@@ -17,7 +17,6 @@ import dev.langchain4j.rag.query.Query;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.Builder;
 import lombok.NonNull;
-import lombok.Setter;
 
 import java.util.Collection;
 import java.util.List;
@@ -42,19 +41,17 @@ public class DefaultContentStore implements ContentStore {
 
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
-    protected final ChatModel chatModel;
+    private final ChatModel chatModel;
 
-    protected final EmbeddingModel embeddingModel;
+    private final EmbeddingModel embeddingModel;
 
-    protected final EmbeddingStore<TextSegment> mdlEmbeddingStore;
-    protected final EmbeddingStore<TextSegment> sqlEmbeddingStore;
-    protected final EmbeddingStore<TextSegment> synEmbeddingStore;
-    protected final EmbeddingStore<TextSegment> docEmbeddingStore;
+    private final EmbeddingStore<TextSegment> mdlEmbeddingStore;
+    private final EmbeddingStore<TextSegment> sqlEmbeddingStore;
+    private final EmbeddingStore<TextSegment> synEmbeddingStore;
+    private final EmbeddingStore<TextSegment> docEmbeddingStore;
 
-    @Setter
-    protected Integer maxResults;
-    @Setter
-    protected Double minScore;
+    private final Integer maxResults;
+    private final Double minScore;
 
     @Builder
     public DefaultContentStore(@NonNull ChatModel chatModel,
@@ -70,7 +67,7 @@ public class DefaultContentStore implements ContentStore {
         this.sqlEmbeddingStore = sqlEmbeddingStore;
         this.synEmbeddingStore = synEmbeddingStore;
         this.docEmbeddingStore = docEmbeddingStore;
-        this.maxResults = Optional.ofNullable(maxResults).orElse(10);
+        this.maxResults = Optional.ofNullable(maxResults).orElse(5);
         this.minScore = Optional.ofNullable(minScore).orElse(0.6);
     }
 

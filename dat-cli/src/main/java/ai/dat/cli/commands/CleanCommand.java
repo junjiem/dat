@@ -1,7 +1,7 @@
 package ai.dat.cli.commands;
 
 import ai.dat.cli.utils.AnsiUtil;
-import ai.dat.core.project.ProjectBuilder;
+import ai.dat.boot.ProjectBuilder;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;

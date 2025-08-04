@@ -6,14 +6,13 @@ import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigurationUtils;
 import ai.dat.core.factories.*;
-import ai.dat.core.project.utils.ProjectUtil;
+import ai.dat.boot.utils.ProjectUtil;
 import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.JinjaTemplateUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 
 import java.io.IOException;
@@ -382,7 +381,8 @@ public class InitCommand implements Callable<Integer> {
     private void createProjectYamlFile(Path projectPath) throws IOException {
         Map<String, Object> variables = new HashMap<>();
         variables.put("project", projectConfig);
-        variables.put("agentConfigs", DatProjectUtil.configTemplates(new DefaultAskdataAgentFactory()));
+        variables.put("projectConfigs", DatProjectUtil.projectConfigTemplates());
+        variables.put("agentConfigs", DatProjectUtil.defaultAgentConfigTemplates());
         String yamlContent = JinjaTemplateUtil.render(PROJECT_YAML_TEMPLATE_CONTENT, variables);
         Path projectYamlPath = projectPath.resolve(PROJECT_CONFIG_FILE_NAME);
         Files.write(projectYamlPath, yamlContent.getBytes());

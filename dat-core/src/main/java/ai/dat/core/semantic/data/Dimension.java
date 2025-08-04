@@ -8,6 +8,7 @@ import lombok.NonNull;
 import lombok.Setter;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -27,6 +28,9 @@ public class Dimension {
     private DimensionType type = DimensionType.CATEGORICAL;
 
     private String expr;
+
+    @JsonProperty("enum_values")
+    private List<EnumValue> enumValues = List.of();
 
     @JsonProperty("type_params")
     private TypeParams typeParams;
@@ -101,6 +105,16 @@ public class Dimension {
                 return VALUE_MAP.get(value);
             }
         }
+    }
+
+    @Setter
+    @Getter
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class EnumValue {
+        @NonNull
+        private String value;
+
+        private String label;
     }
 }
 

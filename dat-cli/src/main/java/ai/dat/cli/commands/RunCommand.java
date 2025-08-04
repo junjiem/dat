@@ -7,7 +7,7 @@ import ai.dat.cli.utils.TablePrinter;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
-import ai.dat.core.project.ProjectRunner;
+import ai.dat.boot.ProjectRunner;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;

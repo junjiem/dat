@@ -8,6 +8,13 @@ version: 1
 
 name: dat_project_example
 description: dat project configuration example.
+{% if projectConfigs -%}
+    {{ "configuration:" }}
+    {% for config in projectConfigs -%}
+        {{ "  " }}{% if not config.required -%}
+            {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+    {% endfor %}
+{% endif %}
 
 
 # Data source configuration

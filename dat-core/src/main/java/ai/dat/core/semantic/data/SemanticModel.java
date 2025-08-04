@@ -35,6 +35,9 @@ public class SemanticModel {
     private String model;
 
     @NonNull
+    private List<String> tags = List.of();
+
+    @NonNull
     private Defaults defaults = new Defaults();
 
     @NonNull
@@ -86,6 +89,7 @@ public class SemanticModel {
         try {
             validateNameUnique();
             validateDefaultsAggTimeDimension();
+            validateEnumValues();
         } catch (Exception e) {
             this.dimensions = olds;
             throw e;
@@ -101,6 +105,16 @@ public class SemanticModel {
             this.measures = olds;
             throw e;
         }
+    }
+
+    private void validateEnumValues() {
+        List<String> incorrectNames = dimensions.stream()
+                .filter(d -> Dimension.DimensionType.TIME == d.getType())
+                .filter(d -> d.getEnumValues() != null && !d.getEnumValues().isEmpty())
+                .map(d -> "'" + d.getName() + "'").toList();
+        Preconditions.checkArgument(incorrectNames.isEmpty(),
+                String.format("The time type %s cannot set enum values in the dimensions of %s",
+                        String.join(", ", incorrectNames), theSemanticModelStr()));
     }
 
     private void validateDefaultsAggTimeDimension() {

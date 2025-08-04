@@ -23,7 +23,7 @@ public class EmbeddingStoreConfig {
     private ReadableConfig configuration = new Configuration();
 
     @JsonProperty("configuration")
-    public void setConfigurationMap(Map<String, Object> configMap) {
-        this.configuration = Configuration.fromMap(configMap);
+    public void setConfiguration(Map<String, Object> configs) {
+        this.configuration = Configuration.fromMap(configs);
     }
 }

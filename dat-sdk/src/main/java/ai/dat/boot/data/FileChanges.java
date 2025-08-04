@@ -1,4 +1,4 @@
-package ai.dat.core.project.data;
+package ai.dat.boot.data;
 
 import lombok.NonNull;
 

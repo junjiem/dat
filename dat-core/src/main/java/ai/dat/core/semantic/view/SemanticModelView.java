@@ -22,6 +22,9 @@ public class SemanticModelView {
     private String alias;
 
     @NonNull
+    private List<String> tags = List.of();
+
+    @NonNull
     private SemanticModel.Defaults defaults;
 
     @NonNull
@@ -38,6 +41,7 @@ public class SemanticModelView {
         view.setName(model.getName());
         view.setDescription(model.getDescription());
         view.setAlias(model.getAlias());
+        view.setTags(model.getTags());
         view.setDefaults(model.getDefaults());
         view.setEntities(model.getEntities().stream()
                 .map(EntityView::from)

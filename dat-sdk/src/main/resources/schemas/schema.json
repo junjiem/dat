@@ -43,6 +43,13 @@
             "type": "string",
             "description": "数据模型"
           },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "语义模型标签，用于分类和检索"
+          },
           "defaults": {
             "type": "object",
             "properties": {
@@ -141,6 +148,29 @@
                     "time"
                   ],
                   "description": "维度类型，categorical 或 time"
+                },
+                "enum_values": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "number",
+                          "string"
+                        ],
+                        "description": "枚举值"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "枚举值的显示标签"
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  },
+                  "description": "枚举值定义，适用于分类维度"
                 },
                 "type_params": {
                   "oneOf": [

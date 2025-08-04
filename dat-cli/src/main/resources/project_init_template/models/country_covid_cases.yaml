@@ -2,10 +2,14 @@ version: 1
 
 semantic_models:
   - name: country_covid_cases
-    defaults:
-      agg_time_dimension: report_date
     description: 各个国家的covid病例情况。
     model: ref('country_covid_cases')
+    tags: 
+      - covid
+      - 疫情
+      - 医疗统计
+    defaults:
+      agg_time_dimension: report_date
     entities:
       - name: country_id
         description: 国家代码
@@ -20,6 +24,13 @@ semantic_models:
       - name: country
         description: 国家
         type: categorical
+        enum_values:
+          - value: "UnitedStates"
+            label: "美国"
+          - value: "China"
+            label: "中国"
+          - value: "UnitedKingdom"
+            label: "英国"
     measures:
       - name: cases
         description: 病历数

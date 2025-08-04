@@ -29,6 +29,14 @@
       ],
       "description": "项目的详细描述"
     },
+    "configuration": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "项目的配置",
+      "additionalProperties": true
+    },
     "db": {
       "type": "object",
       "description": "关系型数据库的上下文",

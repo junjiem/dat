@@ -1,6 +1,7 @@
 package ai.dat.cli;
 
 import ai.dat.cli.commands.*;
+import ai.dat.cli.utils.AnsiUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.fusesource.jansi.AnsiConsole;
 import picocli.CommandLine;
@@ -10,7 +11,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * DAT CLI 主类
@@ -22,7 +25,7 @@ import java.util.concurrent.Callable;
 @Command(
         name = "dat",
         mixinStandardHelpOptions = true,
-        version = "DAT CLI 0.1-SNAPSHOT",
+        version = "DAT CLI 0.0.1-beta5",
         description = "DAT (Data Ask Tool) Command Line Interface",
         subcommands = {
                 InitCommand.class,
@@ -34,6 +37,11 @@ import java.util.concurrent.Callable;
 )
 public class DatCli implements Callable<Integer> {
 
+    private final static String[] GRADIENT_COLORS = {
+            "0;3;1", "0;4;1", "0;5;1", "0;5;2", "0;5;3", "0;5;4",
+            "0;5;5", "0;4;4", "0;4;3", "0;4;2", "0;3;3", "0;3;2",
+    };
+
     @Override
     public Integer call() {
         System.out.println("DAT - Data Ask Tool");
@@ -44,8 +52,15 @@ public class DatCli implements Callable<Integer> {
     private static void printBanner() {
         try (InputStream is = DatCli.class.getResourceAsStream("/banner.txt")) {
             if (is != null) {
-                new BufferedReader(new InputStreamReader(is)).lines()
-                        .forEach(System.out::println);
+                StringBuilder builder = new StringBuilder();
+                List<String> lines = new BufferedReader(new InputStreamReader(is)).lines().toList();
+                for (int i = 0; i < lines.size(); i++) {
+                    if (lines.get(i).isBlank()) continue;
+                    String color = GRADIENT_COLORS[i % GRADIENT_COLORS.length];
+                    builder.append(AnsiUtil.string("@|bold,fg(" + color + ") " + lines.get(i) + "|@"))
+                            .append("\n");
+                }
+                System.out.println(builder);
             }
         } catch (IOException e) {
             //
@@ -61,4 +76,5 @@ public class DatCli implements Callable<Integer> {
         AnsiConsole.systemUninstall(); // cleanup when done
         System.exit(exitCode);
     }
+
 }

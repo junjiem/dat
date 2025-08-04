@@ -1,7 +1,7 @@
-package ai.dat.core.project;
+package ai.dat.boot;
 
-import ai.dat.core.project.data.SchemaFileState;
-import ai.dat.core.project.utils.ProjectUtil;
+import ai.dat.boot.data.SchemaFileState;
+import ai.dat.boot.utils.ProjectUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;

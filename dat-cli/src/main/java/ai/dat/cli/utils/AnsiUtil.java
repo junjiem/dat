@@ -11,6 +11,6 @@ public class AnsiUtil {
     }
 
     public static String string(String stringWithMarkup) {
-        return Ansi.AUTO.string(stringWithMarkup);
+        return Ansi.ON.string(stringWithMarkup);
     }
 }

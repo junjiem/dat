@@ -9,7 +9,6 @@
     </parent>
 
     <artifactId>dat-core</artifactId>
-
     <name>DAT : Core</name>
 
     <properties>

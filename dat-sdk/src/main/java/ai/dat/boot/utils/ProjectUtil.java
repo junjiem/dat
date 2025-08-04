@@ -1,7 +1,11 @@
-package ai.dat.core.project.utils;
+package ai.dat.boot.utils;
 
+import ai.dat.boot.cache.SemanticModelsCacheUtil;
 import ai.dat.core.adapter.DatabaseAdapter;
+import ai.dat.core.adapter.SemanticAdapter;
 import ai.dat.core.agent.AskdataAgent;
+import ai.dat.core.configuration.ConfigOption;
+import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
@@ -11,17 +15,17 @@ import ai.dat.core.factories.EmbeddingModelFactory;
 import ai.dat.core.factories.EmbeddingModelFactoryManager;
 import ai.dat.core.factories.EmbeddingStoreFactory;
 import ai.dat.core.factories.EmbeddingStoreFactoryManager;
+import ai.dat.core.semantic.data.Dimension;
 import ai.dat.core.semantic.data.SemanticModel;
-import ai.dat.core.utils.DatModelUtil;
-import ai.dat.core.utils.DatProjectUtil;
-import ai.dat.core.utils.DatSchemaUtil;
-import ai.dat.core.utils.FactoryUtil;
+import ai.dat.core.utils.*;
 import ai.dat.storer.weaviate.duckdb.DuckDBEmbeddingStoreFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.File;
@@ -31,11 +35,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.sql.SQLException;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static ai.dat.core.utils.DatProjectUtil.VERIFY_MDL_DIMENSIONS_ENUM_VALUES;
 
 @Slf4j
 public class ProjectUtil {
@@ -44,15 +48,178 @@ public class ProjectUtil {
     public final static String PROJECT_CONFIG_FILE_NAME_YAML = PROJECT_CONFIG_FILE_NAME_PREFIX + ".yaml";
     public final static String PROJECT_CONFIG_FILE_NAME_YML = PROJECT_CONFIG_FILE_NAME_PREFIX + ".yml";
 
-    public static final Set<String> YAML_EXTENSIONS = Set.of(".yaml", ".yml");
-    public static final Set<String> SQL_EXTENSIONS = Set.of(".sql");
+    public final static Set<String> YAML_EXTENSIONS = Set.of(".yaml", ".yml");
+    public final static Set<String> SQL_EXTENSIONS = Set.of(".sql");
 
-    public static final String DAT_DIR_NAME = ".dat";
-    public static final String STORE_FILE_PREFIX = "embeddings_";
+    public final static String MODELS_DIR_NAME = "models";
+    public final static String DAT_DIR_NAME = ".dat";
+    public final static String STORE_FILE_PREFIX = "embeddings_";
 
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    private final static ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private ProjectUtil() {
+    }
+
+    public static void validate(DatProject project) {
+        ReadableConfig config = project.getConfiguration();
+        Set<ConfigOption<?>> requiredOptions = DatProjectUtil.projectRequiredOptions();
+        Set<ConfigOption<?>> optionalOptions = DatProjectUtil.projectOptionalOptions();
+        FactoryUtil.validateFactoryOptions(requiredOptions, optionalOptions, config);
+
+        DatabaseAdapter databaseAdapter = ProjectUtil.createDatabaseAdapter(project);
+
+        validateModelSqls(project.getName(), databaseAdapter); // 校验模型SQL
+        validateSemanticModelSqls(project.getName(), databaseAdapter); // 校验语义模型SQL
+
+        if (config.get(VERIFY_MDL_DIMENSIONS_ENUM_VALUES)) {
+            validateDimensionsEnumValues(project.getName(), databaseAdapter);
+        }
+    }
+
+    private static void validateModelSqls(String projectId, DatabaseAdapter databaseAdapter) {
+        Map<String, List<ValidationMessage>> validations =
+                SemanticModelsCacheUtil.get(projectId).entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey,
+                                e -> e.getValue().stream()
+                                        .map(model -> ProjectUtil.validateModelSql(databaseAdapter, model))
+                                        .filter(o -> o.exception != null)
+                                        .collect(Collectors.toList())
+                        ))
+                        .entrySet().stream().filter(e -> !e.getValue().isEmpty())
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!validations.isEmpty()) {
+            StringBuffer sb = new StringBuffer();
+            validations.forEach((relativePath, validationMessages) -> {
+                sb.append("There has exceptions in the model SQL validation of the semantic model, " +
+                        "in the YAML file relative path: ").append(relativePath).append("\n");
+                validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
+                        .append(": ").append(m.exception.getMessage()).append("\n"));
+                sb.append("\n");
+            });
+            throw new ValidationException(sb.toString());
+        }
+    }
+
+    private static ValidationMessage validateModelSql(DatabaseAdapter databaseAdapter,
+                                                      SemanticModel semanticModel) {
+        String sql = "SELECT 1 FROM (" + semanticModel.getModel() + ") AS __dat_model WHERE 1=0";
+        SQLException sqlException;
+        try {
+            databaseAdapter.executeQuery(sql);
+            sqlException = null;
+        } catch (SQLException exception) {
+            sqlException = exception;
+        }
+        return new ValidationMessage(semanticModel.getName(), sqlException);
+    }
+
+    private static void validateSemanticModelSqls(String projectId, DatabaseAdapter databaseAdapter) {
+        Map<String, List<ValidationMessage>> validations =
+                SemanticModelsCacheUtil.get(projectId).entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey,
+                                e -> e.getValue().stream()
+                                        .map(model -> ProjectUtil.validateSemanticModelSql(databaseAdapter, model))
+                                        .filter(o -> o.exception != null)
+                                        .collect(Collectors.toList())
+                        ))
+                        .entrySet().stream().filter(e -> !e.getValue().isEmpty())
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!validations.isEmpty()) {
+            StringBuffer sb = new StringBuffer();
+            validations.forEach((relativePath, validationMessages) -> {
+                sb.append("There has exceptions in the semantic model SQL validation of the semantic model, " +
+                        "in the YAML file relative path: ").append(relativePath).append("\n");
+                validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
+                        .append(": ").append(m.exception.getMessage()).append("\n"));
+                sb.append("\n");
+            });
+            throw new ValidationException(sb.toString());
+        }
+    }
+
+    private static ValidationMessage validateSemanticModelSql(DatabaseAdapter databaseAdapter,
+                                                              SemanticModel semanticModel) {
+        SemanticAdapter semanticAdapter = databaseAdapter.semanticAdapter();
+        String semanticModelSql;
+        try {
+            semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
+        } catch (SqlParseException e) {
+            return new ValidationMessage(semanticModel.getName(), e);
+        }
+        String sql = "SELECT 1 FROM (" + semanticModelSql + ") AS __dat_semantic_model WHERE 1=0";
+        SQLException exception;
+        try {
+            databaseAdapter.executeQuery(sql);
+            exception = null;
+        } catch (SQLException e) {
+            exception = e;
+        }
+        return new ValidationMessage(semanticModel.getName(), exception);
+    }
+
+    private static void validateDimensionsEnumValues(String projectId, DatabaseAdapter databaseAdapter) {
+        Map<String, List<ValidationMessage>> validations =
+                SemanticModelsCacheUtil.get(projectId).entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey,
+                                e -> e.getValue().stream()
+                                        .map(model -> ProjectUtil.validateDimensionEnumValues(databaseAdapter, model))
+                                        .filter(Objects::nonNull)
+                                        .filter(o -> o.exception != null)
+                                        .collect(Collectors.toList())
+                        ))
+                        .entrySet().stream().filter(e -> !e.getValue().isEmpty())
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!validations.isEmpty()) {
+            StringBuffer sb = new StringBuffer();
+            validations.forEach((relativePath, validationMessages) -> {
+                sb.append("There has exceptions in the dimension enum values validation of the semantic model, " +
+                        "in the YAML file relative path: ").append(relativePath).append("\n");
+                validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
+                        .append(": ").append(m.exception.getMessage()).append("\n"));
+                sb.append("\n");
+            });
+            throw new ValidationException(sb.toString());
+        }
+    }
+
+    private static ValidationMessage validateDimensionEnumValues(DatabaseAdapter databaseAdapter,
+                                                                 SemanticModel semanticModel) {
+        List<Dimension> dimensions = semanticModel.getDimensions().stream()
+                .filter(d -> d.getEnumValues() != null && !d.getEnumValues().isEmpty())
+                .toList();
+        if (dimensions.isEmpty()) {
+            return null;
+        }
+        SemanticAdapter semanticAdapter = databaseAdapter.semanticAdapter();
+        String semanticModelSql;
+        try {
+            semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
+        } catch (SqlParseException e) {
+            return new ValidationMessage(semanticModel.getName(), e);
+        }
+        List<String> messages = dimensions.stream().map(d -> {
+                    List<String> enumValues = d.getEnumValues().stream().map(Dimension.EnumValue::getValue).toList();
+                    String sql = "SELECT DISTINCT " + d.getName()
+                            + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
+                    try {
+                        Set<String> values = databaseAdapter.executeQuery(sql).stream()
+                                .map(map -> map.get(map.keySet().stream().findFirst().orElse(d.getName())))
+                                .filter(Objects::nonNull).map(Object::toString).collect(Collectors.toSet());
+                        if (values.containsAll(enumValues)) {
+                            return null;
+                        }
+                        return "Dimension '" + d.getName()
+                                + "' -> Enum values contain values that do not exist in the database";
+                    } catch (SQLException e) {
+                        return "Dimension '" + d.getName() + "' -> " + e.getMessage();
+                    }
+                })
+                .filter(Objects::nonNull).toList();
+        if (messages.isEmpty()) {
+            return null;
+        }
+        return new ValidationMessage(semanticModel.getName(),
+                new ValidationException(String.join("\n", messages)));
     }
 
     public static String contentStoreFingerprint(@NonNull Path projectPath) {
@@ -123,7 +290,7 @@ public class ProjectUtil {
             }
             String storeFileName = STORE_FILE_PREFIX + contentStoreFingerprint(project);
             Path filePath = projectPath.resolve(DAT_DIR_NAME + File.separator + storeFileName);
-            embeddingStore.setConfigurationMap(Map.of("file-path", filePath.toAbsolutePath().toString()));
+            embeddingStore.setConfiguration(Map.of("file-path", filePath.toAbsolutePath().toString()));
         }
 
         return FactoryUtil.createContentStore(project.getName(),
@@ -252,14 +419,13 @@ public class ProjectUtil {
         return null;
     }
 
-    public static Map<Path, DatSchema> loadAllSchema(Path projectPath) {
-        List<Path> yamlFiles = scanYamlFiles(projectPath);
+    public static Map<Path, DatSchema> loadAllSchema(Path modelsPath) {
+        List<Path> yamlFiles = scanYamlFiles(modelsPath);
         return yamlFiles.stream().collect(Collectors.toMap(p -> p,
-                p -> ProjectUtil.loadSchema(projectPath, p)));
+                p -> ProjectUtil.loadSchema(p, modelsPath)));
     }
 
-    private static DatSchema loadSchema(Path projectPath, Path filePath) {
-        Path modelsPath = projectPath.resolve("models");
+    private static DatSchema loadSchema(Path filePath, Path modelsPath) {
         try {
             String content = Files.readString(filePath);
             return DatSchemaUtil.datSchema(content);
@@ -269,14 +435,13 @@ public class ProjectUtil {
         }
     }
 
-    public static Map<Path, DatModel> loadAllModel(Path projectPath) {
-        List<Path> sqlFiles = scanSqlFiles(projectPath);
+    public static Map<Path, DatModel> loadAllModel(Path modelsPath) {
+        List<Path> sqlFiles = scanSqlFiles(modelsPath);
         return sqlFiles.stream().collect(Collectors.toMap(p -> p,
-                p -> ProjectUtil.loadModel(projectPath, p)));
+                p -> ProjectUtil.loadModel(p, modelsPath)));
     }
 
-    private static DatModel loadModel(Path projectPath, Path filePath) {
-        Path modelsPath = projectPath.resolve("models");
+    private static DatModel loadModel(Path filePath, Path modelsPath) {
         try {
             String content = Files.readString(filePath);
             String modelName = fileNamePrefix(filePath.getFileName().toString());
@@ -292,8 +457,7 @@ public class ProjectUtil {
         return lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
     }
 
-    private static List<Path> scanYamlFiles(Path projectPath) {
-        Path modelsPath = projectPath.resolve("models");
+    private static List<Path> scanYamlFiles(Path modelsPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(modelsPath),
                 "There is no 'models' directory in the project root directory");
@@ -318,8 +482,7 @@ public class ProjectUtil {
         return YAML_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }
 
-    private static List<Path> scanSqlFiles(Path projectPath) {
-        Path modelsPath = projectPath.resolve("models");
+    private static List<Path> scanSqlFiles(Path modelsPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(modelsPath),
                 "There is no 'models' directory in the project root directory");
@@ -344,4 +507,9 @@ public class ProjectUtil {
         return SQL_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }
 
+    @AllArgsConstructor
+    static class ValidationMessage {
+        private String semanticModelName;
+        private Exception exception;
+    }
 }

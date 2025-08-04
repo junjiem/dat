@@ -1,14 +1,12 @@
-package ai.dat.core.project;
+package ai.dat.boot;
 
-import ai.dat.core.adapter.DatabaseAdapter;
-import ai.dat.core.contentstore.ContentStore;
+import ai.dat.boot.data.FileChanges;
+import ai.dat.boot.data.SchemaFileState;
+import ai.dat.boot.utils.ProjectUtil;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
 import ai.dat.core.data.project.DatProject;
 import ai.dat.core.exception.ValidationException;
-import ai.dat.core.project.data.FileChanges;
-import ai.dat.core.project.data.SchemaFileState;
-import ai.dat.core.project.utils.ProjectUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,8 +36,14 @@ public class ProjectBuilder {
 
     public ProjectBuilder(@NonNull Path projectPath) {
         this.projectPath = projectPath;
-        this.modelsPath = projectPath.resolve("models");
+        this.modelsPath = projectPath.resolve(ProjectUtil.MODELS_DIR_NAME);
         this.stateManager = new BuildStateManager(projectPath);
+    }
+
+    public ProjectBuilder(@NonNull Path projectPath,
+                          @NonNull Map<Path, DatSchema> schemas,
+                          @NonNull Map<Path, DatModel> models) {
+        this(projectPath, ProjectUtil.loadProject(projectPath), schemas, models);
     }
 
     public ProjectBuilder(@NonNull Path projectPath,
@@ -67,17 +71,28 @@ public class ProjectBuilder {
 
         List<SchemaFileState> fileStates = stateManager.loadBuildState(fingerprint);
 
-        FileChangeAnalyzer fileChangeAnalyzer = new FileChangeAnalyzer(projectPath, schemas, models);
+        FileChangeAnalyzer fileChangeAnalyzer = new FileChangeAnalyzer(project, projectPath, schemas, models);
         FileChanges changes = fileChangeAnalyzer.analyzeChanges(fileStates);
 
         if (changes.hasChanges()) {
-            DatabaseAdapter databaseAdapter = ProjectUtil.createDatabaseAdapter(project);
-            ContentStore contentStore = ProjectUtil.createContentStore(project, projectPath);
-            ContentStoreManager storeManager = new ContentStoreManager(projectPath,
-                    databaseAdapter, contentStore, fingerprint, schemas, models);
+            // 校验
+            ProjectUtil.validate(project);
+            // 更新状态
+            ContentStoreManager storeManager = new ContentStoreManager(project, projectPath, fingerprint);
             storeManager.updateStore(fileStates, changes);
         }
         log.info("Incremental build project completed");
+    }
+
+    private void validate() {
+        if (schemas == null) {
+            schemas = ProjectUtil.loadAllSchema(modelsPath);
+        }
+        validateYamlFiles(schemas);
+        if (models == null) {
+            models = ProjectUtil.loadAllModel(modelsPath);
+        }
+        validateSqlFiles(models);
     }
 
     /**
@@ -87,17 +102,6 @@ public class ProjectBuilder {
         log.info("Start force rebuild project ...");
         cleanState();
         build();
-    }
-
-    private void validate() {
-        if (schemas == null) {
-            schemas = ProjectUtil.loadAllSchema(projectPath);
-        }
-        validateYamlFiles(schemas);
-        if (models == null) {
-            models = ProjectUtil.loadAllModel(projectPath);
-        }
-        validateSqlFiles(models);
     }
 
     private void validateSqlFiles(Map<Path, DatModel> models) {

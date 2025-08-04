@@ -2,6 +2,7 @@ package ai.dat.core.utils;
 
 import ai.dat.adapter.postgresql.PostgreSqlDatabaseAdapterFactory;
 import ai.dat.core.configuration.ConfigOption;
+import ai.dat.core.configuration.ConfigOptions;
 import ai.dat.core.configuration.description.HtmlFormatter;
 import ai.dat.core.configuration.time.TimeUtils;
 import ai.dat.core.data.project.DatProject;
@@ -81,6 +82,20 @@ public class DatProjectUtil {
             }
             return new String(stream.readAllBytes());
         }
+    }
+
+    public static final ConfigOption<Boolean> VERIFY_MDL_DIMENSIONS_ENUM_VALUES =
+            ConfigOptions.key("verify-mdl-dimensions-enum-values")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Whether to verify the enumeration values of dimensions in the semantic model");
+
+    public static Set<ConfigOption<?>> projectRequiredOptions() {
+        return Collections.emptySet();
+    }
+
+    public static Set<ConfigOption<?>> projectOptionalOptions() {
+        return new LinkedHashSet<>(List.of(VERIFY_MDL_DIMENSIONS_ENUM_VALUES));
     }
 
     private DatProjectUtil() {
@@ -166,6 +181,7 @@ public class DatProjectUtil {
                 .collect(Collectors.toList());
 
         Map<String, Object> variables = new HashMap<>();
+        variables.put("projectConfigs", projectConfigTemplates());
         variables.put("dbs", dbs);
         variables.put("llms", llms);
         variables.put("embeddings", embeddings);
@@ -176,15 +192,28 @@ public class DatProjectUtil {
         return JinjaTemplateUtil.render(TEMPLATE_CONTENT, variables);
     }
 
-    public static List<ConfigTemplate> configTemplates(Factory factory) {
+    public static List<ConfigTemplate> projectConfigTemplates() {
+        return configTemplates(projectRequiredOptions(), projectOptionalOptions());
+    }
+
+    public static List<ConfigTemplate> defaultAgentConfigTemplates() {
+        return configTemplates(new DefaultAskdataAgentFactory());
+    }
+
+    private static List<ConfigTemplate> configTemplates(Factory factory) {
+        return configTemplates(factory.requiredOptions(), factory.optionalOptions());
+    }
+
+    private static List<ConfigTemplate> configTemplates(Set<ConfigOption<?>> requiredOptions,
+                                                        Set<ConfigOption<?>> optionalOptions) {
         List<ConfigTemplate> configs = new ArrayList<>();
-        if (factory.requiredOptions() != null) {
-            configs.addAll(factory.requiredOptions().stream()
+        if (requiredOptions != null) {
+            configs.addAll(requiredOptions.stream()
                     .map(o -> configTemplate(true, o))
                     .toList());
         }
-        if (factory.optionalOptions() != null) {
-            configs.addAll(factory.optionalOptions().stream()
+        if (optionalOptions != null) {
+            configs.addAll(optionalOptions.stream()
                     .map(o -> configTemplate(false, o))
                     .toList());
         }

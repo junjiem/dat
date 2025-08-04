@@ -1,11 +1,14 @@
-package ai.dat.core.project;
+package ai.dat.boot;
 
+import ai.dat.boot.utils.ProjectUtil;
+import ai.dat.boot.cache.SemanticModelsCacheUtil;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
-import ai.dat.core.project.data.FileChanges;
-import ai.dat.core.project.data.SchemaFileState;
-import ai.dat.core.project.data.ModelFileState;
-import ai.dat.core.project.utils.FileUtil;
+import ai.dat.boot.data.FileChanges;
+import ai.dat.boot.data.SchemaFileState;
+import ai.dat.boot.data.ModelFileState;
+import ai.dat.boot.utils.FileUtil;
+import ai.dat.core.data.project.DatProject;
 import ai.dat.core.utils.DatSchemaUtil;
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
@@ -30,18 +33,29 @@ public class FileChangeAnalyzer {
 
     private final Path modelsPath;
 
+    private final DatProject project;
+
     private final Map<Path, DatSchema> schemas;
     private final Map<Path, DatModel> models;
 
-    public FileChangeAnalyzer(Path projectPath,
+    private final Map<String, DatModel> modelsMap;
+
+    public FileChangeAnalyzer(DatProject project,
+                              Path projectPath,
                               Map<Path, DatSchema> schemas,
                               Map<Path, DatModel> models) {
-        this.modelsPath = projectPath.resolve("models");
+        this.project = project;
+        this.modelsPath = projectPath.resolve(ProjectUtil.MODELS_DIR_NAME);
         this.schemas = schemas;
         this.models = models;
+        this.modelsMap = models.entrySet().stream()
+                .collect(Collectors.toMap(e -> modelsPath.relativize(e.getKey()).toString(),
+                        Map.Entry::getValue));
     }
 
     public FileChanges analyzeChanges(List<SchemaFileState> fileStates) {
+        SemanticModelsCacheUtil.remove(project.getName());
+
         Map<String, SchemaFileState> fileStateMap = fileStates.stream()
                 .collect(Collectors.toMap(SchemaFileState::getRelativePath, Function.identity()));
 
@@ -57,7 +71,17 @@ public class FileChangeAnalyzer {
             SchemaFileState fileState = fileStateMap.get(relativePath);
             if (fileState == null) {
                 // 新文件
-                newFiles.add(createFileMetadata(filePath, schema));
+                long lastModified = FileUtil.lastModified(filePath);
+                String md5Hash = FileUtil.md5(filePath);
+                List<ModelFileState> dependencies = resolveDependencies(relativePath, schema);
+                SemanticModelsCacheUtil.add(project.getName(), relativePath,
+                        DatSchemaUtil.getSemanticModels(schema, getDatModels(dependencies)));
+                newFiles.add(SchemaFileState.builder()
+                        .relativePath(relativePath)
+                        .lastModified(lastModified)
+                        .md5Hash(md5Hash)
+                        .dependencies(dependencies)
+                        .build());
             } else {
                 // 已存在的文件，检查是否发生变化
                 boolean hasChanged = false;
@@ -76,6 +100,8 @@ public class FileChangeAnalyzer {
                 }
                 if (hasChanged) {
                     // 文件已修改
+                    SemanticModelsCacheUtil.add(project.getName(), relativePath,
+                            DatSchemaUtil.getSemanticModels(schema, getDatModels(dependencies)));
                     modifiedFiles.add(SchemaFileState.builder()
                             .relativePath(relativePath)
                             .lastModified(lastModified)
@@ -99,19 +125,6 @@ public class FileChangeAnalyzer {
         return new FileChanges(newFiles, modifiedFiles, unchangedFiles, deletedFiles);
     }
 
-    public SchemaFileState createFileMetadata(Path filePath, DatSchema schema) {
-        String relativePath = modelsPath.relativize(filePath).toString();
-        long lastModified = FileUtil.lastModified(filePath);
-        String md5Hash = FileUtil.md5(filePath);
-        List<ModelFileState> dependencies = resolveDependencies(relativePath, schema);
-        return SchemaFileState.builder()
-                .relativePath(relativePath)
-                .lastModified(lastModified)
-                .md5Hash(md5Hash)
-                .dependencies(dependencies)
-                .build();
-    }
-
     public List<ModelFileState> resolveDependencies(String relativePath, DatSchema schema) {
         return DatSchemaUtil.getModelName(schema).stream()
                 .map(modelName -> {
@@ -121,6 +134,16 @@ public class FileChangeAnalyzer {
                         throw new RuntimeException(e);
                     }
                 }).collect(Collectors.toList());
+    }
+
+    private List<DatModel> getDatModels(List<ModelFileState> dependencies) {
+        if (dependencies == null || dependencies.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return dependencies.stream()
+                .filter(f -> modelsMap.containsKey(f.getRelativePath()))
+                .map(f -> modelsMap.get(f.getRelativePath()))
+                .collect(Collectors.toList());
     }
 
     private ModelFileState getModelFileMetadata(String relativePath, String modelName) throws IOException {

@@ -3,12 +3,10 @@ package ai.dat.cli.commands;
 import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.data.project.AgentConfig;
 import ai.dat.core.data.project.DatProject;
-import ai.dat.core.project.utils.ProjectUtil;
+import ai.dat.boot.utils.ProjectUtil;
 import lombok.extern.slf4j.Slf4j;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Help.Ansi;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

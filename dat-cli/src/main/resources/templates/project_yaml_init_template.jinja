@@ -2,6 +2,13 @@ version: 1
 
 name: {{ project.name }}
 description: {{ project.description }}
+{% if projectConfigs -%}
+    {{ "configuration:" }}
+    {% for config in projectConfigs -%}
+        {{ "  " }}{% if not config.required -%}
+            {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+    {% endfor %}
+{% endif %}
 
 db:
 {{ "  provider: " ~ project.dbConfig.provider }}
