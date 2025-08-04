@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 /**
  * DAT CLI 主类
@@ -52,15 +51,13 @@ public class DatCli implements Callable<Integer> {
     private static void printBanner() {
         try (InputStream is = DatCli.class.getResourceAsStream("/banner.txt")) {
             if (is != null) {
-                StringBuilder builder = new StringBuilder();
                 List<String> lines = new BufferedReader(new InputStreamReader(is)).lines().toList();
                 for (int i = 0; i < lines.size(); i++) {
                     if (lines.get(i).isBlank()) continue;
                     String color = GRADIENT_COLORS[i % GRADIENT_COLORS.length];
-                    builder.append(AnsiUtil.string("@|bold,fg(" + color + ") " + lines.get(i) + "|@"))
-                            .append("\n");
+                    System.out.println(AnsiUtil.string(
+                            "@|bold,fg(" + color + ") " + lines.get(i) + "|@"));
                 }
-                System.out.println(builder);
             }
         } catch (IOException e) {
             //
