@@ -1,5 +1,6 @@
 package ai.dat.core.adapter;
 
+import ai.dat.core.adapter.data.AnsiSqlType;
 import ai.dat.core.semantic.data.Dimension;
 import org.apache.calcite.sql.SqlDialect;
 
@@ -45,4 +46,12 @@ public interface SemanticAdapter {
      * @return 应用时间粒度后的表达式
      */
     String applyTimeGranularity(String dateExpr, Dimension.TypeParams.TimeGranularity granularity);
+
+    /**
+     * 从数据库类型名映射到ANSI SQL类型
+     *
+     * @param columnTypeName
+     * @return
+     */
+    AnsiSqlType toAnsiSqlType(String columnTypeName);
 }

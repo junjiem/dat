@@ -82,7 +82,7 @@ llms:
 content_store:
 {% for item in content_stores -%}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
-    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  llm: default  # You need to fill in correct llm" }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  llm: default  # You need to fill in correct llm name" }}
     {% if item.configs -%}
         {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
         {% for config in item.configs -%}
@@ -100,7 +100,7 @@ agents:
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  - name: " ~ item.name }}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    description:  # Ask data agent description" }}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    provider: " ~ item.provider ~ "  # " ~ item.comment }}
-    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    llm: default  # You need to fill in correct llm" }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    llm: default  # You need to fill in correct llm name" }}
     {% if not item.display -%}{{ "#" }}{% endif -%}
     {{ "    #semantic_models: # Optional" }}
     {{ "      #- covid_cases  # You need to fill in correct semantic model name" }}

@@ -63,4 +63,13 @@ public abstract class GenericSqlDatabaseAdapter implements DatabaseAdapter {
     }
 
     protected abstract Object handleSpecificTypes(Object value, int columnType);
+
+    @Override
+    public ResultSetMetaData getMetaData(String sql) throws SQLException {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            return rs.getMetaData();
+        }
+    }
 }

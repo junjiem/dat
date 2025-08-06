@@ -1,13 +1,12 @@
 package ai.dat.boot;
 
+import ai.dat.boot.data.FileChanges;
+import ai.dat.boot.data.ModelFileState;
+import ai.dat.boot.data.SchemaFileState;
+import ai.dat.boot.utils.FileUtil;
 import ai.dat.boot.utils.ProjectUtil;
-import ai.dat.boot.cache.SemanticModelsCacheUtil;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
-import ai.dat.boot.data.FileChanges;
-import ai.dat.boot.data.SchemaFileState;
-import ai.dat.boot.data.ModelFileState;
-import ai.dat.boot.utils.FileUtil;
 import ai.dat.core.data.project.DatProject;
 import ai.dat.core.utils.DatSchemaUtil;
 import com.google.common.base.Preconditions;
@@ -49,12 +48,12 @@ public class FileChangeAnalyzer {
         this.schemas = schemas;
         this.models = models;
         this.modelsMap = models.entrySet().stream()
-                .collect(Collectors.toMap(e -> modelsPath.relativize(e.getKey()).toString(),
-                        Map.Entry::getValue));
+                .collect(Collectors.toMap(e ->
+                        modelsPath.relativize(e.getKey()).toString(), Map.Entry::getValue));
     }
 
     public FileChanges analyzeChanges(List<SchemaFileState> fileStates) {
-        SemanticModelsCacheUtil.remove(project.getName());
+        ChangeSemanticModelsCacheUtil.remove(project.getName());
 
         Map<String, SchemaFileState> fileStateMap = fileStates.stream()
                 .collect(Collectors.toMap(SchemaFileState::getRelativePath, Function.identity()));
@@ -74,7 +73,7 @@ public class FileChangeAnalyzer {
                 long lastModified = FileUtil.lastModified(filePath);
                 String md5Hash = FileUtil.md5(filePath);
                 List<ModelFileState> dependencies = resolveDependencies(relativePath, schema);
-                SemanticModelsCacheUtil.add(project.getName(), relativePath,
+                ChangeSemanticModelsCacheUtil.add(project.getName(), relativePath,
                         DatSchemaUtil.getSemanticModels(schema, getDatModels(dependencies)));
                 newFiles.add(SchemaFileState.builder()
                         .relativePath(relativePath)
@@ -100,7 +99,7 @@ public class FileChangeAnalyzer {
                 }
                 if (hasChanged) {
                     // 文件已修改
-                    SemanticModelsCacheUtil.add(project.getName(), relativePath,
+                    ChangeSemanticModelsCacheUtil.add(project.getName(), relativePath,
                             DatSchemaUtil.getSemanticModels(schema, getDatModels(dependencies)));
                     modifiedFiles.add(SchemaFileState.builder()
                             .relativePath(relativePath)

@@ -4,6 +4,7 @@ import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ReadableConfig;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import lombok.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -19,8 +20,7 @@ import java.util.stream.Collectors;
 public interface EmbeddingModelFactory extends Factory {
     Set<ConfigOption<?>> fingerprintOptions();
 
-    default Map<String, String> fingerprintConfigs(ReadableConfig config) {
-        Preconditions.checkArgument(config != null, "config cannot be null");
+    default Map<String, String> fingerprintConfigs(@NonNull ReadableConfig config) {
         Set<ConfigOption<?>> fingerprintOptions = fingerprintOptions();
         Preconditions.checkArgument(fingerprintOptions != null,
                 "The fingerprintOptions method cannot return null");

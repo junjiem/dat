@@ -66,6 +66,7 @@
           },
           "entities": {
             "type": "array",
+            "minItems": 1,
             "uniqueItems": true,
             "description": "实体是商业中真实存在的概念，例如客户、交易和广告活动",
             "items": {
@@ -104,6 +105,10 @@
                     "foreign"
                   ],
                   "description": "实体类型，可选 primary、unique、foreign"
+                },
+                "data_type": {
+                  "type": "string",
+                  "description": "数据类型"
                 }
               },
               "additionalProperties": false
@@ -111,6 +116,7 @@
           },
           "dimensions": {
             "type": "array",
+            "minItems": 1,
             "uniqueItems": true,
             "description": "维度表示数据集中不可聚合的列，它们是描述或分类数据的属性、特征或特性",
             "items": {
@@ -149,29 +155,6 @@
                   ],
                   "description": "维度类型，categorical 或 time"
                 },
-                "enum_values": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "value": {
-                        "type": [
-                          "number",
-                          "string"
-                        ],
-                        "description": "枚举值"
-                      },
-                      "label": {
-                        "type": "string",
-                        "description": "枚举值的显示标签"
-                      }
-                    },
-                    "required": [
-                      "value"
-                    ]
-                  },
-                  "description": "枚举值定义，适用于分类维度"
-                },
                 "type_params": {
                   "oneOf": [
                     {
@@ -205,6 +188,34 @@
                       "description": "time类型需要指定time_granularity"
                     }
                   ]
+                },
+                "enum_values": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": [
+                          "number",
+                          "string"
+                        ],
+                        "description": "枚举值"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "枚举值的显示标签"
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  },
+                  "description": "枚举值定义，适用于分类维度"
+                },
+                "data_type": {
+                  "type": "string",
+                  "description": "数据类型"
                 }
               },
               "additionalProperties": false,
@@ -355,6 +366,10 @@
                 "agg_time_dimension": {
                   "type": "string",
                   "description": "时间字段，默认为语义模型的默认聚合时间维度"
+                },
+                "data_type": {
+                  "type": "string",
+                  "description": "数据类型"
                 }
               },
               "additionalProperties": false

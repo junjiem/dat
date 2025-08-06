@@ -41,6 +41,12 @@ Now you can edit the `dat_project.yaml` file to describe your Project, here is t
 > **Note:** For more project configurations, please refer to `dat_project.yaml.template`.
 
 
+### Models
+
+[Semantic Model Configuration Guide](./MODEL_GUIDE.md)
+
+
+
 ### Development the Project
 
 You must be developed under the `models` directory, where both data models and semantic models can be developed.

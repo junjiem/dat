@@ -1,5 +1,7 @@
 package ai.dat.core.semantic.view;
 
+import ai.dat.core.adapter.SemanticAdapter;
+import ai.dat.core.adapter.data.AnsiSqlType;
 import ai.dat.core.semantic.data.Measure;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -10,14 +12,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class MeasureView {
-    @NonNull
-    private String name;
-
-    @NonNull
-    private String description;
-
-    private String alias;
+public class MeasureView extends ElementView {
 
     @NonNull
     private Measure.AggregationType agg;
@@ -28,7 +23,8 @@ public class MeasureView {
     @JsonProperty("agg_time_dimension")
     private String aggTimeDimension;
 
-    public static MeasureView from(Measure measure) {
+    public static MeasureView from(@NonNull SemanticAdapter semanticAdapter,
+                                   @NonNull Measure measure) {
         MeasureView view = new MeasureView();
         view.setName(measure.getName());
         view.setDescription(measure.getDescription());
@@ -36,6 +32,13 @@ public class MeasureView {
         view.setAgg(measure.getAgg());
         view.setNonAdditiveDimension(measure.getNonAdditiveDimension());
         view.setAggTimeDimension(measure.getAggTimeDimension());
+        AnsiSqlType ansiSqlType = null;
+        if (measure.getAnsiSqlType() != null) {
+            ansiSqlType = measure.getAnsiSqlType();
+        } else if (measure.getDataType() != null) {
+            ansiSqlType = semanticAdapter.toAnsiSqlType(measure.getDataType());
+        }
+        view.setDataType(ansiSqlType);
         return view;
     }
 }

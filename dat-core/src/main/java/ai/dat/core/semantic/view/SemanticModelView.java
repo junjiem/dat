@@ -1,5 +1,6 @@
 package ai.dat.core.semantic.view;
 
+import ai.dat.core.adapter.SemanticAdapter;
 import ai.dat.core.semantic.data.SemanticModel;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
@@ -36,21 +37,22 @@ public class SemanticModelView {
     @NonNull
     private List<MeasureView> measures = List.of();
 
-    public static SemanticModelView from(SemanticModel model) {
+    public static SemanticModelView from(@NonNull SemanticAdapter semanticAdapter,
+                                         @NonNull SemanticModel semanticModel) {
         SemanticModelView view = new SemanticModelView();
-        view.setName(model.getName());
-        view.setDescription(model.getDescription());
-        view.setAlias(model.getAlias());
-        view.setTags(model.getTags());
-        view.setDefaults(model.getDefaults());
-        view.setEntities(model.getEntities().stream()
-                .map(EntityView::from)
+        view.setName(semanticModel.getName());
+        view.setDescription(semanticModel.getDescription());
+        view.setAlias(semanticModel.getAlias());
+        view.setTags(semanticModel.getTags());
+        view.setDefaults(semanticModel.getDefaults());
+        view.setEntities(semanticModel.getEntities().stream()
+                .map(o -> EntityView.from(semanticAdapter, o))
                 .collect(Collectors.toList()));
-        view.setDimensions(model.getDimensions().stream()
-                .map(DimensionView::from)
+        view.setDimensions(semanticModel.getDimensions().stream()
+                .map(o -> DimensionView.from(semanticAdapter, o))
                 .collect(Collectors.toList()));
-        view.setMeasures(model.getMeasures().stream()
-                .map(MeasureView::from)
+        view.setMeasures(semanticModel.getMeasures().stream()
+                .map(o -> MeasureView.from(semanticAdapter, o))
                 .collect(Collectors.toList()));
         return view;
     }

@@ -3,7 +3,6 @@ package ai.dat.boot;
 import ai.dat.boot.data.FileChanges;
 import ai.dat.boot.data.SchemaFileState;
 import ai.dat.boot.utils.ProjectUtil;
-import ai.dat.boot.cache.SemanticModelsCacheUtil;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.data.project.DatProject;
 import ai.dat.core.semantic.data.SemanticModel;
@@ -64,7 +63,7 @@ public class ContentStoreManager {
         }
         // 处理新增的文件
         for (SchemaFileState fs : changes.newFiles()) {
-            List<SemanticModel> semanticModels = SemanticModelsCacheUtil
+            List<SemanticModel> semanticModels = ChangeSemanticModelsCacheUtil
                     .get(project.getName(), fs.getRelativePath());
             if (semanticModels != null && !semanticModels.isEmpty()) {
                 List<String> vectorIds = contentStore.addMdls(semanticModels);
@@ -94,7 +93,7 @@ public class ContentStoreManager {
                     continue;
                 }
             }
-            List<SemanticModel> semanticModels = SemanticModelsCacheUtil
+            List<SemanticModel> semanticModels = ChangeSemanticModelsCacheUtil
                     .get(project.getName(), fs.getRelativePath());
             if (semanticModels != null && !semanticModels.isEmpty()) {
                 List<String> vectorIds = contentStore.addMdls(semanticModels);

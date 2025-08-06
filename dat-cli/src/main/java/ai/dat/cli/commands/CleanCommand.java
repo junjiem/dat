@@ -1,7 +1,7 @@
 package ai.dat.cli.commands;
 
-import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.boot.ProjectBuilder;
+import ai.dat.cli.utils.AnsiUtil;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.Callable;
 
 /**
- * Clean commands
+ * Clean project commands
  *
  * @Author JunjieM
  * @Date 2025/7/22

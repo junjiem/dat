@@ -1,5 +1,6 @@
 package ai.dat.adapter.oracle;
 
+import ai.dat.core.adapter.data.AnsiSqlType;
 import ai.dat.core.adapter.GenericSqlDatabaseAdapter;
 
 import javax.sql.DataSource;
@@ -9,7 +10,7 @@ import java.sql.Timestamp;
 
 /**
  * Oracle数据库适配器
- * 处理Oracle特定的数据类型转换
+ * 处理Oracle特定的数据类型转换和映射
  * 
  * @Author JunjieM
  * @Date 2025/7/3
@@ -76,5 +77,78 @@ public class OracleDatabaseAdapter extends GenericSqlDatabaseAdapter {
         }
         
         return value;
+    }
+    
+    @Override
+    public AnsiSqlType toAnsiSqlType(int columnType, String columnTypeName, int precision, int scale) {
+        // Oracle特定的类型映射规则
+        return switch (columnTypeName.toUpperCase()) {
+            case "NUMBER" -> {
+                // Oracle的NUMBER类型需要根据精度和小数位数进行细分
+                if (scale == 0) {
+                    // 整数类型
+                    if (precision <= 3) {
+                        yield AnsiSqlType.TINYINT;
+                    } else if (precision <= 5) {
+                        yield AnsiSqlType.SMALLINT;
+                    } else if (precision <= 10) {
+                        yield AnsiSqlType.INTEGER;
+                    } else {
+                        yield AnsiSqlType.BIGINT;
+                    }
+                } else {
+                    // 小数类型
+                    yield AnsiSqlType.DECIMAL;
+                }
+            }
+                
+            case "BINARY_FLOAT" ->
+                // Oracle的BINARY_FLOAT映射为REAL
+                    AnsiSqlType.REAL;
+            case "BINARY_DOUBLE" ->
+                // Oracle的BINARY_DOUBLE映射为DOUBLE
+                    AnsiSqlType.DOUBLE;
+            case "FLOAT" ->
+                    AnsiSqlType.FLOAT;
+            case "VARCHAR2", "NVARCHAR2" ->
+                // Oracle的VARCHAR2映射为VARCHAR
+                    AnsiSqlType.VARCHAR;
+            case "CHAR", "NCHAR" ->
+                // Oracle的CHAR映射为CHAR
+                    AnsiSqlType.CHAR;
+            case "CLOB", "NCLOB" ->
+                // Oracle的CLOB映射为TEXT
+                    AnsiSqlType.TEXT;
+            case "BLOB" ->
+                // Oracle的BLOB映射为BLOB
+                    AnsiSqlType.BLOB;
+            case "RAW", "LONG RAW" ->
+                // Oracle的RAW类型映射为VARBINARY
+                    AnsiSqlType.VARBINARY;
+            case "DATE" ->
+                // Oracle的DATE类型实际包含时间信息，映射为TIMESTAMP
+                    AnsiSqlType.TIMESTAMP;
+            case "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITH LOCAL TIME ZONE" ->
+                // Oracle的TIMESTAMP类型映射为TIMESTAMP
+                    AnsiSqlType.TIMESTAMP;
+            case "INTERVAL YEAR TO MONTH", "INTERVAL DAY TO SECOND" ->
+                // Oracle的INTERVAL类型映射为VARCHAR
+                    AnsiSqlType.VARCHAR;
+            case "XMLTYPE" ->
+                // Oracle的XMLType映射为TEXT
+                    AnsiSqlType.TEXT;
+            case "ROWID", "UROWID" ->
+                // Oracle的ROWID类型映射为VARCHAR
+                    AnsiSqlType.VARCHAR;
+            case "BFILE" ->
+                // Oracle的BFILE类型映射为VARCHAR（存储文件路径）
+                    AnsiSqlType.VARCHAR;
+            case "LONG" ->
+                // Oracle的LONG类型映射为TEXT
+                    AnsiSqlType.TEXT;
+            default ->
+                // 对于其他类型，使用默认的JDBC类型映射
+                    super.toAnsiSqlType(columnType, columnTypeName, precision, scale);
+        };
     }
 } 

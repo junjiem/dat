@@ -51,6 +51,12 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                     .noDefaultValue()
                     .withDescription("OpenAI LLM model temperature");
 
+    public static final ConfigOption<Double> TOP_P =
+            ConfigOptions.key("top-p")
+                    .doubleType()
+                    .noDefaultValue()
+                    .withDescription("OpenAI LLM model Top-P");
+
     public static final ConfigOption<Duration> TIMEOUT =
             ConfigOptions.key("timeout")
                     .durationType()
@@ -75,6 +81,18 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                     .defaultValue(4096)
                     .withDescription("OpenAI LLM model maximum completion tokens");
 
+    public static final ConfigOption<Integer> SEED =
+            ConfigOptions.key("seed")
+                    .intType()
+                    .noDefaultValue()
+                    .withDescription("OpenAI LLM model seed");
+
+    public static final ConfigOption<String> USER =
+            ConfigOptions.key("user")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("OpenAI user");
+
     public static final ConfigOption<Boolean> LOG_REQUESTS =
             ConfigOptions.key("log-requests")
                     .booleanType()
@@ -98,6 +116,25 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                     .booleanType()
                     .defaultValue(false)
                     .withDescription("Whether to output strict json schema");
+
+    public static final ConfigOption<Boolean> STRICT_TOOLS =
+            ConfigOptions.key("strict-tools")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Whether to strict tools");
+
+    public static final ConfigOption<Boolean> RETURN_THINKING =
+            ConfigOptions.key("return-thinking")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Whether to return thinking. " +
+                            "This setting is intended for DeepSeek Reasoning Model.");
+
+    public static final ConfigOption<Boolean> STORE =
+            ConfigOptions.key("store")
+                    .booleanType()
+                    .noDefaultValue()
+                    .withDescription("Whether to store");
 
     public static final ConfigOption<Boolean> ONLY_SUPPORT_STREAM_OUTPUT =
             ConfigOptions.key("only-support-stream-output")
@@ -125,9 +162,10 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(TEMPERATURE, TIMEOUT,
+        return new LinkedHashSet<>(List.of(TEMPERATURE, TOP_P, TIMEOUT,
                 MAX_RETRIES, MAX_TOKENS, MAX_COMPLETION_TOKENS,
                 LOG_REQUESTS, LOG_RESPONSES, RESPONSE_FORMAT, STRICT_JSON_SCHEMA,
+                STRICT_TOOLS, STORE, RETURN_THINKING, SEED, USER,
                 ONLY_SUPPORT_STREAM_OUTPUT, CUSTOM_PARAMETERS));
     }
 
@@ -137,9 +175,6 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
         validateConfigOptions(config);
 
         String modelName = config.get(MODEL_NAME);
-        Boolean logRequests = config.get(LOG_REQUESTS);
-        Boolean logResponses = config.get(LOG_RESPONSES);
-        Boolean strictJsonSchema = config.get(STRICT_JSON_SCHEMA);
         Boolean onlySupportStreamOutput = config.get(ONLY_SUPPORT_STREAM_OUTPUT);
 
         if (onlySupportStreamOutput) {
@@ -147,19 +182,25 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
         }
 
         OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
-                .modelName(modelName)
-                .logRequests(logRequests)
-                .logResponses(logResponses)
-                .strictJsonSchema(strictJsonSchema);
+                .modelName(modelName);
 
         config.getOptional(BASE_URL).ifPresent(builder::baseUrl);
         config.getOptional(API_KEY).ifPresent(builder::apiKey);
         config.getOptional(TEMPERATURE).ifPresent(builder::temperature);
+        config.getOptional(TOP_P).ifPresent(builder::topP);
         config.getOptional(TIMEOUT).ifPresent(builder::timeout);
         config.getOptional(MAX_RETRIES).ifPresent(builder::maxRetries);
         config.getOptional(MAX_TOKENS).ifPresent(builder::maxTokens);
         config.getOptional(MAX_COMPLETION_TOKENS).ifPresent(builder::maxCompletionTokens);
         config.getOptional(RESPONSE_FORMAT).ifPresent(builder::responseFormat);
+        config.getOptional(LOG_REQUESTS).ifPresent(builder::logRequests);
+        config.getOptional(LOG_RESPONSES).ifPresent(builder::logResponses);
+        config.getOptional(STRICT_JSON_SCHEMA).ifPresent(builder::strictJsonSchema);
+        config.getOptional(STRICT_TOOLS).ifPresent(builder::strictTools);
+        config.getOptional(STORE).ifPresent(builder::store);
+        config.getOptional(RETURN_THINKING).ifPresent(builder::returnThinking);
+        config.getOptional(SEED).ifPresent(builder::seed);
+        config.getOptional(USER).ifPresent(builder::user);
 
         config.getOptional(CUSTOM_PARAMETERS)
                 .ifPresent(customParameters ->
@@ -175,22 +216,26 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
         validateConfigOptions(config);
 
         String modelName = config.get(MODEL_NAME);
-        Boolean logRequests = config.get(LOG_REQUESTS);
-        Boolean logResponses = config.get(LOG_RESPONSES);
-        Boolean strictJsonSchema = config.get(STRICT_JSON_SCHEMA);
 
-        OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
-                .modelName(modelName)
-                .logRequests(logRequests)
-                .logResponses(logResponses)
-                .strictJsonSchema(strictJsonSchema);
+        OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder builder =
+                OpenAiStreamingChatModel.builder()
+                        .modelName(modelName);
 
         config.getOptional(BASE_URL).ifPresent(builder::baseUrl);
         config.getOptional(API_KEY).ifPresent(builder::apiKey);
         config.getOptional(TEMPERATURE).ifPresent(builder::temperature);
+        config.getOptional(TOP_P).ifPresent(builder::topP);
         config.getOptional(TIMEOUT).ifPresent(builder::timeout);
         config.getOptional(MAX_TOKENS).ifPresent(builder::maxTokens);
         config.getOptional(RESPONSE_FORMAT).ifPresent(builder::responseFormat);
+        config.getOptional(LOG_REQUESTS).ifPresent(builder::logRequests);
+        config.getOptional(LOG_RESPONSES).ifPresent(builder::logResponses);
+        config.getOptional(STRICT_JSON_SCHEMA).ifPresent(builder::strictJsonSchema);
+        config.getOptional(STRICT_TOOLS).ifPresent(builder::strictTools);
+        config.getOptional(STORE).ifPresent(builder::store);
+        config.getOptional(RETURN_THINKING).ifPresent(builder::returnThinking);
+        config.getOptional(SEED).ifPresent(builder::seed);
+        config.getOptional(USER).ifPresent(builder::user);
 
         config.getOptional(CUSTOM_PARAMETERS)
                 .ifPresent(customParameters ->
@@ -204,6 +249,9 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
         config.getOptional(TEMPERATURE)
                 .ifPresent(t -> Preconditions.checkArgument(t >= 0.0 && t <= 2.0,
                         "'" + TEMPERATURE.key() + "' value must be between 0.0 and 2.0"));
+        config.getOptional(TOP_P)
+                .ifPresent(v -> Preconditions.checkArgument(v > 0.0 && v <= 1.0,
+                        "'" + TOP_P.key() + "' value must > 0.0 and <= 1.0"));
         Integer maxRetries = config.get(MAX_RETRIES);
         Preconditions.checkArgument(maxRetries >= 0,
                 "'" + MAX_RETRIES.key() + "' value must be greater than or equal to 0");

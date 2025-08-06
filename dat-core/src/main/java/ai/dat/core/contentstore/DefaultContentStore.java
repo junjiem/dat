@@ -11,9 +11,12 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.rag.query.Query;
+import dev.langchain4j.store.embedding.EmbeddingMatch;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.Builder;
 import lombok.NonNull;
@@ -101,12 +104,34 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<SemanticModel> retrieveMdl(String question) {
-        return getMdlContentRetriever()
+        List<TextSegment> textSegments = getMdlContentRetriever()
                 .retrieve(Query.from(question))
                 .stream()
-                .map(c -> {
+                .map(Content::textSegment)
+                .collect(Collectors.toList());
+        return decodingMdls(textSegments);
+    }
+
+    @Override
+    public List<SemanticModel> allMdls() {
+        EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
+                .queryEmbedding(embeddingModel.embed("N/A").content()) // 零向量
+                .minScore(0.0) // 匹配所有记录
+                .maxResults(Integer.MAX_VALUE) // 返回全部结果
+                .build();
+        List<TextSegment> textSegments = mdlEmbeddingStore.search(searchRequest)
+                .matches()
+                .stream()
+                .map(EmbeddingMatch::embedded)
+                .collect(Collectors.toList());
+        return decodingMdls(textSegments);
+    }
+
+    private List<SemanticModel> decodingMdls(List<TextSegment> textSegments) {
+        return textSegments.stream()
+                .map(textSegment -> {
                     try {
-                        return JSON_MAPPER.readValue(c.textSegment().text(), SemanticModel.class);
+                        return JSON_MAPPER.readValue(textSegment.text(), SemanticModel.class);
                     } catch (JsonProcessingException e) {
                         return null;
                     }

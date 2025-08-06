@@ -38,10 +38,11 @@ public abstract class AbstractAskdataAgent implements AskdataAgent {
         }
     });
 
-    private final ContentStore contentStore;
-    private final DatabaseAdapter databaseAdapter;
+    protected final ContentStore contentStore;
+    protected final DatabaseAdapter databaseAdapter;
 
-    public AbstractAskdataAgent(ContentStore contentStore, DatabaseAdapter databaseAdapter) {
+    public AbstractAskdataAgent(@NonNull ContentStore contentStore,
+                                @NonNull DatabaseAdapter databaseAdapter) {
         this.contentStore = contentStore;
         this.databaseAdapter = databaseAdapter;
     }

@@ -120,7 +120,8 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         }
 
         List<String> semantics = semanticModels.stream()
-                .map(SemanticModel::convertLlmSemanticModelContent)
+                .map(semanticModel -> SemanticModelUtil.toLlmSemanticModelContent(
+                        databaseAdapter.semanticAdapter(), semanticModel))
                 .collect(Collectors.toList());
         List<QuestionSqlPair> sqlSamples = contentStore.retrieveSql(question);
         List<NounSynonymPair> synonyms = contentStore.retrieveSyn(question);

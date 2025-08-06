@@ -1,5 +1,7 @@
 package ai.dat.core.semantic.view;
 
+import ai.dat.core.adapter.SemanticAdapter;
+import ai.dat.core.adapter.data.AnsiSqlType;
 import ai.dat.core.semantic.data.Entity;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
@@ -9,24 +11,25 @@ import lombok.Setter;
 @Setter
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class EntityView {
-    @NonNull
-    private String name;
-
-    @NonNull
-    private String description;
-
-    private String alias;
+public class EntityView extends ElementView {
 
     @NonNull
     private Entity.EntityType type;
 
-    public static EntityView from(Entity entity) {
+    public static EntityView from(@NonNull SemanticAdapter semanticAdapter,
+                                  @NonNull Entity entity) {
         EntityView view = new EntityView();
         view.setName(entity.getName());
         view.setDescription(entity.getDescription());
         view.setAlias(entity.getAlias());
         view.setType(entity.getType());
+        AnsiSqlType ansiSqlType = null;
+        if (entity.getAnsiSqlType() != null) {
+            ansiSqlType = entity.getAnsiSqlType();
+        } else if (entity.getDataType() != null) {
+            ansiSqlType = semanticAdapter.toAnsiSqlType(entity.getDataType());
+        }
+        view.setDataType(ansiSqlType);
         return view;
     }
 }

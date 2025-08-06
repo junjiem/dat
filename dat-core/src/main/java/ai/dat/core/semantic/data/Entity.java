@@ -12,19 +12,10 @@ import java.util.stream.Collectors;
 
 @Setter
 @Getter
-public class Entity {
-    @NonNull
-    private String name;
-
-    @NonNull
-    private String description;
-
-    private String alias;
+public class Entity extends Element {
 
     @NonNull
     private EntityType type;
-
-    private String expr;
 
     public void setType(String type) {
         setEntityType(EntityType.fromValue(type));
@@ -56,6 +47,11 @@ public class Entity {
 
         public static EntityType fromValue(String value) {
             return VALUE_MAP.get(value);
+        }
+
+        @Override
+        public String toString() {
+            return value;
         }
     }
 }

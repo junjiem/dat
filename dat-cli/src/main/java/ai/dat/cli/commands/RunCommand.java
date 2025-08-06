@@ -34,7 +34,9 @@ import java.util.concurrent.Callable;
 @Slf4j
 public class RunCommand implements Callable<Integer> {
 
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    private final static ObjectMapper JSON_MAPPER = new ObjectMapper();
+
+    private final static String NOT_GENERATE = "<not generate>";
 
     // the keys whose values should be highlighted
     private static final String[] EXCEPTION_KEYS =
@@ -67,7 +69,7 @@ public class RunCommand implements Callable<Integer> {
             System.out.println("🤖 DAT interaction mode has been activated");
             System.out.println(AnsiUtil.string(
                     "💡 Enter the question to start the conversation. " +
-                    "@|fg(red) Enter 'quit' or 'exit' to exit|@"));
+                            "@|fg(red) Enter 'quit' or 'exit' to exit|@"));
             System.out.println("📁 Project path: " + path);
             System.out.println("🤖 Agent: " + agentName);
             InputProcessor processor = InputProcessorUtil.createInputProcessor();
@@ -88,7 +90,7 @@ public class RunCommand implements Callable<Integer> {
                 }
                 System.out.println("🤖 Dealing with ask...");
                 StreamAction action = runner.ask(question, histories);
-                histories.add(print(question, action));
+                print(question, action);
             }
             System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
             processor.close();
@@ -101,10 +103,11 @@ public class RunCommand implements Callable<Integer> {
         }
     }
 
-    public static QuestionSqlPair print(String question, StreamAction action) {
-        String sql = "<not generate>";
+    public void print(String question, StreamAction action) {
+        String sql = NOT_GENERATE;
         String lastEvent = "";
         boolean lastIncremental = false;
+        boolean isAccurateSql = false;
         for (StreamEvent event : action) {
             if (event == null) break;
             String eventName = event.name();
@@ -115,18 +118,24 @@ public class RunCommand implements Callable<Integer> {
                 if (lastIncremental) System.out.println();
                 lastEvent = eventName;
                 lastIncremental = event.getIncrementalContent().isPresent();
-                String fg = isException(eventName) ? "red" : "blue";
+                String color = isException(eventName) ? "red" : "blue";
                 System.out.println(AnsiUtil.string(
-                        "--------------------- @|bold,underline,fg(" + fg + ") "
+                        "--------------------- @|bold,underline,fg(" + color + ") "
                                 + eventName + "|@ ---------------------"));
+            }
+            if (event.getQueryData().isPresent()) {
+                isAccurateSql = true;
             }
             print(event);
         }
         if (lastIncremental) System.out.println();
-        return QuestionSqlPair.from(question, sql);
+        if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
+            sql = "/* Incorrect SQL */ " + sql;
+        }
+        histories.add(QuestionSqlPair.from(question, sql));
     }
 
-    private static void print(StreamEvent event) {
+    private void print(StreamEvent event) {
         event.getIncrementalContent().ifPresent(content ->
                 System.out.print(AnsiUtil.string("@|fg(blue) " + content + "|@")));
         event.getSemanticSql().ifPresent(content ->
@@ -140,7 +149,7 @@ public class RunCommand implements Callable<Integer> {
         event.getMessages().forEach((k, v) -> print(event, k, v));
     }
 
-    private static void print(StreamEvent event, String key, Object value) {
+    private void print(StreamEvent event, String key, Object value) {
         String valueStr;
         if (value instanceof String) {
             valueStr = (String) value;

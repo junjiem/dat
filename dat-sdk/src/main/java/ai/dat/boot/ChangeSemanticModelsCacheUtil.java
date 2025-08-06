@@ -1,4 +1,4 @@
-package ai.dat.boot.cache;
+package ai.dat.boot;
 
 import ai.dat.core.semantic.data.SemanticModel;
 import lombok.NonNull;
@@ -9,12 +9,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 变化的语义模型缓存工具
+ *
  * @Author JunjieM
  * @Date 2025/8/4
  */
-public class SemanticModelsCacheUtil {
+class ChangeSemanticModelsCacheUtil {
 
-    private SemanticModelsCacheUtil() {
+    private ChangeSemanticModelsCacheUtil() {
     }
 
     private final static Map<String, Map<String, List<SemanticModel>>> CACHE = new HashMap<>();

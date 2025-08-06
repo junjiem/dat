@@ -27,6 +27,8 @@ public interface ContentStore {
 
     List<SemanticModel> retrieveMdl(String question);
 
+    List<SemanticModel> allMdls();
+
     default void removeMdl(String id) {
         removeMdls(List.of(id));
     }

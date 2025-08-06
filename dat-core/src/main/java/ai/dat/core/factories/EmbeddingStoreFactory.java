@@ -6,6 +6,7 @@ import ai.dat.core.contentstore.ContentType;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import lombok.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -21,8 +22,7 @@ import java.util.stream.Collectors;
 public interface EmbeddingStoreFactory extends Factory {
     Set<ConfigOption<?>> fingerprintOptions();
 
-    default Map<String, String> fingerprintConfigs(ReadableConfig config) {
-        Preconditions.checkArgument(config != null, "config cannot be null");
+    default Map<String, String> fingerprintConfigs(@NonNull ReadableConfig config) {
         Set<ConfigOption<?>> fingerprintOptions = fingerprintOptions();
         Preconditions.checkArgument(fingerprintOptions != null,
                 "The fingerprintOptions method cannot return null");

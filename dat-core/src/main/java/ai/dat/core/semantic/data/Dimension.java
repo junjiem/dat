@@ -15,19 +15,10 @@ import java.util.stream.Collectors;
 
 @Setter
 @Getter
-public class Dimension {
-    @NonNull
-    private String name;
-
-    @NonNull
-    private String description;
-
-    private String alias;
+public class Dimension extends Element {
 
     @NonNull
     private DimensionType type = DimensionType.CATEGORICAL;
-
-    private String expr;
 
     @JsonProperty("enum_values")
     private List<EnumValue> enumValues = List.of();
@@ -63,6 +54,11 @@ public class Dimension {
 
         public static DimensionType fromValue(String value) {
             return VALUE_MAP.get(value);
+        }
+
+        @Override
+        public String toString() {
+            return value;
         }
     }
 
@@ -103,6 +99,11 @@ public class Dimension {
 
             public static TimeGranularity fromValue(String value) {
                 return VALUE_MAP.get(value);
+            }
+
+            @Override
+            public String toString() {
+                return value;
             }
         }
     }

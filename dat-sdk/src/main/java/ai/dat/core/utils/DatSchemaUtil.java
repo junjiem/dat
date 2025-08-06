@@ -93,23 +93,8 @@ public class DatSchemaUtil {
                 .collect(Collectors.toList());
     }
 
-    public static void validateSemanticModels(List<SemanticModel> semanticModels) {
-        if (semanticModels == null || semanticModels.isEmpty()) {
-            return;
-        }
-        List<String> duplicates = semanticModels.stream()
-                .map(SemanticModel::getName)
-                .collect(Collectors.groupingBy(name -> name, Collectors.counting()))
-                .entrySet().stream()
-                .filter(entry -> entry.getValue() > 1)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-        Preconditions.checkArgument(duplicates.isEmpty(),
-                String.format("There are duplicate semantic model names: %s",
-                        String.join(", ", duplicates)));
-    }
-
-    private static SemanticModel convertModel(@NonNull SemanticModel semanticModel, @NonNull Map<String, DatModel> models) {
+    private static SemanticModel convertModel(@NonNull SemanticModel semanticModel,
+                                              @NonNull Map<String, DatModel> models) {
         String name = semanticModel.getName();
         String model = semanticModel.getModel();
         String modelName = extractModelName(model);

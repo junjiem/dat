@@ -6,6 +6,9 @@ import ai.dat.core.semantic.data.Dimension;
 import ai.dat.core.semantic.data.Entity;
 import ai.dat.core.semantic.data.Measure;
 import ai.dat.core.semantic.data.SemanticModel;
+import ai.dat.core.semantic.view.SemanticModelView;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import lombok.NonNull;
 import org.apache.calcite.sql.SqlDialect;
@@ -23,23 +26,26 @@ import java.util.stream.Collectors;
  * @Date 2025/7/15
  */
 public class SemanticModelUtil {
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
     private SemanticModelUtil() {
     }
 
     public static void validateSemanticModels(List<SemanticModel> semanticModels) {
-        if (semanticModels != null && !semanticModels.isEmpty()) {
-            List<String> duplicates = semanticModels.stream()
-                    .map(SemanticModel::getName)
-                    .collect(Collectors.groupingBy(name -> name, Collectors.counting()))
-                    .entrySet().stream()
-                    .filter(entry -> entry.getValue() > 1)
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toList());
-            Preconditions.checkArgument(duplicates.isEmpty(),
-                    String.format("There are duplicate semantic model names: %s",
-                            String.join(", ", duplicates)));
-            semanticModels.forEach(SemanticModelUtil::validateSemanticModel);
+        if (semanticModels == null || semanticModels.isEmpty()) {
+            return;
         }
+        List<String> duplicates = semanticModels.stream()
+                .map(SemanticModel::getName)
+                .collect(Collectors.groupingBy(name -> name, Collectors.counting()))
+                .entrySet().stream()
+                .filter(entry -> entry.getValue() > 1)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+        Preconditions.checkArgument(duplicates.isEmpty(),
+                String.format("There are duplicate semantic model names: %s",
+                        String.join(", ", duplicates)));
+        semanticModels.forEach(SemanticModelUtil::validateSemanticModel);
     }
 
     public static void validateSemanticModel(@NonNull SemanticModel semanticModel) {
@@ -51,6 +57,21 @@ public class SemanticModelUtil {
                         .matcher(sql).matches(),
                 String.format("The model of the semantic model '%s' is and can only be a SELECT statement " +
                         "(The end of an statement cannot contain ';')", name));
+    }
+
+    public static SemanticModelView toSemanticModelView(@NonNull SemanticAdapter semanticAdapter,
+                                                        @NonNull SemanticModel semanticModel) {
+        return SemanticModelView.from(semanticAdapter, semanticModel);
+    }
+
+    public static String toLlmSemanticModelContent(@NonNull SemanticAdapter semanticAdapter,
+                                                   @NonNull SemanticModel semanticModel) {
+        try {
+            return JSON_MAPPER.writeValueAsString(toSemanticModelView(semanticAdapter, semanticModel));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize semantic model view to JSON: "
+                    + e.getMessage(), e);
+        }
     }
 
     /**

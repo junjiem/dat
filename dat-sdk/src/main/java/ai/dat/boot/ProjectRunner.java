@@ -1,12 +1,14 @@
 package ai.dat.boot;
 
+import ai.dat.boot.utils.ProjectUtil;
 import ai.dat.core.agent.AskdataAgent;
 import ai.dat.core.agent.data.StreamAction;
+import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
 import ai.dat.core.data.project.DatProject;
-import ai.dat.boot.utils.ProjectUtil;
+import ai.dat.core.semantic.data.SemanticModel;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -35,8 +37,9 @@ public class ProjectRunner {
         } catch (IOException e) {
             throw new RuntimeException("The project build failed", e);
         }
-        this.agent = ProjectUtil.createAskdataAgent(project, agentName,
-                schemas.values().stream().toList(), models.values().stream().toList(), projectPath);
+        ContentStore contentStore = ProjectUtil.createContentStore(project, projectPath);
+        List<SemanticModel> allSemanticModels = contentStore.allMdls();
+        this.agent = ProjectUtil.createAskdataAgent(project, agentName, allSemanticModels, projectPath);
     }
 
     public StreamAction ask(String question) {

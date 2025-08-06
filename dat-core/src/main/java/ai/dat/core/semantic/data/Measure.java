@@ -15,19 +15,9 @@ import java.util.stream.Collectors;
 
 @Setter
 @Getter
-public class Measure {
-    @NonNull
-    private String name;
-
-    @NonNull
-    private String description;
-
-    private String alias;
-
+public class Measure extends Element {
     @NonNull
     private AggregationType agg = AggregationType.NONE;
-
-    private String expr;
 
     @JsonProperty("non_additive_dimension")
     private NonAdditiveDimension nonAdditiveDimension;
@@ -71,6 +61,11 @@ public class Measure {
         public static AggregationType fromValue(String value) {
             return VALUE_MAP.get(value);
         }
+
+        @Override
+        public String toString() {
+            return value;
+        }
     }
 
     @Setter
@@ -113,6 +108,11 @@ public class Measure {
 
             public static WindowChoiceType fromValue(String value) {
                 return VALUE_MAP.get(value);
+            }
+
+            @Override
+            public String toString() {
+                return value;
             }
         }
     }

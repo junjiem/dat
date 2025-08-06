@@ -15,6 +15,7 @@ semantic_models:
         description: 国家代码
         expr: geo_id
         type: primary
+        data_type: VARCHAR
     dimensions:
       - name: report_date
         description: 报告日期
@@ -34,8 +35,10 @@ semantic_models:
     measures:
       - name: cases
         description: 病历数
+        data_type: BIGINT
       - name: deaths
         description: 死亡数
+        data_type: BIGINT
       - name: not_deaths
         description: 未死亡数
         expr: cases - deaths

@@ -1,10 +1,7 @@
 package ai.dat.core.semantic.data;
 
-import ai.dat.core.semantic.view.SemanticModelView;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import lombok.Getter;
 import lombok.NonNull;
@@ -20,8 +17,6 @@ import java.util.stream.Collectors;
 @Setter
 @Getter
 public class SemanticModel {
-
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     @NonNull
     private String name;
@@ -147,20 +142,6 @@ public class SemanticModel {
             String name = measure.getName();
             Preconditions.checkArgument(names.add(name),
                     String.format("There is duplicate name in %s: measure '%s'", theSemanticModelStr(), name));
-        }
-    }
-
-    public SemanticModelView convertSemanticModelView() {
-        return SemanticModelView.from(this);
-    }
-
-    @JsonInclude
-    public String convertLlmSemanticModelContent() {
-        try {
-            return JSON_MAPPER.writeValueAsString(convertSemanticModelView());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize semantic model view to JSON: "
-                    + e.getMessage(), e);
         }
     }
 

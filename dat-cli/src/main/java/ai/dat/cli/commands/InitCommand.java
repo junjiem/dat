@@ -1,13 +1,12 @@
 package ai.dat.cli.commands;
 
+import ai.dat.boot.utils.ProjectUtil;
 import ai.dat.cli.processor.InputProcessor;
 import ai.dat.cli.processor.InputProcessorUtil;
 import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigurationUtils;
 import ai.dat.core.factories.*;
-import ai.dat.boot.utils.ProjectUtil;
-import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.JinjaTemplateUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -379,10 +378,11 @@ public class InitCommand implements Callable<Integer> {
      * @throws IOException
      */
     private void createProjectYamlFile(Path projectPath) throws IOException {
+        DatProjectFactory factory = new DatProjectFactory();
         Map<String, Object> variables = new HashMap<>();
         variables.put("project", projectConfig);
-        variables.put("projectConfigs", DatProjectUtil.projectConfigTemplates());
-        variables.put("agentConfigs", DatProjectUtil.defaultAgentConfigTemplates());
+        variables.put("projectConfigs", factory.projectConfigTemplates());
+        variables.put("agentConfigs", factory.defaultAgentConfigTemplates());
         String yamlContent = JinjaTemplateUtil.render(PROJECT_YAML_TEMPLATE_CONTENT, variables);
         Path projectYamlPath = projectPath.resolve(PROJECT_CONFIG_FILE_NAME);
         Files.write(projectYamlPath, yamlContent.getBytes());
@@ -396,7 +396,7 @@ public class InitCommand implements Callable<Integer> {
      * @throws IOException
      */
     private void createProjectYamlTemplateFile(Path projectPath) throws IOException {
-        String yamlContent = DatProjectUtil.projectYamlTemplate();
+        String yamlContent = new DatProjectFactory().yamlTemplate();
         Path projectYamlTemplatePath = projectPath.resolve(PROJECT_CONFIG_TEMPLATE_FILE_NAME);
         Files.write(projectYamlTemplatePath, yamlContent.getBytes());
         log.info("Create " + PROJECT_CONFIG_TEMPLATE_FILE_NAME + " file: {}", projectYamlTemplatePath);
