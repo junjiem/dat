@@ -1,12 +1,13 @@
-## DAT
 
-DAT(Data Ask Tool): Dating with your data.
+![DAT](./images/dat.png)
+
+DAT (Data Ask Tool): Dating with your data.
 
 
 ---
 
 
-### Definition
+## Definition
 
 Asking yours data in a natural language way through pre-modeling (data models and semantic models).
 
@@ -14,7 +15,7 @@ Asking yours data in a natural language way through pre-modeling (data models an
 ---
 
 
-### Description
+## Description
 
 ```
  .--------------.
@@ -41,7 +42,7 @@ dat的“语言”涵盖了在dat项目中编写的所有内容。也可以将�
 ---
 
 
-### Conception
+## Conception
 
 1. DAT CLI只是用于本地开发、单元测试、调试使用，它可以在本地通过IDE（vscode、idea或eclipse中）开发dat智能问数项目，将提示（上下文）工程转变成数据工程。
 2. DAT 它不是一个platform，而是一个framework；二次开发者可以开发自己的Web UI，可以是web ide、拖拉拽的workflow、列表等交互方式。
@@ -50,7 +51,7 @@ dat的“语言”涵盖了在dat项目中编写的所有内容。也可以将�
 
 ---
 
-### Feature
+## Feature
 
 - 1. 数据模型（表或视图）的配置；
 - 2. 语义模型（与数据模型绑定）的配置，包括：实体、维度、度量等；
@@ -59,4 +60,18 @@ dat的“语言”涵盖了在dat项目中编写的所有内容。也可以将�
 - 5. 数据模型、语义模型、智能问数的单元测试；（TODO）
 - 6. SQL问答对、文本内容等向量化入库与检索；（TODO）
 - 7. 指标的配置（构建语义模型后可以更进一步添加指标）；（TODO）
+
+
+---
+
+## Star history
+
+[![Star History Chart](https://api.star-history.com/svg?repos=junjiem/dat&type=Date)](https://star-history.com/#junjiem/dat&Date)
+
+
+---
+
+## License
+
+This project uses the Apache 2.0 license. For details, please refer to the [LICENSE](https://github.com/junjiem/dat/blob/main/LICENSE) file.
 
