@@ -78,14 +78,14 @@ public class RunCommand implements Callable<Integer> {
             int round = 1;
             while (true) {
                 System.out.println(AnsiUtil.string("@|fg(green) "
-                        + ("─".repeat(50)) + "|@ @|bold,fg(yellow) Round " + (round++)
+                        + ("─".repeat(50)) + "|@ @|bold,fg(yellow) Round " + round
                         + "|@ @|fg(green) " + ("─".repeat(50)) + "|@"));
                 String question = processor.readLine(AnsiUtil.string(
                         "@|fg(yellow) ❓ Please enter the question:|@ "));
                 if (question == null || question.isEmpty()) {
                     continue;
                 }
-//                System.out.println("Question: " + question);
+                System.out.println("Question: " + question);
                 if ("quit".equalsIgnoreCase(question) || "exit".equalsIgnoreCase(question)) {
                     System.out.println("👋 Bye!");
                     break;
@@ -93,6 +93,7 @@ public class RunCommand implements Callable<Integer> {
                 System.out.println("🤖 Dealing with ask...");
                 StreamAction action = runner.ask(question, histories);
                 print(runner, question, action);
+                round += 1;
             }
             System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
             processor.close();

@@ -1,4 +1,6 @@
 @echo off
+:: Change the console code page to UTF-8(65001)
+chcp 65001 > nul
 
 set CURR_DIR=%~dp0
 

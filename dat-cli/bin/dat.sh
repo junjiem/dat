@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Set the LANG and LC_ALL environment variables to UTF-8 encoding
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
 CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if ! command -v java &> /dev/null; then

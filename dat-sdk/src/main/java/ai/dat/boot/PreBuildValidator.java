@@ -202,7 +202,7 @@ public class PreBuildValidator {
                     try {
                         String sql = "SELECT COUNT(DISTINCT " + d.getName() + ") AS distinct_count"
                                 + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
-                        int distinctCount = (int) databaseAdapter.executeQuery(sql).get(0)
+                        long distinctCount = (long) databaseAdapter.executeQuery(sql).get(0)
                                 .entrySet().iterator().next().getValue();
                         if (distinctCount > 1000) {
                             return "Dimension '" + d.getName()
