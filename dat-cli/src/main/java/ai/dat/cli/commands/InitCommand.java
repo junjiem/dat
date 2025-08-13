@@ -234,20 +234,24 @@ public class InitCommand implements Callable<Integer> {
     private Map<String, Object> toConfigs(Set<ConfigOption<?>> requiredOptions) {
         Map<String, Object> configs = new HashMap<>();
         requiredOptions.forEach(option -> {
-            boolean hasDefaultValue = option.hasDefaultValue();
-            String hint = " [User input]";
-            if (hasDefaultValue) {
-                String defaultValue = ConfigurationUtils.convertValue(option.defaultValue(), String.class);
-                hint = " @|fg(green) (Default: " + defaultValue + ")|@" +
-                        " [User input/press Enter to use the default value]";
+            while (true) {
+                boolean hasDefaultValue = option.hasDefaultValue();
+                String hint = " [User input]";
+                if (hasDefaultValue) {
+                    String defaultValue = ConfigurationUtils.convertValue(option.defaultValue(), String.class);
+                    hint = " @|fg(green) (Default: " + defaultValue + ")|@" +
+                            " [User input/press Enter to use the default value]";
+                }
+                System.out.print(AnsiUtil.string("@|fg(cyan) " + option.key() + "|@" + hint + ": "));
+                String input = SCANNER.nextLine().trim();
+                Object value = input;
+                if (input.isEmpty()) {
+                    if (!hasDefaultValue) continue;
+                    value = option.defaultValue();
+                }
+                configs.put(option.key(), value);
+                return;
             }
-            System.out.print(AnsiUtil.string("@|fg(cyan) " + option.key() + "|@" + hint + ": "));
-            String input = SCANNER.nextLine().trim();
-            Object value = input;
-            if (input.isEmpty() && hasDefaultValue) {
-                value = option.defaultValue();
-            }
-            configs.put(option.key(), value);
         });
         return configs;
     }
@@ -381,8 +385,8 @@ public class InitCommand implements Callable<Integer> {
         DatProjectFactory factory = new DatProjectFactory();
         Map<String, Object> variables = new HashMap<>();
         variables.put("project", projectConfig);
-        variables.put("projectConfigs", factory.projectConfigTemplates());
-        variables.put("agentConfigs", factory.defaultAgentConfigTemplates());
+        variables.put("project_configuration", factory.getProjectConfiguration());
+        variables.put("agent_configuration", factory.getDefaultAgentConfiguration());
         String yamlContent = JinjaTemplateUtil.render(PROJECT_YAML_TEMPLATE_CONTENT, variables);
         Path projectYamlPath = projectPath.resolve(PROJECT_CONFIG_FILE_NAME);
         Files.write(projectYamlPath, yamlContent.getBytes());

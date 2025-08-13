@@ -147,8 +147,24 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
             ConfigOptions.key("custom-parameters")
                     .mapObjectType()
                     .noDefaultValue()
-                    .withDescription("Custom parameters, format Map<String, Object>. " +
-                            "Alternatively, custom parameters can also be specified as a structure of nested maps.");
+                    .withDescription("""
+                            Custom parameters.
+                            Alternatively, custom parameters can also be specified as a structure of nested maps.
+                            
+                            For example1: aliyun qwen3 custom parameters
+                            ```
+                            custom-parameters:
+                              extra_body:
+                                enable_thinking: false
+                            ```
+                            
+                            For example2: vllm qwen3 custom parameters
+                            ```
+                            custom-parameters:
+                              chat_template_kwargs:
+                                enable_thinking: false
+                            ```
+                            """);
 
     @Override
     public String factoryIdentifier() {

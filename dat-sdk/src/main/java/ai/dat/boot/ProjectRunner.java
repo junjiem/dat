@@ -49,4 +49,8 @@ public class ProjectRunner {
     public StreamAction ask(String question, List<QuestionSqlPair> histories) {
         return agent.ask(question, histories);
     }
+
+    public void userResponse(String response) {
+        agent.userResponse(response);
+    }
 }

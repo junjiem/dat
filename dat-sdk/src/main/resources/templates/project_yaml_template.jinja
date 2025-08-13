@@ -6,110 +6,145 @@
 
 version: 1
 
+# ------------------------------------------------------------
+# Project basic configuration
+# ------------------------------------------------------------
 name: dat_project_example
 description: dat project configuration example.
-{% if projectConfigs -%}
+{% if project_configuration -%}
     {{ "configuration:" }}
-    {% for config in projectConfigs -%}
-        {{ "  " }}{% if not config.required -%}
-            {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
-    {% endfor %}
+    {% for line in project_configuration.split('\n') -%}
+        {{ "  " ~ line }}
+    {% endfor -%}
 {% endif %}
 
 
+# ------------------------------------------------------------
 # Data source configuration
+{{ "# Supported providers are " }}
+{%- for item in dbs -%}
+    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+{% endfor -%}.
+# ------------------------------------------------------------
 db:
 {% for item in dbs -%}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
-    {% if item.configs -%}
+    {% if item.configuration -%}
         {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
-        {% for config in item.configs -%}
-            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " }}{% if not config.required -%}
-                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% for line in item.configuration.split('\n') -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " ~ line }}
         {% endfor -%}
     {% endif -%}
     {% if not loop.last -%}{{ "\n" }}{% endif -%}
 {% endfor %}
 
 
+# ------------------------------------------------------------
 # Embedding model configuration
+{{ "# Supported providers are " }}
+{%- for item in embeddings -%}
+    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+{% endfor -%}.
+# ------------------------------------------------------------
 embedding:
 {% for item in embeddings -%}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
-    {% if item.configs -%}
+    {% if item.configuration -%}
         {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
-        {% for config in item.configs -%}
-            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " }}{% if not config.required -%}
-                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% for line in item.configuration.split('\n') -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " ~ line }}
         {% endfor -%}
     {% endif -%}
     {% if not loop.last -%}{{ "\n" }}{% endif -%}
 {% endfor %}
 
 
+# ------------------------------------------------------------
 # Embedding store configuration
+{{ "# Supported providers are " }}
+{%- for item in embedding_stores -%}
+    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+{% endfor -%}.
+# ------------------------------------------------------------
 embedding_store:
 {% for item in embedding_stores -%}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
-    {% if item.configs -%}
+    {% if item.configuration -%}
         {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
-        {% for config in item.configs -%}
-            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " }}{% if not config.required -%}
-                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% for line in item.configuration.split('\n') -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " ~ line }}
         {% endfor -%}
     {% endif -%}
     {% if not loop.last -%}{{ "\n" }}{% endif -%}
 {% endfor %}
 
 
+# ------------------------------------------------------------
 # Large language models configurations
+{{ "# Supported providers are " }}
+{%- for item in llms -%}
+    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+{% endfor -%}.
+# ------------------------------------------------------------
 llms:
 {% for item in llms -%}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  - name: " ~ item.name }}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    provider: " ~ item.provider }}
-    {% if item.configs -%}
+    {% if item.configuration -%}
         {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    configuration:" }}
-        {% for config in item.configs -%}
-            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "      " }}{% if not config.required -%}
-                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% for line in item.configuration.split('\n') -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "      " ~ line }}
         {% endfor -%}
     {% endif -%}
     {% if not loop.last -%}{{ "\n" }}{% endif -%}
 {% endfor %}
 
 
+# ------------------------------------------------------------
 # Content store configuration
+{{ "# Supported providers are " }}
+{%- for item in content_stores -%}
+    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+{% endfor -%}.
+# ------------------------------------------------------------
 content_store:
 {% for item in content_stores -%}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
-    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  llm: default  # You need to fill in correct llm name" }}
-    {% if item.configs -%}
+    {% if item.configuration -%}
         {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
-        {% for config in item.configs -%}
-            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " }}{% if not config.required -%}
-                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% for line in item.configuration.split('\n') -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " ~ line }}
         {% endfor -%}
     {% endif -%}
     {% if not loop.last -%}{{ "\n" }}{% endif -%}
 {% endfor %}
 
 
+# ------------------------------------------------------------
 # Ask data agents configurations
+{{ "# Supported providers are " }}
+{%- for item in agents -%}
+    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+{% endfor -%}.
+{% for item in agents -%}
+    {{ "# `" ~ item.provider ~ "`: " ~ item.comment }}
+{% endfor -%}
+# ------------------------------------------------------------
 agents:
 {% for item in agents -%}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  - name: " ~ item.name }}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    description:  # Ask data agent description" }}
-    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    provider: " ~ item.provider ~ "  # " ~ item.comment }}
-    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    llm: default  # You need to fill in correct llm name" }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    provider: " ~ item.provider }}
     {% if not item.display -%}{{ "#" }}{% endif -%}
     {{ "    #semantic_models: # Optional" }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}
     {{ "      #- covid_cases  # You need to fill in correct semantic model name" }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}
     {{ "      #- country_covid_cases  # You need to fill in correct semantic model name" }}
-    {% if item.configs -%}
+    {% if item.configuration -%}
         {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    configuration:" }}
-        {% for config in item.configs -%}
-            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "      " }}{% if not config.required -%}
-                {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
+        {% for line in item.configuration.split('\n') -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "      " ~ line }}
         {% endfor -%}
     {% endif -%}
     {% if not loop.last -%}{{ "\n" }}{% endif -%}

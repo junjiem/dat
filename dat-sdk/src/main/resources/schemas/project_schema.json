@@ -150,11 +150,6 @@
           "default": "default",
           "description": "Content Store提供者"
         },
-        "llm": {
-          "type": "string",
-          "default": "default",
-          "description": "Content Store依赖的LLM名称"
-        },
         "configuration": {
           "type": [
             "object",
@@ -195,11 +190,6 @@
             "pattern": "^[A-Za-z0-9_\\-]+$",
             "default": "default",
             "description": "Agent提供者"
-          },
-          "llm": {
-            "type": "string",
-            "default": "default",
-            "description": "Agent依赖的LLM名称"
           },
           "semantic_models": {
             "type": "array",

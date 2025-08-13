@@ -28,7 +28,8 @@ public class DuckDBEmbeddingStoreFactory implements EmbeddingStoreFactory {
                     .stringType()
                     .noDefaultValue()
                     .withDescription("DuckDB embedding store file path. " +
-                            "The project mode does not need to be filled in by default and is stored in the project root directory under the .dat directory.");
+                            "The project mode does not need to be filled in by default and is stored " +
+                            "in the project root directory under the .dat directory.");
 
     @Override
     public String factoryIdentifier() {

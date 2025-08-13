@@ -3,6 +3,8 @@ package ai.dat.core.contentstore;
 import ai.dat.core.contentstore.data.NounSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.semantic.data.SemanticModel;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 
 import java.util.Collection;
@@ -29,6 +31,8 @@ public interface ContentStore {
 
     List<SemanticModel> allMdls();
 
+    boolean isMdl(TextSegment textSegment);
+
     default void removeMdl(String id) {
         removeMdls(List.of(id));
     }
@@ -48,6 +52,8 @@ public interface ContentStore {
     ContentRetriever getSqlContentRetriever();
 
     List<QuestionSqlPair> retrieveSql(String question);
+
+    boolean isSql(TextSegment textSegment);
 
     default void removeSql(String id) {
         removeSqls(List.of(id));
@@ -69,6 +75,8 @@ public interface ContentStore {
 
     List<NounSynonymPair> retrieveSyn(String question);
 
+    boolean isSyn(TextSegment textSegment);
+
     default void removeSyn(String id) {
         removeSyns(List.of(id));
     }
@@ -88,6 +96,8 @@ public interface ContentStore {
     ContentRetriever getDocContentRetriever();
 
     List<String> retrieveDoc(String question);
+
+    boolean isDoc(TextSegment textSegment);
 
     default void removeDoc(String id) {
         removeDocs(List.of(id));

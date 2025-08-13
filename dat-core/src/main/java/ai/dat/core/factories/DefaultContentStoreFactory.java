@@ -5,18 +5,16 @@ import ai.dat.core.configuration.ConfigOptions;
 import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.DefaultContentStore;
+import ai.dat.core.factories.data.ChatModelInstance;
 import ai.dat.core.utils.FactoryUtil;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.NonNull;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @Author JunjieM
@@ -38,6 +36,12 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                     .defaultValue(0.6)
                     .withDescription("Content store retrieve Score minimum value, must be between 0.0 and 1.0");
 
+    public static final ConfigOption<String> DEFAULT_LLM =
+            ConfigOptions.key("default-llm")
+                    .stringType()
+                    .defaultValue("default")
+                    .withDescription("Specify the default LLM model name.");
+
     @Override
     public String factoryIdentifier() {
         return IDENTIFIER;
@@ -50,7 +54,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(MAX_RESULTS, MIN_SCORE));
+        return new LinkedHashSet<>(List.of(MAX_RESULTS, MIN_SCORE, DEFAULT_LLM));
     }
 
     @Override
@@ -60,15 +64,21 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                                @NonNull EmbeddingStore<TextSegment> sqlEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> synEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> docEmbeddingStore,
-                               @NonNull ChatModel chatModel) {
+                               @NonNull List<ChatModelInstance> chatModelInstances) {
+        Preconditions.checkArgument(!chatModelInstances.isEmpty(),
+                "chatModelInstances cannot be empty");
         FactoryUtil.validateFactoryOptions(this, config);
-        validateConfigOptions(config);
+        Map<String, ChatModelInstance> instances = chatModelInstances.stream()
+                .collect(Collectors.toMap(ChatModelInstance::getName, i -> i));
+        validateConfigOptions(config, instances);
 
         Integer maxResults = config.get(MAX_RESULTS);
         Double minScore = config.get(MIN_SCORE);
+        ChatModelInstance instance = config.getOptional(DEFAULT_LLM)
+                .map(instances::get).orElseGet(() -> chatModelInstances.get(0));
 
         return DefaultContentStore.builder()
-                .chatModel(chatModel)
+                .chatModel(instance.getChatModel())
                 .embeddingModel(embeddingModel)
                 .mdlEmbeddingStore(mdlEmbeddingStore)
                 .sqlEmbeddingStore(sqlEmbeddingStore)
@@ -79,12 +89,17 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                 .build();
     }
 
-    private void validateConfigOptions(ReadableConfig config) {
+    private void validateConfigOptions(ReadableConfig config, Map<String, ChatModelInstance> instances) {
         Integer maxResults = config.get(MAX_RESULTS);
         Preconditions.checkArgument(maxResults >= 1 && maxResults <= 10,
                 "'" + MAX_RESULTS.key() + "' value must be between 1 and 10");
         Double minScore = config.get(MIN_SCORE);
         Preconditions.checkArgument(minScore >= 0.0 && minScore <= 1.0,
                 "'" + MIN_SCORE.key() + "' value must be between 0.0 and 1.0");
+        String llmNames = String.join(", ", instances.keySet());
+        String errorMessageFormat = "'%s' value must be one of [%s]";
+        config.getOptional(DEFAULT_LLM)
+                .ifPresent(n -> Preconditions.checkArgument(instances.containsKey(n),
+                        String.format(errorMessageFormat, DEFAULT_LLM.key(), llmNames)));
     }
 }

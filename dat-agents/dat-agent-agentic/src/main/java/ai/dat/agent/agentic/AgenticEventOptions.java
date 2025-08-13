@@ -1,4 +1,4 @@
-package ai.dat.core.agent;
+package ai.dat.agent.agentic;
 
 import ai.dat.core.agent.data.EventOption;
 import ai.dat.core.configuration.ConfigOption;
@@ -10,9 +10,9 @@ import java.util.Set;
 
 /**
  * @Author JunjieM
- * @Date 2025/7/17
+ * @Date 2025/8/11
  */
-public class DefaultEventOptions {
+public class AgenticEventOptions {
 
     public static final ConfigOption<String> CONTENT =
             ConfigOptions.key("content")
@@ -39,56 +39,6 @@ public class DefaultEventOptions {
             .dataOptions(Set.of(MESSAGE))
             .build();
 
-    // ----------------------------- intent_classification --------------------------
-
-    public static final ConfigOption<String> REASONING =
-            ConfigOptions.key("reasoning")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("Brief chain-of-thought reasoning (max 20 words)");
-
-    public static final ConfigOption<DefaultAskdataAgent.Intent> INTENT =
-            ConfigOptions.key("intent")
-                    .enumType(DefaultAskdataAgent.Intent.class)
-                    .noDefaultValue()
-                    .withDescription("The intent of intent classification");
-
-    public static final ConfigOption<String> REPHRASED_QUESTION =
-            ConfigOptions.key("rephrased_question")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("Rephrased question in full standalone question if there are previous questions, " +
-                            "otherwise the original question");
-
-    public static final EventOption INTENT_CLASSIFICATION_EVENT = EventOption.builder()
-            .name("intent_classification")
-            .dataOptions(Set.of(REPHRASED_QUESTION, REASONING, INTENT))
-            .build();
-
-    // ----------------------------- misleading_assistance --------------------------
-
-    public static final EventOption MISLEADING_ASSISTANCE_EVENT = EventOption.builder()
-            .name("misleading_assistance")
-            .incrementalOption(CONTENT)
-            .dataOptions(Set.of(CONTENT, ERROR))
-            .build();
-
-    // ----------------------------- data_assistance --------------------------
-
-    public static final EventOption DATA_ASSISTANCE_EVENT = EventOption.builder()
-            .name("data_assistance")
-            .incrementalOption(CONTENT)
-            .dataOptions(Set.of(CONTENT, ERROR))
-            .build();
-
-    // ----------------------------- sql_generation_reasoning --------------------------
-
-    public static final EventOption SQL_GENERATION_REASONING_EVENT = EventOption.builder()
-            .name("sql_generation_reasoning")
-            .incrementalOption(CONTENT)
-            .dataOptions(Set.of(CONTENT, ERROR))
-            .build();
-
     // ----------------------------- sql_generate --------------------------
 
     public static final ConfigOption<String> SQL =
@@ -108,7 +58,7 @@ public class DefaultEventOptions {
     public static final EventOption SEMANTIC_TO_SQL_EVENT = EventOption.builder()
             .name("semantic_to_sql")
             .querySqlOption(SQL)
-            .dataOptions(Set.of(SQL, ERROR))
+            .dataOptions(Set.of(SQL))
             .build();
 
     // ----------------------------- sql_execute --------------------------
@@ -124,5 +74,61 @@ public class DefaultEventOptions {
             .name("sql_execute")
             .queryDataOption(DATA)
             .dataOptions(Set.of(DATA, ERROR))
+            .build();
+
+    // ----------------------------- before_tool_execution --------------------------
+
+    public static final ConfigOption<String> TOOL_NAME =
+            ConfigOptions.key("name")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("tool execution request name");
+
+    public static final ConfigOption<String> TOOL_ARGS =
+            ConfigOptions.key("arguments")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("tool execution request arguments");
+
+    public static final EventOption BEFORE_TOOL_EXECUTION = EventOption.builder()
+            .name("before_tool_execution")
+            .dataOptions(Set.of(TOOL_NAME, TOOL_ARGS))
+            .build();
+
+    // ----------------------------- tool_execution --------------------------
+
+    public static final ConfigOption<String> TOOL_RESULT =
+            ConfigOptions.key("result")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("tool execution result");
+
+    public static final EventOption TOOL_EXECUTION = EventOption.builder()
+            .name("tool_execution")
+            .dataOptions(Set.of(TOOL_NAME, TOOL_ARGS, TOOL_RESULT))
+            .build();
+
+    // ----------------------------- agent_answer --------------------------
+
+    public static final EventOption AGENT_ANSWER = EventOption.builder()
+            .name("agent_answer")
+            .incrementalOption(CONTENT)
+            .dataOptions(Set.of(CONTENT, ERROR))
+            .build();
+
+    // ----------------------------- agent_answer --------------------------
+
+    public static final ConfigOption<String> AI_REQUEST =
+            ConfigOptions.key("ai_request")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("AI request");
+
+    // ----------------------------- Human-in-the-loop ask_user --------------------------
+
+    public static final EventOption HITL_ASK_USER = EventOption.builder()
+            .name("hitl_ask_user")
+            .hitlAiRequestOption(AI_REQUEST)
+            .dataOptions(Set.of(AI_REQUEST))
             .build();
 }

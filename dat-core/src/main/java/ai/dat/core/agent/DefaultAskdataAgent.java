@@ -18,10 +18,8 @@ import dev.langchain4j.service.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -46,21 +44,22 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
     private static final String TEXT_TO_SQL_RULES;
 
     static {
-        TEXT_TO_SQL_RULES = loadText("/prompts/default/text_to_sql_rules.txt");
+        TEXT_TO_SQL_RULES = loadText("prompts/default/text_to_sql_rules.txt");
     }
 
     private static String loadText(String fromResource) {
-        try (InputStream inputStream = DefaultAskdataAgent.class.getResourceAsStream(fromResource);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            return reader.lines().collect(Collectors.joining("\n"));
+        try (InputStream inputStream = DefaultAskdataAgent.class.getClassLoader()
+                .getResourceAsStream(fromResource)) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load txt from resources", e);
+            throw new RuntimeException("Failed to load text from resources: " + fromResource, e);
         }
     }
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final List<SemanticModel> semanticModels;
+
     private final String language;
     private final boolean intentClassification;
     private final boolean sqlGenerationReasoning;
@@ -69,15 +68,22 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
     private final Assistant assistant;
     private final Assistant streamingAssistant;
 
+    private final Assistant intentClassificationAssistant;
+    private final Assistant sqlGenerationReasoningAssistant;
+    private final Assistant sqlGenerationAssistant;
+
     @Builder
     private DefaultAskdataAgent(@NonNull ContentStore contentStore,
                                 @NonNull DatabaseAdapter databaseAdapter,
-                                @NonNull ChatModel chatModel,
-                                @NonNull StreamingChatModel streamingChatModel,
+                                @NonNull ChatModel defaultModel,
+                                @NonNull StreamingChatModel defaultStreamingModel,
                                 List<SemanticModel> semanticModels,
                                 String language,
                                 Boolean intentClassification,
+                                @NonNull ChatModel intentClassificationModel,
                                 Boolean sqlGenerationReasoning,
+                                @NonNull StreamingChatModel sqlGenerationReasoningModel,
+                                @NonNull ChatModel sqlGenerationModel,
                                 String textToSqlRules) {
         super(contentStore, databaseAdapter);
         SemanticModelUtil.validateSemanticModels(semanticModels);
@@ -87,10 +93,19 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         this.sqlGenerationReasoning = Optional.ofNullable(sqlGenerationReasoning).orElse(true);
         this.textToSqlRules = Optional.ofNullable(textToSqlRules).orElse(TEXT_TO_SQL_RULES);
         this.assistant = AiServices.builder(Assistant.class)
-                .chatModel(chatModel)
+                .chatModel(defaultModel)
                 .build();
         this.streamingAssistant = AiServices.builder(Assistant.class)
-                .streamingChatModel(streamingChatModel)
+                .streamingChatModel(defaultStreamingModel)
+                .build();
+        this.intentClassificationAssistant = AiServices.builder(Assistant.class)
+                .chatModel(intentClassificationModel)
+                .build();
+        this.sqlGenerationReasoningAssistant = AiServices.builder(Assistant.class)
+                .streamingChatModel(sqlGenerationReasoningModel)
+                .build();
+        this.sqlGenerationAssistant = AiServices.builder(Assistant.class)
+                .chatModel(sqlGenerationModel)
                 .build();
     }
 
@@ -116,7 +131,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         List<SemanticModel> semanticModels = this.semanticModels;
         if (semanticModels == null || semanticModels.isEmpty()) {
             semanticModels = contentStore.retrieveMdl(question);
-            Preconditions.checkArgument(!semanticModels.isEmpty(), "retrieve semantic models is empty");
+            Preconditions.checkArgument(!semanticModels.isEmpty(), "Retrieve semantic models is empty");
         }
 
         List<String> semantics = semanticModels.stream()
@@ -157,9 +172,12 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                 TokenStream tokenStream = streamingAssistant.misleadingAssistance(
                         semantics, questionTime, userCompositeQuestion, language);
                 CompletableFuture<Void> future = new CompletableFuture<>();
-                tokenStream.onPartialResponse(c -> action.add(StreamEvent.from(MISLEADING_ASSISTANCE_EVENT, CONTENT, c)))
-                        .onCompleteResponse(c -> future.complete(null))
-                        .onError(e -> action.add(StreamEvent.from(MISLEADING_ASSISTANCE_EVENT, ERROR, e.getMessage())))
+                tokenStream.onPartialResponse(s -> action.add(StreamEvent.from(MISLEADING_ASSISTANCE_EVENT, CONTENT, s)))
+                        .onCompleteResponse(r -> future.complete(null))
+                        .onError(e -> {
+                            action.add(StreamEvent.from(MISLEADING_ASSISTANCE_EVENT, ERROR, e.getMessage()));
+                            future.completeExceptionally(e);
+                        })
                         .start();
                 future.join();
                 return;
@@ -167,9 +185,12 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                 TokenStream tokenStream = streamingAssistant.dataAssistance(
                         semantics, questionTime, userCompositeQuestion, language);
                 CompletableFuture<Void> future = new CompletableFuture<>();
-                tokenStream.onPartialResponse(c -> action.add(StreamEvent.from(DATA_ASSISTANCE_EVENT, CONTENT, c)))
-                        .onCompleteResponse(c -> future.complete(null))
-                        .onError(e -> action.add(StreamEvent.from(DATA_ASSISTANCE_EVENT, ERROR, e.getMessage())))
+                tokenStream.onPartialResponse(s -> action.add(StreamEvent.from(DATA_ASSISTANCE_EVENT, CONTENT, s)))
+                        .onCompleteResponse(r -> future.complete(null))
+                        .onError(e -> {
+                            action.add(StreamEvent.from(DATA_ASSISTANCE_EVENT, ERROR, e.getMessage()));
+                            future.completeExceptionally(e);
+                        })
                         .start();
                 future.join();
                 return;
@@ -196,7 +217,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                                       String questionTime,
                                                       String question) {
         try {
-            return assistant.intentClassification(semantics, sqlSamples,
+            return intentClassificationAssistant.intentClassification(semantics, sqlSamples,
                     synonyms, docs, histories, questionTime, question, language);
         } catch (Exception e) {
             log.error("Intent classification exception", e);
@@ -216,10 +237,10 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         if (sqlGenerationReasoning) {
             TokenStream tokenStream;
             if (histories.isEmpty()) {
-                tokenStream = streamingAssistant.sqlGenerateReasoning(
+                tokenStream = sqlGenerationReasoningAssistant.sqlGenerateReasoning(
                         semanticContexts, sqlSamples, synonyms, docs, questionTime, question, language);
             } else {
-                tokenStream = streamingAssistant.followupSqlGenerateReasoning(
+                tokenStream = sqlGenerationReasoningAssistant.followupSqlGenerateReasoning(
                         semanticContexts, sqlSamples, synonyms, docs, histories, questionTime, question, language);
             }
             CompletableFuture<Void> future = new CompletableFuture<>();
@@ -238,10 +259,10 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
 
         GenSql genSql;
         if (histories.isEmpty()) {
-            genSql = assistant.sqlGenerate(textToSqlRules, semanticContexts,
+            genSql = sqlGenerationAssistant.sqlGenerate(textToSqlRules, semanticContexts,
                     sqlSamples, synonyms, docs, questionTime, question, sqlGenerateReasoning.get());
         } else {
-            genSql = assistant.followupSqlGenerate(textToSqlRules, semanticContexts,
+            genSql = sqlGenerationAssistant.followupSqlGenerate(textToSqlRules, semanticContexts,
                     sqlSamples, synonyms, docs, histories, questionTime, question, sqlGenerateReasoning.get());
         }
 
@@ -352,4 +373,5 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                    @V("query") String query,
                                    @V("sql_generation_reasoning") String sqlGenerationReasoning);
     }
+
 }

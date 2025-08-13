@@ -72,6 +72,10 @@ public class StreamEvent {
         return eventOption.getQueryDataOption().flatMap(data::getOptional);
     }
 
+    public Optional<String> getHitlAiRequest() {
+        return eventOption.getHitlAiRequestOption().flatMap(data::getOptional);
+    }
+
     public Map<String, Object> getMessages() {
         List<String> keys = new ArrayList<>();
         eventOption.getIncrementalOption().ifPresent(o -> keys.add(o.key()));

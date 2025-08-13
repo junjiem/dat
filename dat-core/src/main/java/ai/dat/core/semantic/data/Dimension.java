@@ -113,7 +113,7 @@ public class Dimension extends Element {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class EnumValue {
         @NonNull
-        private String value;
+        private Object value; // 可以是Number或String
 
         private String label;
     }

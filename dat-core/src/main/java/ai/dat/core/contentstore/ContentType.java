@@ -1,11 +1,12 @@
 package ai.dat.core.contentstore;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.Getter;
 
 /**
  * @Author JunjieM
  * @Date 2025/7/17
  */
+@Getter
 public enum ContentType {
     MDL("mdl"), // 模型定义语言（语义模型）
     SQL("sql"), // 问题SQL对
@@ -14,12 +15,12 @@ public enum ContentType {
 
     private final String value;
 
-    @JsonValue
-    public String getValue() {
-        return value;
-    }
-
     ContentType(String value) {
         this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return value;
     }
 }

@@ -8,6 +8,7 @@ import ai.dat.core.data.DatSchema;
 import ai.dat.core.data.project.*;
 import ai.dat.core.exception.ValidationException;
 import ai.dat.core.factories.*;
+import ai.dat.core.factories.data.FactoryDescriptor;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.DatSchemaUtil;
@@ -102,14 +103,6 @@ public class ProjectUtil {
     }
 
     public static ContentStore createContentStore(@NonNull DatProject project, Path projectPath) {
-        Map<String, LlmConfig> llmMap = project.getLlms().stream()
-                .collect(Collectors.toMap(LlmConfig::getName, o -> o));
-
-        String llmName = project.getContentStore().getLlm();
-        Preconditions.checkArgument(llmMap.containsKey(llmName),
-                "The project doesn't exist llm '%s', modify the llm in the content store", llmName);
-        LlmConfig llmConfig = llmMap.get(llmName);
-
         EmbeddingStoreConfig embeddingStore = project.getEmbeddingStore();
 
         if (projectPath != null
@@ -129,11 +122,20 @@ public class ProjectUtil {
             embeddingStore.setConfiguration(Map.of("file-path", filePath.toAbsolutePath().toString()));
         }
 
+        FactoryDescriptor contentStoreFactoryDescriptor = FactoryDescriptor.from(
+                project.getContentStore().getProvider(), project.getContentStore().getConfiguration());
+        FactoryDescriptor embeddingFactoryDescriptor = FactoryDescriptor.from(
+                project.getEmbedding().getProvider(), project.getEmbedding().getConfiguration());
+        FactoryDescriptor embeddingStoreFactoryDescriptor = FactoryDescriptor.from(
+                embeddingStore.getProvider(), embeddingStore.getConfiguration());
+
+        Map<String, FactoryDescriptor> chatModelFactoryDescriptors = project.getLlms().stream()
+                .collect(Collectors.toMap(LlmConfig::getName,
+                        o -> FactoryDescriptor.from(o.getProvider(), o.getConfiguration())));
+
         return FactoryUtil.createContentStore(project.getName(),
-                project.getContentStore().getProvider(), project.getContentStore().getConfiguration(),
-                project.getEmbedding().getProvider(), project.getEmbedding().getConfiguration(),
-                embeddingStore.getProvider(), embeddingStore.getConfiguration(),
-                llmConfig.getProvider(), llmConfig.getConfiguration());
+                contentStoreFactoryDescriptor, embeddingFactoryDescriptor,
+                embeddingStoreFactoryDescriptor, chatModelFactoryDescriptors);
     }
 
     public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
@@ -163,30 +165,29 @@ public class ProjectUtil {
         validateAgents(project.getAgents(), semanticModels);
 
         AgentConfig agentConfig = agentMap.get(agentName);
-        String llmName = agentConfig.getLlm();
         List<String> semanticModelNames = agentConfig.getSemanticModels();
 
-        Map<String, LlmConfig> llmMap = project.getLlms().stream()
-                .collect(Collectors.toMap(LlmConfig::getName, o -> o));
-        Preconditions.checkArgument(llmMap.containsKey(llmName),
-                "The project doesn't exist llm '%s', modify the llm in the agent '%s'",
-                llmName, agentName);
-        LlmConfig llmConfig = llmMap.get(llmName);
+        Map<String, FactoryDescriptor> chatModelFactoryDescriptors = project.getLlms().stream()
+                .collect(Collectors.toMap(LlmConfig::getName,
+                        o -> FactoryDescriptor.from(o.getProvider(), o.getConfiguration())));
 
         List<SemanticModel> agentSemanticModels = semanticModels.stream()
                 .filter(model -> semanticModelNames.contains(model.getName()))
                 .collect(Collectors.toList());
 
-        return FactoryUtil.createAskdataAgent(
-                agentConfig.getProvider(), agentConfig.getConfiguration(),
-                agentSemanticModels, createContentStore(project, projectPath),
-                llmConfig.getProvider(), llmConfig.getConfiguration(),
+        FactoryDescriptor agentFactoryDescriptor = FactoryDescriptor.from(
+                agentConfig.getProvider(), agentConfig.getConfiguration());
+        FactoryDescriptor databaseAdapterFactoryDescriptor = FactoryDescriptor.from(
                 project.getDb().getProvider(), project.getDb().getConfiguration());
+
+        return FactoryUtil.createAskdataAgent(agentFactoryDescriptor,
+                agentSemanticModels, createContentStore(project, projectPath),
+                chatModelFactoryDescriptors, databaseAdapterFactoryDescriptor);
     }
 
     public static DatabaseAdapter createDatabaseAdapter(@NonNull DatProject project) {
-        return FactoryUtil.createDatabaseAdapter(
-                project.getDb().getProvider(), project.getDb().getConfiguration());
+        return FactoryUtil.createDatabaseAdapter(FactoryDescriptor.from(
+                project.getDb().getProvider(), project.getDb().getConfiguration()));
     }
 
     private static void validateAgents(List<AgentConfig> agents, List<SemanticModel> semanticModels) {
@@ -218,22 +219,18 @@ public class ProjectUtil {
         try {
             return DatProjectUtil.datProject(getProjectConfig(projectPath));
         } catch (IOException e) {
-            throw new RuntimeException("The read project configuration file last modified time failed", e);
+            throw new RuntimeException("The project YAML file content does not meet the requirements", e);
         }
     }
 
-    public static String getProjectConfig(Path projectPath) {
-        Path path = findProjectConfigFile(projectPath);
-        if (path == null) {
+    private static String getProjectConfig(Path projectPath) throws IOException {
+        Path filePath = findProjectConfigFile(projectPath);
+        if (filePath == null) {
             throw new RuntimeException("The project configuration file not found "
                     + PROJECT_CONFIG_FILE_NAME_YAML + " or " + PROJECT_CONFIG_FILE_NAME_YML
                     + ", please ensure that the project configuration file exists in the project root directory.");
         }
-        try {
-            return Files.readString(path);
-        } catch (IOException e) {
-            throw new RuntimeException("The read project configuration file last modified time failed", e);
-        }
+        return Files.readString(filePath);
     }
 
     private static Path findProjectConfigFile(Path projectPath) {

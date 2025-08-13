@@ -26,9 +26,6 @@ public class AgentConfig {
     private String provider = DefaultAskdataAgentFactory.IDENTIFIER;
 
     @NonNull
-    private String llm = "default";
-
-    @NonNull
     @JsonProperty("semantic_models")
     private List<String> semanticModels = Collections.emptyList();
 

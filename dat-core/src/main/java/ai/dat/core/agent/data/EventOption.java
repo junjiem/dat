@@ -45,6 +45,11 @@ public class EventOption {
 
     private final Optional<ConfigOption<List<Map<String, Object>>>> queryDataOption;
 
+    /**
+     * Human-in-the-loop AI request Option
+     */
+    private final Optional<ConfigOption<String>> hitlAiRequestOption;
+
     private final Set<ConfigOption<?>> dataOptions;
 
     @Builder
@@ -53,6 +58,7 @@ public class EventOption {
                        ConfigOption<String> semanticSqlOption,
                        ConfigOption<String> querySqlOption,
                        ConfigOption<List<Map<String, Object>>> queryDataOption,
+                       ConfigOption<String> hitlAiRequestOption,
                        Set<ConfigOption<?>> dataOptions) {
         this.name = Optional.ofNullable(name).orElse("message");
         this.description = Optional.ofNullable(description).orElse(Description.builder().text("").build());
@@ -60,6 +66,7 @@ public class EventOption {
         this.semanticSqlOption = Optional.ofNullable(semanticSqlOption);
         this.querySqlOption = Optional.ofNullable(querySqlOption);
         this.queryDataOption = Optional.ofNullable(queryDataOption);
+        this.hitlAiRequestOption = Optional.ofNullable(hitlAiRequestOption);
         this.dataOptions = Optional.ofNullable(dataOptions).orElse(Collections.emptySet());
     }
 }

@@ -92,6 +92,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-agent-agentic</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

@@ -3,12 +3,13 @@ package ai.dat.core.utils;
 import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.agent.AskdataAgent;
 import ai.dat.core.configuration.ConfigOption;
-import ai.dat.core.configuration.ConfigOptions;
 import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.ContentType;
 import ai.dat.core.exception.ValidationException;
 import ai.dat.core.factories.*;
+import ai.dat.core.factories.data.ChatModelInstance;
+import ai.dat.core.factories.data.FactoryDescriptor;
 import ai.dat.core.semantic.data.SemanticModel;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.data.segment.TextSegment;
@@ -16,6 +17,7 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import lombok.NonNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,7 +28,6 @@ import java.util.stream.Collectors;
  */
 public final class FactoryUtil {
 
-    public static final String DEFAULT_IDENTIFIER = "default";
     public static final String HIDDEN_CONTENT = "******";
     public static final String PLACEHOLDER_SYMBOL = "#";
 
@@ -45,36 +46,23 @@ public final class FactoryUtil {
                     "jaas.config"
             };
 
-    public static final ConfigOption<String> PROVIDER =
-            ConfigOptions.key("provider")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("Uniquely identifies the provider that is used for accessing in an external system.");
-
-    public static final ConfigOption<String> AGENT =
-            ConfigOptions.key("agent")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("Uniquely identifies the agent that is used for ask data.");
-
     private FactoryUtil() {
     }
 
     /**
      * Create Embedding Model
      *
-     * @param identifier
-     * @param config
+     * @param factoryDescriptor
      * @return
      */
-    public static EmbeddingModel createEmbeddingModel(String identifier, ReadableConfig config) {
-        EmbeddingModelFactory factory = EmbeddingModelFactoryManager.getFactory(identifier);
+    public static EmbeddingModel createEmbeddingModel(@NonNull FactoryDescriptor factoryDescriptor) {
+        EmbeddingModelFactory factory = EmbeddingModelFactoryManager.getFactory(factoryDescriptor.getIdentifier());
         try {
-            return factory.create(config);
+            return factory.create(factoryDescriptor.getConfig());
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to create embedding model, factory identifier: '%s'.",
-                            identifier), e);
+                            factoryDescriptor.getIdentifier()), e);
         }
     }
 
@@ -83,73 +71,70 @@ public final class FactoryUtil {
      *
      * @param storeId
      * @param contentType
-     * @param identifier
-     * @param config
+     * @param factoryDescriptor
      * @return
      */
-    public static EmbeddingStore<TextSegment> createEmbeddingStore(String storeId, ContentType contentType,
-                                                                   String identifier, ReadableConfig config) {
-        EmbeddingStoreFactory factory = EmbeddingStoreFactoryManager.getFactory(identifier);
+    public static EmbeddingStore<TextSegment> createEmbeddingStore(@NonNull String storeId,
+                                                                   @NonNull ContentType contentType,
+                                                                   @NonNull FactoryDescriptor factoryDescriptor) {
+        EmbeddingStoreFactory factory = EmbeddingStoreFactoryManager.getFactory(factoryDescriptor.getIdentifier());
         try {
-            return factory.create(storeId, contentType, config);
+            return factory.create(storeId, contentType, factoryDescriptor.getConfig());
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to create %s embedding store, factory identifier: '%s'.",
-                            contentType.name(), identifier), e);
+                            contentType.name(), factoryDescriptor.getIdentifier()), e);
         }
     }
 
     /**
      * Create Chat Model
      *
-     * @param identifier
-     * @param config
+     * @param factoryDescriptor
      * @return
      */
-    public static ChatModel createChatModel(String identifier, ReadableConfig config) {
-        ChatModelFactory factory = ChatModelFactoryManager.getFactory(identifier);
+    public static ChatModel createChatModel(@NonNull FactoryDescriptor factoryDescriptor) {
+        ChatModelFactory factory = ChatModelFactoryManager.getFactory(factoryDescriptor.getIdentifier());
         try {
-            return factory.create(config);
+            return factory.create(factoryDescriptor.getConfig());
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to create LLM, factory identifier: '%s'.",
-                            identifier), e);
+                            factoryDescriptor.getIdentifier()), e);
         }
     }
 
     /**
      * Create Streaming Chat Model
      *
-     * @param identifier
-     * @param config
+     * @param factoryDescriptor
      * @return
      */
-    public static StreamingChatModel createStreamingChatModel(String identifier, ReadableConfig config) {
-        ChatModelFactory factory = ChatModelFactoryManager.getFactory(identifier);
+    public static StreamingChatModel createStreamingChatModel(@NonNull FactoryDescriptor factoryDescriptor) {
+        ChatModelFactory factory = ChatModelFactoryManager.getFactory(factoryDescriptor.getIdentifier());
         try {
-            return factory.createStream(config);
+            return factory.createStream(factoryDescriptor.getConfig());
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to create streaming LLM, factory identifier: '%s'.",
-                            identifier), e);
+                            factoryDescriptor.getIdentifier()), e);
         }
     }
 
     /**
      * Create Database Adapter
      *
-     * @param identifier
-     * @param config
+     * @param factoryDescriptor
      * @return
      */
-    public static DatabaseAdapter createDatabaseAdapter(String identifier, ReadableConfig config) {
-        DatabaseAdapterFactory factory = DatabaseAdapterFactoryManager.getFactory(identifier);
+    public static DatabaseAdapter createDatabaseAdapter(@NonNull FactoryDescriptor factoryDescriptor) {
+        DatabaseAdapterFactory factory = DatabaseAdapterFactoryManager.getFactory(factoryDescriptor.getIdentifier());
         try {
-            return factory.create(config);
+            return factory.create(factoryDescriptor.getConfig());
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to create database adapter, factory identifier: '%s'.",
-                            identifier), e);
+                            factoryDescriptor.getIdentifier()), e);
         }
     }
 
@@ -157,78 +142,69 @@ public final class FactoryUtil {
      * Create Content Store
      *
      * @param storeId
-     * @param identifier
-     * @param embeddingModelIdentifier
-     * @param embeddingModelConfig
-     * @param embeddingStoreIdentifier
-     * @param embeddingStoreConfig
-     * @param chatModelIdentifier
-     * @param chatModelConfig
-     * @param config
+     * @param factoryDescriptor
+     * @param embeddingModelFactoryDescriptor
+     * @param embeddingStoreFactoryDescriptor
+     * @param chatModelFactoryDescriptors
      * @return
      */
-    public static ContentStore createContentStore(String storeId,
-                                                  String identifier,
-                                                  ReadableConfig config,
-                                                  String embeddingModelIdentifier,
-                                                  ReadableConfig embeddingModelConfig,
-                                                  String embeddingStoreIdentifier,
-                                                  ReadableConfig embeddingStoreConfig,
-                                                  String chatModelIdentifier,
-                                                  ReadableConfig chatModelConfig) {
-        ContentStoreFactory factory = ContentStoreFactoryManager.getFactory(identifier);
-        EmbeddingModel embeddingModel = createEmbeddingModel(embeddingModelIdentifier, embeddingModelConfig);
+    public static ContentStore createContentStore(@NonNull String storeId,
+                                                  @NonNull FactoryDescriptor factoryDescriptor,
+                                                  @NonNull FactoryDescriptor embeddingModelFactoryDescriptor,
+                                                  @NonNull FactoryDescriptor embeddingStoreFactoryDescriptor,
+                                                  @NonNull Map<String, FactoryDescriptor> chatModelFactoryDescriptors) {
+        ContentStoreFactory factory = ContentStoreFactoryManager.getFactory(factoryDescriptor.getIdentifier());
+        EmbeddingModel embeddingModel = createEmbeddingModel(embeddingModelFactoryDescriptor);
         EmbeddingStore<TextSegment> mdlEmbeddingStore = createEmbeddingStore(
-                storeId, ContentType.MDL, embeddingStoreIdentifier, embeddingStoreConfig);
+                storeId, ContentType.MDL, embeddingStoreFactoryDescriptor);
         EmbeddingStore<TextSegment> sqlEmbeddingStore = createEmbeddingStore(
-                storeId, ContentType.SQL, embeddingStoreIdentifier, embeddingStoreConfig);
+                storeId, ContentType.SQL, embeddingStoreFactoryDescriptor);
         EmbeddingStore<TextSegment> synEmbeddingStore = createEmbeddingStore(
-                storeId, ContentType.SYN, embeddingStoreIdentifier, embeddingStoreConfig);
+                storeId, ContentType.SYN, embeddingStoreFactoryDescriptor);
         EmbeddingStore<TextSegment> docEmbeddingStore = createEmbeddingStore(
-                storeId, ContentType.DOC, embeddingStoreIdentifier, embeddingStoreConfig);
-        ChatModel chatModel = createChatModel(chatModelIdentifier, chatModelConfig);
+                storeId, ContentType.DOC, embeddingStoreFactoryDescriptor);
+        List<ChatModelInstance> chatModelInstances = chatModelFactoryDescriptors.entrySet().stream()
+                .map(e -> ChatModelInstance.from(e.getKey(), createChatModel(e.getValue()),
+                        createStreamingChatModel(e.getValue())))
+                .collect(Collectors.toList());
         try {
-            return factory.create(config, embeddingModel,
-                    mdlEmbeddingStore, sqlEmbeddingStore, synEmbeddingStore, docEmbeddingStore, chatModel);
+            return factory.create(factoryDescriptor.getConfig(), embeddingModel,
+                    mdlEmbeddingStore, sqlEmbeddingStore, synEmbeddingStore, docEmbeddingStore, chatModelInstances);
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to create content store, factory identifier: '%s'.",
-                            identifier), e);
+                            factoryDescriptor.getIdentifier()), e);
         }
     }
 
     /**
      * Create Askdata Agent
      *
-     * @param identifier
-     * @param config
+     * @param factoryDescriptor
      * @param semanticModels
-     * @param chatModelIdentifier
-     * @param chatModelConfig
-     * @param chatModelIdentifier
-     * @param chatModelConfig
-     * @param databaseAdapterIdentifier
-     * @param databaseAdapterConfig
+     * @param contentStore
+     * @param chatModelFactoryDescriptors
+     * @param databaseAdapterFactoryDescriptor
      * @return
      */
-    public static AskdataAgent createAskdataAgent(String identifier,
-                                                  ReadableConfig config,
+    public static AskdataAgent createAskdataAgent(@NonNull FactoryDescriptor factoryDescriptor,
                                                   List<SemanticModel> semanticModels,
-                                                  ContentStore contentStore,
-                                                  String chatModelIdentifier,
-                                                  ReadableConfig chatModelConfig,
-                                                  String databaseAdapterIdentifier,
-                                                  ReadableConfig databaseAdapterConfig) {
-        AskdataAgentFactory factory = AskdataAgentFactoryManager.getFactory(identifier);
-        ChatModel chatModel = createChatModel(chatModelIdentifier, chatModelConfig);
-        StreamingChatModel streamingChatModel = createStreamingChatModel(chatModelIdentifier, chatModelConfig);
-        DatabaseAdapter databaseAdapter = createDatabaseAdapter(databaseAdapterIdentifier, databaseAdapterConfig);
+                                                  @NonNull ContentStore contentStore,
+                                                  @NonNull Map<String, FactoryDescriptor> chatModelFactoryDescriptors,
+                                                  @NonNull FactoryDescriptor databaseAdapterFactoryDescriptor) {
+        AskdataAgentFactory factory = AskdataAgentFactoryManager.getFactory(factoryDescriptor.getIdentifier());
+        DatabaseAdapter databaseAdapter = createDatabaseAdapter(databaseAdapterFactoryDescriptor);
+        List<ChatModelInstance> chatModelInstances = chatModelFactoryDescriptors.entrySet().stream()
+                .map(e -> ChatModelInstance.from(e.getKey(), createChatModel(e.getValue()),
+                        createStreamingChatModel(e.getValue())))
+                .collect(Collectors.toList());
         try {
-            return factory.create(config, semanticModels, contentStore, chatModel, streamingChatModel, databaseAdapter);
+            return factory.create(factoryDescriptor.getConfig(), semanticModels, contentStore,
+                    chatModelInstances, databaseAdapter);
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to create askdata agent, factory identifier: '%s'.",
-                            identifier), e);
+                            factoryDescriptor.getIdentifier()), e);
         }
     }
 

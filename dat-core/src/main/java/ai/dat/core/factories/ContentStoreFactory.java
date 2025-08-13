@@ -2,10 +2,13 @@ package ai.dat.core.factories;
 
 import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.contentstore.ContentStore;
+import ai.dat.core.factories.data.ChatModelInstance;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+
+import java.util.List;
 
 /**
  * @Author JunjieM
@@ -18,5 +21,5 @@ public interface ContentStoreFactory extends Factory {
                         EmbeddingStore<TextSegment> sqlEmbeddingStore,
                         EmbeddingStore<TextSegment> synEmbeddingStore,
                         EmbeddingStore<TextSegment> docEmbeddingStore,
-                        ChatModel chatModel);
+                        List<ChatModelInstance> chatModelInstances);
 }

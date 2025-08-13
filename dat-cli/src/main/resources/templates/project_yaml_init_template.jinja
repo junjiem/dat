@@ -2,12 +2,11 @@ version: 1
 
 name: {{ project.name }}
 description: {{ project.description }}
-{% if projectConfigs -%}
+{% if project_configuration -%}
     {{ "configuration:" }}
-    {% for config in projectConfigs -%}
-        {{ "  " }}{% if not config.required -%}
-            {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
-    {% endfor %}
+    {% for line in project_configuration.split('\n') -%}
+        {{ "  " ~ line }}
+    {% endfor -%}
 {% endif %}
 
 db:
@@ -33,14 +32,12 @@ agents:
 {{ "  - name: default" }}
 {{ "    description: default ask data agent" }}
 {{ "    provider: default" }}
-{{ "    llm: default # You need to fill in correct llm" }}
 {{ "    #semantic_models: # Optional" }}
 {{ "      #- covid_cases  # You need to fill in correct semantic model name" }}
 {{ "      #- country_covid_cases  # You need to fill in correct semantic model name" }}
-{% if agentConfigs -%}
+{% if agent_configuration -%}
     {{ "    configuration:" }}
-    {% for config in agentConfigs -%}
-        {{ "      " }}{% if not config.required -%}
-            {{ "#" }}{% endif -%}{{ config.key ~ ": " ~ config.value ~ "  # " ~ config.description }}
-    {% endfor %}
+    {% for line in agent_configuration.split('\n') -%}
+        {{ "      " ~ line }}
+    {% endfor -%}
 {% endif %}

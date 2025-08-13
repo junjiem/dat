@@ -188,11 +188,29 @@ public class PreBuildValidator {
         } catch (SqlParseException e) {
             return new ValidationMessage(semanticModel.getName(), e);
         }
-        List<String> messages = dimensions.stream().map(d -> {
-                    List<String> enumValues = d.getEnumValues().stream().map(Dimension.EnumValue::getValue).toList();
-                    String sql = "SELECT DISTINCT " + d.getName()
-                            + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
+        List<String> messages = dimensions.stream()
+                .map(d -> {
+                    List<String> enumValues = d.getEnumValues().stream()
+                            .map(enumValue -> {
+                                Object value = enumValue.getValue();
+                                if (value instanceof Number val) {
+                                    return val.toString();
+                                } else {
+                                    return value.toString();
+                                }
+                            }).toList();
                     try {
+                        String sql = "SELECT COUNT(DISTINCT " + d.getName() + ") AS distinct_count"
+                                + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
+                        int distinctCount = (int) databaseAdapter.executeQuery(sql).get(0)
+                                .entrySet().iterator().next().getValue();
+                        if (distinctCount > 1000) {
+                            return "Dimension '" + d.getName()
+                                    + "' -> The number of COUNT DISTINCT in this dimension field " +
+                                    "in the database exceeds 1000, and not recommended to set enum values";
+                        }
+                        sql = "SELECT DISTINCT " + d.getName()
+                                + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
                         Set<String> values = databaseAdapter.executeQuery(sql).stream()
                                 .map(map -> map.get(map.keySet().stream().findFirst().orElse(d.getName())))
                                 .filter(Objects::nonNull).map(Object::toString).collect(Collectors.toSet());

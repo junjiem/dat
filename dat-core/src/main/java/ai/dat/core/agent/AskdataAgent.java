@@ -4,6 +4,7 @@ import ai.dat.core.agent.data.EventOption;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
+import dev.langchain4j.exception.UnsupportedFeatureException;
 
 import java.util.List;
 import java.util.Set;
@@ -23,4 +24,13 @@ public interface AskdataAgent {
     StreamAction ask(String question);
 
     StreamAction ask(String question, List<QuestionSqlPair> histories);
+
+    /**
+     * Human-in-the-loop user (human) response
+     *
+     * @param response
+     */
+    default void userResponse(String response) {
+        throw new UnsupportedFeatureException("Not supported yet.");
+    }
 }

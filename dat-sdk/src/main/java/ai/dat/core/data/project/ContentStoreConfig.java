@@ -18,9 +18,6 @@ public class ContentStoreConfig {
     @NonNull
     private String provider = DefaultContentStoreFactory.IDENTIFIER;
 
-    @NonNull
-    private String llm = "default";
-
     @JsonIgnore
     @NonNull
     private ReadableConfig configuration = new Configuration();

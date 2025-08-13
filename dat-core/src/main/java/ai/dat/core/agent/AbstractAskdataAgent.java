@@ -77,8 +77,14 @@ public abstract class AbstractAskdataAgent implements AskdataAgent {
     protected List<Map<String, Object>> executeQuery(String semanticSql,
                                                      List<SemanticModel> semanticModels,
                                                      StreamAction action) throws SQLException {
-        String sql = databaseAdapter.generateSql(semanticSql, semanticModels);
-        action.add(StreamEvent.from(SEMANTIC_TO_SQL_EVENT, SQL, sql));
+        String sql;
+        try {
+            sql = databaseAdapter.generateSql(semanticSql, semanticModels);
+            action.add(StreamEvent.from(SEMANTIC_TO_SQL_EVENT, SQL, sql));
+        } catch (Exception e) {
+            action.add(StreamEvent.from(SEMANTIC_TO_SQL_EVENT, ERROR, e.getMessage()));
+            throw new RuntimeException(e);
+        }
         try {
             List<Map<String, Object>> results = databaseAdapter.executeQuery(sql);
             action.add(StreamEvent.from(SQL_EXECUTE_EVENT, DATA, results));

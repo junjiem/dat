@@ -58,7 +58,7 @@ semantic_models:
 | **description** | 包含重要详细信息的描述                          | 可选 | String |
 | **model** | 使用ref函数指定数据模型                        | 必填 | String |
 | **alias** | 语义模型的别名                              | 可选 | String |
-| **tags** | 用于分类和检索的标签数组                         | 可选 | Array  |
+| **tags** | 语义模型的标签，用于分类和检索的标签数组          | 可选 | Array  |
 | **defaults** | 模型的默认配置，目前仅支持agg_time_dimension      | 必填 | Object |
 | **entities** | 作为连接键的列，指示其类型为primary、foreign或unique | 必填 | List   |
 | **dimensions** | 对度量进行分组或切片的不同方式，可以是时间或分类             | 必填 | List   |
@@ -78,13 +78,14 @@ semantic_models:
 
 #### 实体配置参数
 
-| 参数 | 描述 | 必填 | 类型 |
-|------|------|------|------|
-| **name** | 实体名称，语义模型内必须唯一 | 必填 | String |
-| **type** | 实体类型：primary、foreign或unique | 必填 | String |
-| **description** | 实体的描述 | 可选 | String |
-| **alias** | 实体的别名 | 可选 | String |
-| **expr** | 引用现有列或使用SQL表达式创建新列 | 可选 | String |
+| 参数              | 描述                          | 必填 | 类型 |
+|-----------------|-----------------------------|------|------|
+| **name**        | 实体名称，语义模型内必须唯一              | 必填 | String |
+| **type**        | 实体类型：primary、foreign或unique | 必填 | String |
+| **description** | 实体的描述                       | 可选 | String |
+| **alias**       | 实体的别名                       | 可选 | String |
+| **expr**        | 引用现有列或使用SQL表达式创建新列          | 可选 | String |
+| **data_type**   | 数据类型                        | 可选 | String |
 
 #### 实体配置示例
 
@@ -141,6 +142,7 @@ entities:
 | **alias** | 维度的别名 | 可选 | String |
 | **expr** | 定义底层列或SQL查询 | 可选 | String |
 | **enum_values** | 分类维度的枚举值定义 | 可选 | Array  |
+| **data_type** | 数据类型 | 可选 | String |
 
 #### 分类维度示例
 
@@ -222,6 +224,7 @@ dimensions:
 | **description** | 描述计算的度量 | 可选 | String |
 | **alias** | 度量的别名 | 可选 | String |
 | **expr** | 引用现有列或使用SQL表达式创建新列 | 可选 | String |
+| **data_type** | 数据类型 | 可选 | String |
 | **agg** | 聚合类型 | 可选 | String |
 | **agg_time_dimension** | 时间字段，默认为语义模型的默认聚合时间维度 | 可选 | String |
 | **non_additive_dimension** | 为无法按某些维度聚合的度量指定非加性维度 | 可选 | Object |

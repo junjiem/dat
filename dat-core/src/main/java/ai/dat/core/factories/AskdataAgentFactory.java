@@ -3,11 +3,9 @@ package ai.dat.core.factories;
 import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.agent.AskdataAgent;
 import ai.dat.core.configuration.ReadableConfig;
-import ai.dat.core.configuration.description.Description;
 import ai.dat.core.contentstore.ContentStore;
+import ai.dat.core.factories.data.ChatModelInstance;
 import ai.dat.core.semantic.data.SemanticModel;
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.chat.StreamingChatModel;
 
 import java.util.List;
 
@@ -23,7 +21,6 @@ public interface AskdataAgentFactory extends Factory {
     AskdataAgent create(ReadableConfig config,
                         List<SemanticModel> semanticModels,
                         ContentStore contentStore,
-                        ChatModel chatModel,
-                        StreamingChatModel streamingChatModel,
+                        List<ChatModelInstance> chatModelInstances,
                         DatabaseAdapter databaseAdapter);
 }

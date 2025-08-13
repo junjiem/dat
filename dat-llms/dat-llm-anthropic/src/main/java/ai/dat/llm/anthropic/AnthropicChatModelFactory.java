@@ -41,7 +41,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
             ConfigOptions.key("model-name")
                     .stringType()
                     .defaultValue(AnthropicChatModelName.CLAUDE_SONNET_4_20250514.toString())
-                    .withDescription("Anthropic LLM model name. For example: " +
+                    .withDescription("Anthropic LLM model name. \nFor example: " +
                             Arrays.stream(AnthropicChatModelName.values())
                                     .map(AnthropicChatModelName::toString)
                                     .collect(Collectors.joining(", ")) +

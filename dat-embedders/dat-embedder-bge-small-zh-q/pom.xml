@@ -11,10 +11,6 @@
     <artifactId>dat-embedder-bge-small-zh-q</artifactId>
     <name>DAT : Embedders : In-process bge-small-zh (quantized)</name>
 
-    <properties>
-        <langchain4j-embeddings.version>1.2.0-beta8</langchain4j-embeddings.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>ai.dat</groupId>

@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.Callable;
 
 /**
@@ -35,6 +36,7 @@ import java.util.concurrent.Callable;
 public class RunCommand implements Callable<Integer> {
 
     private final static ObjectMapper JSON_MAPPER = new ObjectMapper();
+    private static final Scanner SCANNER = new Scanner(System.in);
 
     private final static String NOT_GENERATE = "<not generate>";
 
@@ -90,7 +92,7 @@ public class RunCommand implements Callable<Integer> {
                 }
                 System.out.println("🤖 Dealing with ask...");
                 StreamAction action = runner.ask(question, histories);
-                print(question, action);
+                print(runner, question, action);
             }
             System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
             processor.close();
@@ -103,7 +105,7 @@ public class RunCommand implements Callable<Integer> {
         }
     }
 
-    public void print(String question, StreamAction action) {
+    public void print(ProjectRunner runner, String question, StreamAction action) {
         String sql = NOT_GENERATE;
         String lastEvent = "";
         boolean lastIncremental = false;
@@ -126,7 +128,7 @@ public class RunCommand implements Callable<Integer> {
             if (event.getQueryData().isPresent()) {
                 isAccurateSql = true;
             }
-            print(event);
+            print(runner, event);
         }
         if (lastIncremental) System.out.println();
         if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
@@ -135,7 +137,7 @@ public class RunCommand implements Callable<Integer> {
         histories.add(QuestionSqlPair.from(question, sql));
     }
 
-    private void print(StreamEvent event) {
+    private void print(ProjectRunner runner, StreamEvent event) {
         event.getIncrementalContent().ifPresent(content ->
                 System.out.print(AnsiUtil.string("@|fg(blue) " + content + "|@")));
         event.getSemanticSql().ifPresent(content ->
@@ -145,6 +147,16 @@ public class RunCommand implements Callable<Integer> {
         event.getQueryData().ifPresent(data -> {
             System.out.println(AnsiUtil.string("@|fg(cyan) 📊 Query Results:|@"));
             TablePrinter.printTable(data);
+        });
+        event.getHitlAiRequest().ifPresent(request -> {
+            System.out.println(AnsiUtil.string("@|fg(magenta) 🤖 AI: " + request + "|@"));
+            while (true) {
+                System.out.print(AnsiUtil.string("@|fg(yellow) \uD83D\uDC68 > |@ "));
+                String response = SCANNER.nextLine();
+                if (response.isEmpty()) continue;
+                runner.userResponse(response);
+                return;
+            }
         });
         event.getMessages().forEach((k, v) -> print(event, k, v));
     }

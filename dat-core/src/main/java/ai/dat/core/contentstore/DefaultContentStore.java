@@ -2,6 +2,7 @@ package ai.dat.core.contentstore;
 
 import ai.dat.core.contentstore.data.NounSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
+import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.SemanticModelUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,7 +24,6 @@ import lombok.NonNull;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -37,10 +37,10 @@ public class DefaultContentStore implements ContentStore {
 
     public static final String METADATA_CONTENT_TYPE = "content_type";
 
-    private static final Metadata MDL_METADATA = Metadata.from(METADATA_CONTENT_TYPE, ContentType.MDL.getValue());
-    private static final Metadata SQL_METADATA = Metadata.from(METADATA_CONTENT_TYPE, ContentType.SQL.getValue());
-    private static final Metadata SYN_METADATA = Metadata.from(METADATA_CONTENT_TYPE, ContentType.SYN.getValue());
-    private static final Metadata DOC_METADATA = Metadata.from(METADATA_CONTENT_TYPE, ContentType.DOC.getValue());
+    private static final Metadata MDL_METADATA = Metadata.from(METADATA_CONTENT_TYPE, ContentType.MDL.toString());
+    private static final Metadata SQL_METADATA = Metadata.from(METADATA_CONTENT_TYPE, ContentType.SQL.toString());
+    private static final Metadata SYN_METADATA = Metadata.from(METADATA_CONTENT_TYPE, ContentType.SYN.toString());
+    private static final Metadata DOC_METADATA = Metadata.from(METADATA_CONTENT_TYPE, ContentType.DOC.toString());
 
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
@@ -109,7 +109,7 @@ public class DefaultContentStore implements ContentStore {
                 .stream()
                 .map(Content::textSegment)
                 .collect(Collectors.toList());
-        return decodingMdls(textSegments);
+        return ContentStoreUtil.toSemanticModels(textSegments);
     }
 
     @Override
@@ -124,27 +124,13 @@ public class DefaultContentStore implements ContentStore {
                 .stream()
                 .map(EmbeddingMatch::embedded)
                 .collect(Collectors.toList());
-        return decodingMdls(textSegments);
+        return ContentStoreUtil.toSemanticModels(textSegments);
     }
 
-    private List<SemanticModel> decodingMdls(List<TextSegment> textSegments) {
-        return textSegments.stream()
-                .map(textSegment -> {
-                    try {
-                        return JSON_MAPPER.readValue(textSegment.text(), SemanticModel.class);
-                    } catch (JsonProcessingException e) {
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toMap(
-                                SemanticModel::getName,
-                                model -> model,
-                                (o1, o2) -> o2
-                        ),
-                        map -> map.values().stream().toList()
-                ));
+    @Override
+    public boolean isMdl(TextSegment textSegment) {
+        return ContentType.MDL.toString()
+                .equals(textSegment.metadata().getString(METADATA_CONTENT_TYPE));
     }
 
     @Override
@@ -186,18 +172,18 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<QuestionSqlPair> retrieveSql(String question) {
-        return getSqlContentRetriever()
+        List<TextSegment> textSegments = getSqlContentRetriever()
                 .retrieve(Query.from(question))
                 .stream()
-                .map(c -> {
-                    try {
-                        return JSON_MAPPER.readValue(c.textSegment().text(), QuestionSqlPair.class);
-                    } catch (JsonProcessingException e) {
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
+                .map(Content::textSegment)
                 .collect(Collectors.toList());
+        return ContentStoreUtil.toQuestionSqlPairs(textSegments);
+    }
+
+    @Override
+    public boolean isSql(TextSegment textSegment) {
+        return ContentType.SQL.toString()
+                .equals(textSegment.metadata().getString(METADATA_CONTENT_TYPE));
     }
 
     @Override
@@ -239,18 +225,18 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<NounSynonymPair> retrieveSyn(String question) {
-        return getSynContentRetriever()
+        List<TextSegment> textSegments = getSynContentRetriever()
                 .retrieve(Query.from(question))
                 .stream()
-                .map(c -> {
-                    try {
-                        return JSON_MAPPER.readValue(c.textSegment().text(), NounSynonymPair.class);
-                    } catch (JsonProcessingException e) {
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
+                .map(Content::textSegment)
                 .collect(Collectors.toList());
+        return ContentStoreUtil.toNounSynonymPairs(textSegments);
+    }
+
+    @Override
+    public boolean isSyn(TextSegment textSegment) {
+        return ContentType.SYN.toString()
+                .equals(textSegment.metadata().getString(METADATA_CONTENT_TYPE));
     }
 
     @Override
@@ -284,11 +270,18 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<String> retrieveDoc(String question) {
-        return getDocContentRetriever()
+        List<TextSegment> textSegments = getDocContentRetriever()
                 .retrieve(Query.from(question))
                 .stream()
-                .map(c -> c.textSegment().text())
+                .map(Content::textSegment)
                 .collect(Collectors.toList());
+        return ContentStoreUtil.toDocs(textSegments);
+    }
+
+    @Override
+    public boolean isDoc(TextSegment textSegment) {
+        return ContentType.DOC.toString()
+                .equals(textSegment.metadata().getString(METADATA_CONTENT_TYPE));
     }
 
     @Override

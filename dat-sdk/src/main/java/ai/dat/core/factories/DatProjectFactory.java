@@ -12,6 +12,9 @@ import ai.dat.core.utils.JinjaTemplateUtil;
 import ai.dat.embedder.inprocess.BgeSmallZhV15QuantizedEmbeddingModelFactory;
 import ai.dat.llm.openai.OpneAiChatModelFactory;
 import ai.dat.storer.weaviate.duckdb.DuckDBEmbeddingStoreFactory;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.networknt.schema.ValidationMessage;
 import jinjava.org.jsoup.helper.ValidationException;
@@ -20,6 +23,7 @@ import lombok.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,41 +37,43 @@ public class DatProjectFactory {
 
     private static final YAMLMapper YAML_MAPPER = new YAMLMapper();
 
-    private static final String TEMPLATE_PATH = "templates/project_yaml_template.jinja";
     private static final String DEFAULT_NAME = "default";
     private static final String LLM_NAME_PREFIX = "llm_";
     private static final String AGENT_NAME_PREFIX = "agent_";
 
-    private static final String TEMPLATE_CONTENT;
+    private static final String PROJECT_YAML_TEMPLATE;
 
     static {
-        try {
-            TEMPLATE_CONTENT = loadProjectTemplate();
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError("Failed to load project YAML template file: " + e.getMessage());
-        }
+        YAML_MAPPER
+                .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER) // 禁用 ---
+                .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES) // 最小化引号
+                .enable(YAMLGenerator.Feature.LITERAL_BLOCK_STYLE) // 多行字符串用 |
+                .enable(YAMLGenerator.Feature.INDENT_ARRAYS) // 美化数组缩进
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL) // 忽略 null 字段
+        ;
+        PROJECT_YAML_TEMPLATE = loadText("templates/project_yaml_template.jinja");
     }
 
-    private static String loadProjectTemplate() throws IOException {
-        try (InputStream stream = DatProjectUtil.class.getClassLoader().getResourceAsStream(TEMPLATE_PATH)) {
-            if (stream == null) {
-                throw new IOException("Project YAML template file not found in classpath: " + TEMPLATE_PATH);
-            }
-            return new String(stream.readAllBytes());
+    private static String loadText(String fromResource) {
+        try (InputStream inputStream = DatProjectFactory.class.getClassLoader()
+                .getResourceAsStream(fromResource)) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load text from resources: " + fromResource, e);
         }
     }
 
     public static final ConfigOption<Boolean> BUILDING_VERIFY_MDL_DIMENSIONS_ENUM_VALUES =
             ConfigOptions.key("building.verify-mdl-dimensions-enum-values")
                     .booleanType()
-                    .defaultValue(false)
+                    .defaultValue(true)
                     .withDescription("Whether to verify the enumeration values of dimensions " +
                             "in the semantic model during building");
 
     public static final ConfigOption<Boolean> BUILDING_VERIFY_MDL_DATA_TYPES =
             ConfigOptions.key("building.verify-mdl-data-types")
                     .booleanType()
-                    .defaultValue(false)
+                    .defaultValue(true)
                     .withDescription("Whether to verify the data types of " +
                             "entities, dimensions, measures in the semantic model during building");
 
@@ -78,11 +84,11 @@ public class DatProjectFactory {
                     .withDescription("Whether to automatically complete the data types of " +
                             "entities, dimensions, measures in the semantic model during building");
 
-    public Set<ConfigOption<?>> projectRequiredOptions() {
+    public static Set<ConfigOption<?>> projectRequiredOptions() {
         return Collections.emptySet();
     }
 
-    public Set<ConfigOption<?>> projectOptionalOptions() {
+    public static Set<ConfigOption<?>> projectOptionalOptions() {
         return new LinkedHashSet<>(List.of(
                 BUILDING_VERIFY_MDL_DIMENSIONS_ENUM_VALUES,
                 BUILDING_VERIFY_MDL_DATA_TYPES,
@@ -90,7 +96,7 @@ public class DatProjectFactory {
         ));
     }
 
-    public Set<ConfigOption<?>> fingerprintOptions() {
+    public static Set<ConfigOption<?>> fingerprintOptions() {
         return Set.of(BUILDING_AUTO_COMPLETE_MDL_DATA_TYPES);
     }
 
@@ -116,7 +122,7 @@ public class DatProjectFactory {
                 .map(identifier -> {
                     DatabaseAdapterFactory factory = DatabaseAdapterFactoryManager.getFactory(identifier);
                     boolean display = PostgreSqlDatabaseAdapterFactory.IDENTIFIER.equals(identifier);
-                    return new SingleItemTemplate(identifier, display, configTemplates(factory));
+                    return new SingleItemTemplate(identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
                 .collect(Collectors.toList());
@@ -127,7 +133,7 @@ public class DatProjectFactory {
                     ChatModelFactory factory = ChatModelFactoryManager.getFactory(identifier);
                     boolean display = OpneAiChatModelFactory.IDENTIFIER.equals(identifier);
                     String name = display ? DEFAULT_NAME : LLM_NAME_PREFIX + (llmNameAtomic.getAndIncrement());
-                    return new MultipleItemTemplate(name, identifier, display, configTemplates(factory));
+                    return new MultipleItemTemplate(name, identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
                 .collect(Collectors.toList());
@@ -136,7 +142,7 @@ public class DatProjectFactory {
                 .map(identifier -> {
                     EmbeddingModelFactory factory = EmbeddingModelFactoryManager.getFactory(identifier);
                     boolean display = BgeSmallZhV15QuantizedEmbeddingModelFactory.IDENTIFIER.equals(identifier);
-                    return new SingleItemTemplate(identifier, display, configTemplates(factory));
+                    return new SingleItemTemplate(identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
                 .collect(Collectors.toList());
@@ -146,7 +152,7 @@ public class DatProjectFactory {
                 .map(identifier -> {
                     EmbeddingStoreFactory factory = EmbeddingStoreFactoryManager.getFactory(identifier);
                     boolean display = DuckDBEmbeddingStoreFactory.IDENTIFIER.equals(identifier);
-                    return new SingleItemTemplate(identifier, display, configTemplates(factory));
+                    return new SingleItemTemplate(identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
                 .collect(Collectors.toList());
@@ -155,7 +161,7 @@ public class DatProjectFactory {
                 .map(identifier -> {
                     ContentStoreFactory factory = ContentStoreFactoryManager.getFactory(identifier);
                     boolean display = DefaultContentStoreFactory.IDENTIFIER.equals(identifier);
-                    return new SingleItemTemplate(identifier, display, configTemplates(factory));
+                    return new SingleItemTemplate(identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
                 .collect(Collectors.toList());
@@ -167,13 +173,13 @@ public class DatProjectFactory {
                     boolean display = DefaultAskdataAgentFactory.IDENTIFIER.equals(identifier);
                     String name = display ? DEFAULT_NAME : AGENT_NAME_PREFIX + (agentNameAtomic.getAndIncrement());
                     return new MultipleItemContainCommentTemplate(factory.factoryDescription(), name,
-                            identifier, display, configTemplates(factory));
+                            identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
                 .collect(Collectors.toList());
 
         Map<String, Object> variables = new HashMap<>();
-        variables.put("projectConfigs", projectConfigTemplates());
+        variables.put("project_configuration", getProjectConfiguration());
         variables.put("dbs", dbs);
         variables.put("llms", llms);
         variables.put("embeddings", embeddings);
@@ -181,16 +187,65 @@ public class DatProjectFactory {
         variables.put("content_stores", contentStores);
         variables.put("agents", agents);
 
-        return JinjaTemplateUtil.render(TEMPLATE_CONTENT, variables);
+        return JinjaTemplateUtil.render(PROJECT_YAML_TEMPLATE, variables);
     }
 
-    public List<ConfigTemplate> projectConfigTemplates() {
-        DatProjectFactory factory = new DatProjectFactory();
-        return configTemplates(factory.projectRequiredOptions(), factory.projectOptionalOptions());
+    public String getProjectConfiguration() {
+        return configurationTemplate(projectConfigTemplates());
     }
 
-    public List<ConfigTemplate> defaultAgentConfigTemplates() {
+    private List<ConfigTemplate> projectConfigTemplates() {
+        return configTemplates(projectRequiredOptions(), projectOptionalOptions());
+    }
+
+    public String getDefaultAgentConfiguration() {
+        return configurationTemplate(defaultAgentConfigTemplates());
+    }
+
+    private List<ConfigTemplate> defaultAgentConfigTemplates() {
         return configTemplates(new DefaultAskdataAgentFactory());
+    }
+
+    private String getConfiguration(Factory factory) {
+        return configurationTemplate(configTemplates(factory));
+    }
+
+    private String configurationTemplate(List<ConfigTemplate> configs) {
+        StringBuilder sb = new StringBuilder();
+        for (ConfigTemplate config : configs) {
+            String description = config.getDescription();
+            boolean multiLineDescription = description.contains("\n");
+            if (multiLineDescription) {
+                sb.append("## ------------------------------\n");
+                for (String str : description.split("\n")) {
+                    sb.append("## ").append(str).append("\n");
+                }
+                sb.append("## ------------------------------\n");
+            }
+            if (!config.isRequired()) {
+                sb.append("#");
+            }
+            sb.append(config.getKey()).append(": ");
+            String value = config.getValue();
+            if (value != null) {
+                if (value.contains("\n")) {
+                    sb.append("\n");
+                    for (String str : value.split("\n")) {
+                        if (!config.isRequired()) {
+                            sb.append("#");
+                        }
+                        sb.append("  ").append(str).append("\n");
+                    }
+                } else {
+                    sb.append(value);
+                }
+            }
+            if (!multiLineDescription) {
+                sb.append("  # ").append(description);
+            }
+            sb.append("\n");
+        }
+        return sb.toString().trim();
     }
 
     private List<ConfigTemplate> configTemplates(Factory factory) {
@@ -218,37 +273,56 @@ public class DatProjectFactory {
                 toDescription(required, configOption));
     }
 
-    private static Object toValue(Object value) {
+    private String toValue(Object value) {
+        if (value == null) {
+            return null;
+        }
         if (value instanceof Duration val) {
             return TimeUtils.formatWithHighestUnit(val);
         } else {
-            return value;
+            try {
+                return YAML_MAPPER.writeValueAsString(value).trim();
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    private static String toDescription(boolean required, ConfigOption<?> configOption) {
-        return "("
+    private String toDescription(boolean required, ConfigOption<?> configOption) {
+        String description = new HtmlFormatter().format(configOption.description());
+        String defaultValueDescription = "";
+        if (configOption.hasDefaultValue()) {
+            String defaultValue = toValue(configOption.defaultValue());
+            if (defaultValue.contains("\n")) {
+                defaultValue = "\n```\n" + defaultValue + "\n```";
+            }
+            defaultValueDescription = ", Default: " + defaultValue;
+        }
+        String prefix = "("
                 + configOption.getClazz().getSimpleName() + ", "
                 + (required ? "[Required]" : "[Optional]")
-                + (configOption.hasDefaultValue() ? ", Default: " + toValue(configOption.defaultValue()) : "")
-                + ") "
-                + new HtmlFormatter().format(configOption.description());
+                + defaultValueDescription
+                + ")";
+        if (description.contains("\n")) {
+            return prefix + "\n\n" + description;
+        }
+        return prefix + " " + description;
     }
 
     private record SingleItemTemplate(@Getter String provider, @Getter boolean display,
-                                      @Getter List<ConfigTemplate> configs) {
+                                      @Getter String configuration) {
     }
 
     private record MultipleItemTemplate(@Getter String name, @Getter String provider, @Getter boolean display,
-                                        @Getter List<ConfigTemplate> configs) {
+                                        @Getter String configuration) {
     }
 
     private record MultipleItemContainCommentTemplate(@Getter String comment, @Getter String name,
                                                       @Getter String provider, @Getter boolean display,
-                                                      @Getter List<ConfigTemplate> configs) {
+                                                      @Getter String configuration) {
     }
 
-    private record ConfigTemplate(@Getter boolean required, @Getter String key, @Getter Object value,
+    private record ConfigTemplate(@Getter boolean required, @Getter String key, @Getter String value,
                                   @Getter String description) {
     }
 

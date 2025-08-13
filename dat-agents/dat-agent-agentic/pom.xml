@@ -11,9 +11,6 @@
     <artifactId>dat-agent-agentic</artifactId>
     <name>DAT : Agents : Agentic</name>
 
-    <properties>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>ai.dat</groupId>
@@ -25,6 +22,11 @@
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-mcp</artifactId>
+            <version>${langchain4j-beta.version}</version>
         </dependency>
     </dependencies>
 
