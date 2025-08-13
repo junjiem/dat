@@ -20,11 +20,6 @@
         </encoder>
     </appender>
 
-    <logger name="ai.dat.cli" level="WARN" additivity="false">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
-    </logger>
-
     <root level="WARN">
         <appender-ref ref="CONSOLE"/>
     </root>

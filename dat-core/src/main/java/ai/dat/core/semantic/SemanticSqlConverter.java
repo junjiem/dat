@@ -41,7 +41,7 @@ public class SemanticSqlConverter {
      * @return
      * @throws SqlParseException
      */
-    public String convertFormat(String semanticSql) throws SqlParseException {
+    public String convertFormat(@NonNull String semanticSql) throws SqlParseException {
         String dialectSql = convert(semanticSql);
         SqlNode sqlNode = dialectSqlParser.parseQuery(dialectSql);
         SqlWriterConfig config = SqlPrettyWriter.config()
@@ -77,7 +77,10 @@ public class SemanticSqlConverter {
      * @return 真实SQL
      * @throws SqlParseException SQL解析异常
      */
-    public String convert(String semanticSql) throws SqlParseException {
+    public String convert(@NonNull String semanticSql) throws SqlParseException {
+        semanticSql = semanticSql.trim();
+        semanticSql = semanticSql.endsWith(";") ?
+                semanticSql.substring(0, semanticSql.length() - 1) : semanticSql;
         SqlNode sqlNode = ansiSqlParser.parseQuery(semanticSql);
         if (sqlNode == null) {
             throw new IllegalArgumentException("SQL node cannot be null");

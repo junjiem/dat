@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -65,8 +66,11 @@ public class DatCli implements Callable<Integer> {
     }
 
     public static void main(String[] args) {
-//        System.setProperty("file.encoding", "UTF-8");
-//        System.setProperty("sun.jnu.encoding", "UTF-8");
+        // 检测系统编码
+        String osName = System.getProperty("os.name").toLowerCase();
+        String systemEncoding = Charset.defaultCharset().displayName();
+        log.info("OS: {}, System encoding: {}", osName, systemEncoding);
+
         printBanner();
         AnsiConsole.systemInstall(); // enable colors on Windows
         int exitCode = new CommandLine(new DatCli()).execute(args);

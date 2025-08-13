@@ -2,7 +2,6 @@ package ai.dat.cli.commands;
 
 import ai.dat.boot.utils.ProjectUtil;
 import ai.dat.cli.processor.InputProcessor;
-import ai.dat.cli.processor.InputProcessorUtil;
 import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigurationUtils;
@@ -48,8 +47,7 @@ public class InitCommand implements Callable<Integer> {
             ProjectUtil.PROJECT_CONFIG_FILE_NAME_YAML + ".template";
 
     private static final Pattern PROJECT_NAME_PATTERN = Pattern.compile("^[a-zA-Z][A-Za-z0-9_\\-]*$");
-    private static final Scanner SCANNER = new Scanner(System.in);
-    private static final InputProcessor PROCESSOR = InputProcessorUtil.createInputProcessor();
+    private static final InputProcessor PROCESSOR = new InputProcessor();
 
     private static final String TEMPLATE_DIR_NAME = "project_init_template";
     private static final String PROJECT_README_TEMPLATE_NAME = "templates/project_readme_init_template.jinja";
@@ -133,9 +131,8 @@ public class InitCommand implements Callable<Integer> {
     private void projectBasicConfiguration() {
         // Project name
         while (true) {
-            System.out.print(AnsiUtil.string("@|fg(cyan) Project name|@ " +
+            String name = PROCESSOR.readLine(AnsiUtil.string("@|fg(cyan) Project name|@ " +
                     "[press Enter to next step]: "));
-            String name = SCANNER.nextLine().trim();
             if (name.isEmpty()) continue;
             if (!isProjectName(name)) {
                 System.out.println(AnsiUtil.string("@|fg(red) ⚠️ Project name needs to conform " +
@@ -147,10 +144,9 @@ public class InitCommand implements Callable<Integer> {
         }
         // Whether is boot mode
         while (true) {
-            System.out.print(AnsiUtil.string(
+            String choice = PROCESSOR.readLine(AnsiUtil.string(
                     "@|fg(yellow) Use boot mode to initialize project configuration? (y/n)|@ " +
                             "[User input/press Enter to use the y]: "));
-            String choice = SCANNER.nextLine().trim();
             if (!choice.isEmpty()
                     && !choice.equalsIgnoreCase("n")
                     && !choice.equalsIgnoreCase("y")) continue;
@@ -196,9 +192,8 @@ public class InitCommand implements Callable<Integer> {
                 ? " @|fg(green) (1-" + providers.size() + ")|@ [User input]"
                 : " [press Enter to use the 1]";
         while (true) {
-            System.out.print(AnsiUtil.string(
+            String choice = PROCESSOR.readLine(AnsiUtil.string(
                     "@|fg(yellow) Please select a provider|@" + hint + ": "));
-            String choice = SCANNER.nextLine().trim();
             if (providers.size() == 1 && choice.isEmpty()) {
                 return providerMap.get("1");
             }
@@ -242,8 +237,8 @@ public class InitCommand implements Callable<Integer> {
                     hint = " @|fg(green) (Default: " + defaultValue + ")|@" +
                             " [User input/press Enter to use the default value]";
                 }
-                System.out.print(AnsiUtil.string("@|fg(cyan) " + option.key() + "|@" + hint + ": "));
-                String input = SCANNER.nextLine().trim();
+                String input = PROCESSOR.readLine(AnsiUtil.string(
+                        "@|fg(cyan) " + option.key() + "|@" + hint + ": "));
                 Object value = input;
                 if (input.isEmpty()) {
                     if (!hasDefaultValue) continue;

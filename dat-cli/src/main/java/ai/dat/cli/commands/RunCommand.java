@@ -1,13 +1,12 @@
 package ai.dat.cli.commands;
 
+import ai.dat.boot.ProjectRunner;
 import ai.dat.cli.processor.InputProcessor;
-import ai.dat.cli.processor.InputProcessorUtil;
 import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.cli.utils.TablePrinter;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
-import ai.dat.boot.ProjectRunner;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -19,7 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.Callable;
 
 /**
@@ -36,7 +34,7 @@ import java.util.concurrent.Callable;
 public class RunCommand implements Callable<Integer> {
 
     private final static ObjectMapper JSON_MAPPER = new ObjectMapper();
-    private static final Scanner SCANNER = new Scanner(System.in);
+    private static final InputProcessor PROCESSOR = new InputProcessor();
 
     private final static String NOT_GENERATE = "<not generate>";
 
@@ -74,18 +72,17 @@ public class RunCommand implements Callable<Integer> {
                             "@|fg(red) Enter 'quit' or 'exit' to exit|@"));
             System.out.println("📁 Project path: " + path);
             System.out.println("🤖 Agent: " + agentName);
-            InputProcessor processor = InputProcessorUtil.createInputProcessor();
             int round = 1;
             while (true) {
                 System.out.println(AnsiUtil.string("@|fg(green) "
                         + ("─".repeat(50)) + "|@ @|bold,fg(yellow) Round " + round
                         + "|@ @|fg(green) " + ("─".repeat(50)) + "|@"));
-                String question = processor.readLine(AnsiUtil.string(
+                String question = PROCESSOR.readLine(AnsiUtil.string(
                         "@|fg(yellow) ❓ Please enter the question:|@ "));
                 if (question == null || question.isEmpty()) {
                     continue;
                 }
-                System.out.println("Question: " + question);
+                System.out.println("Question: [" + question + "]");
                 if ("quit".equalsIgnoreCase(question) || "exit".equalsIgnoreCase(question)) {
                     System.out.println("👋 Bye!");
                     break;
@@ -96,7 +93,6 @@ public class RunCommand implements Callable<Integer> {
                 round += 1;
             }
             System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
-            processor.close();
             return 0;
         } catch (Exception e) {
             log.error("Run project failed", e);
@@ -152,8 +148,7 @@ public class RunCommand implements Callable<Integer> {
         event.getHitlAiRequest().ifPresent(request -> {
             System.out.println(AnsiUtil.string("@|fg(magenta) 🤖 AI: " + request + "|@"));
             while (true) {
-                System.out.print(AnsiUtil.string("@|fg(yellow) \uD83D\uDC68 > |@ "));
-                String response = SCANNER.nextLine();
+                String response = PROCESSOR.readLine(AnsiUtil.string("@|fg(yellow) 👨 > |@ "));
                 if (response.isEmpty()) continue;
                 runner.userResponse(response);
                 return;

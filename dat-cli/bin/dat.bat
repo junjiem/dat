@@ -27,8 +27,3 @@ for %%f in (%CURR_DIR%\dat-cli-*.jar) do (
 )
 
 :end
-
-:: Wait for the user to press Enter before exiting
-echo.
-echo Please press Enter to exit
-pause >nul
