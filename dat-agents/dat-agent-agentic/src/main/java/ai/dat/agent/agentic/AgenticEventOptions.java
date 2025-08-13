@@ -26,19 +26,6 @@ public class AgenticEventOptions {
                     .noDefaultValue()
                     .withDescription("error message");
 
-    // ----------------------------- exception --------------------------
-
-    public static final ConfigOption<String> MESSAGE =
-            ConfigOptions.key("message")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("message");
-
-    public static final EventOption EXCEPTION_EVENT = EventOption.builder()
-            .name("exception")
-            .dataOptions(Set.of(MESSAGE))
-            .build();
-
     // ----------------------------- sql_generate --------------------------
 
     public static final ConfigOption<String> SQL =
@@ -131,4 +118,5 @@ public class AgenticEventOptions {
             .hitlAiRequestOption(AI_REQUEST)
             .dataOptions(Set.of(AI_REQUEST))
             .build();
+
 }

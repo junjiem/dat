@@ -71,6 +71,12 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
                     .withDescription("Specify the SQL generation LLM model name. " +
                             "If not specified, use the default llm.");
 
+    public static final ConfigOption<Integer> MAX_HISTORIES =
+            ConfigOptions.key("max-histories")
+                    .intType()
+                    .defaultValue(20)
+                    .withDescription("Maximum number of histories");
+
     public static final ConfigOption<String> TEXT_TO_SQL_RULES =
             ConfigOptions.key("text-to-sql-rules")
                     .stringType()
@@ -89,7 +95,7 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
                 DEFAULT_LLM, LANGUAGE,
                 INTENT_CLASSIFICATION, INTENT_CLASSIFICATION_LLM,
                 SQL_GENERATION_REASONING, SQL_GENERATION_REASONING_LLM,
-                SQL_GENERATION_LLM, TEXT_TO_SQL_RULES
+                SQL_GENERATION_LLM, MAX_HISTORIES, TEXT_TO_SQL_RULES
         ));
     }
 
@@ -128,6 +134,7 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
         String language = config.get(LANGUAGE);
         boolean intentClassification = config.get(INTENT_CLASSIFICATION);
         boolean sqlGenerationReasoning = config.get(SQL_GENERATION_REASONING);
+        Integer maxHistories = config.get(MAX_HISTORIES);
 
         DefaultAskdataAgent.DefaultAskdataAgentBuilder builder = DefaultAskdataAgent.builder()
                 .contentStore(contentStore)
@@ -139,7 +146,8 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
                 .intentClassificationModel(intentClassificationInstance.getChatModel())
                 .sqlGenerationReasoning(sqlGenerationReasoning)
                 .sqlGenerationReasoningModel(sqlGenerationReasoningInstance.getStreamingChatModel())
-                .sqlGenerationModel(sqlGenerationInstance.getChatModel());
+                .sqlGenerationModel(sqlGenerationInstance.getChatModel())
+                .maxHistories(maxHistories);
 
         config.getOptional(TEXT_TO_SQL_RULES).ifPresent(builder::textToSqlRules);
 

@@ -118,6 +118,7 @@ public class RunCommand implements Callable<Integer> {
                 lastEvent = eventName;
                 lastIncremental = event.getIncrementalContent().isPresent();
                 String color = isException(eventName) ? "red" : "blue";
+                if (event.getHitlAiRequest().isPresent()) color = "magenta";
                 System.out.println(AnsiUtil.string(
                         "--------------------- @|bold,underline,fg(" + color + ") "
                                 + eventName + "|@ ---------------------"));

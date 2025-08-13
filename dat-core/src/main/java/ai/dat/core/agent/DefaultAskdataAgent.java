@@ -64,6 +64,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
     private final boolean intentClassification;
     private final boolean sqlGenerationReasoning;
     private final String textToSqlRules;
+    private final Integer maxHistories;
 
     private final Assistant assistant;
     private final Assistant streamingAssistant;
@@ -84,7 +85,8 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                 Boolean sqlGenerationReasoning,
                                 @NonNull StreamingChatModel sqlGenerationReasoningModel,
                                 @NonNull ChatModel sqlGenerationModel,
-                                String textToSqlRules) {
+                                String textToSqlRules,
+                                Integer maxHistories) {
         super(contentStore, databaseAdapter);
         SemanticModelUtil.validateSemanticModels(semanticModels);
         this.semanticModels = semanticModels;
@@ -92,6 +94,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         this.intentClassification = Optional.ofNullable(intentClassification).orElse(true);
         this.sqlGenerationReasoning = Optional.ofNullable(sqlGenerationReasoning).orElse(true);
         this.textToSqlRules = Optional.ofNullable(textToSqlRules).orElse(TEXT_TO_SQL_RULES);
+        this.maxHistories = Optional.ofNullable(maxHistories).orElse(20);
         this.assistant = AiServices.builder(Assistant.class)
                 .chatModel(defaultModel)
                 .build();
@@ -124,7 +127,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         String userQuestion = question;
         String questionTime = LocalDateTime.now().format(FORMATTER);
 
-        histories = histories.subList(Math.max(0, histories.size() - 20), histories.size());
+        histories = histories.subList(Math.max(0, histories.size() - maxHistories), histories.size());
 
         ContentStore contentStore = contentStore();
 

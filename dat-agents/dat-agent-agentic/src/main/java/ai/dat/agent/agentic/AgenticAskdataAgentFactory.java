@@ -54,8 +54,6 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                     .withDescription("Customize the text-to-SQL rules. " +
                             "When the value is empty, use the built-in text-to-SQL rules.");
 
-    public static final Map<String, Object> defaultMcpServers = new HashMap<>();
-
     public static final ConfigOption<Map<String, Object>> MCP_SERVERS =
             ConfigOptions.key("mcp-servers")
                     .mapObjectType()
@@ -63,7 +61,7 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                     .withDescription("""
                             MCP Servers configurations.
                             Supported transports are `stdio`, `http`.
-                            
+                                                        
                             For example:
                             ```
                             mcp-servers:
@@ -80,6 +78,14 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                             ```
                             """);
 
+    public static final ConfigOption<Boolean> HUMAN_IN_THE_LOOP =
+            ConfigOptions.key("human-in-the-loop")
+                    .booleanType()
+                    .defaultValue(true)
+                    .withDescription("Enable HITL (human-in-the-loop). " +
+                            "Have a human in the loop, allowing the system to ask user's input " +
+                            "for missing information or approval before proceeding with certain actions.");
+
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
         return Collections.emptySet();
@@ -88,7 +94,8 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(
-                DEFAULT_LLM, MAX_TOOLS_INVOCATIONS, SQL_GENERATION_LLM, TEXT_TO_SQL_RULES, MCP_SERVERS
+                DEFAULT_LLM, MAX_TOOLS_INVOCATIONS, SQL_GENERATION_LLM,
+                TEXT_TO_SQL_RULES, HUMAN_IN_THE_LOOP, MCP_SERVERS
         ));
     }
 
@@ -116,12 +123,13 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                 .collect(Collectors.toMap(ChatModelInstance::getName, i -> i));
         validateConfigOptions(config, instances);
 
-        Integer maxToolsInvocations = config.get(MAX_TOOLS_INVOCATIONS);
-
         ChatModelInstance defaultInstance = config.getOptional(DEFAULT_LLM)
                 .map(instances::get).orElseGet(() -> chatModelInstances.get(0));
         ChatModelInstance sqlGenerationInstance = config.getOptional(SQL_GENERATION_LLM)
                 .map(instances::get).orElse(defaultInstance);
+
+        Integer maxToolsInvocations = config.get(MAX_TOOLS_INVOCATIONS);
+        Boolean humanInTheLoop = config.get(HUMAN_IN_THE_LOOP);
 
         AgenticAskdataAgent.AgenticAskdataAgentBuilder builder = AgenticAskdataAgent.builder()
                 .contentStore(contentStore)
@@ -129,7 +137,8 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                 .defaultModel(defaultInstance.getChatModel())
                 .defaultStreamingModel(defaultInstance.getStreamingChatModel())
                 .text2sqlModel(sqlGenerationInstance.getChatModel())
-                .maxSequentialToolsInvocations(maxToolsInvocations);
+                .maxSequentialToolsInvocations(maxToolsInvocations)
+                .humanInTheLoop(humanInTheLoop);
 
         config.getOptional(TEXT_TO_SQL_RULES).ifPresent(builder::textToSqlRules);
 

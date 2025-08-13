@@ -12,25 +12,25 @@ import ai.dat.core.utils.SemanticModelUtil;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.internal.Json;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.rag.query.router.DefaultQueryRouter;
 import dev.langchain4j.service.*;
-import dev.langchain4j.service.tool.ToolProvider;
+import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.Builder;
 import lombok.NonNull;
 
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -51,6 +51,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
 
     private final Integer maxSequentialToolsInvocations;
     private final String textToSqlRules;
+    private final Boolean humanInTheLoop;
 
     @Builder
     public AgenticAskdataAgent(@NonNull ContentStore contentStore,
@@ -61,7 +62,8 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                                List<SemanticModel> semanticModels,
                                Map<String, McpTransport> mcpTransports,
                                Integer maxSequentialToolsInvocations,
-                               String textToSqlRules) {
+                               String textToSqlRules,
+                               Boolean humanInTheLoop) {
         super(contentStore, databaseAdapter);
         SemanticModelUtil.validateSemanticModels(semanticModels);
         this.defaultModel = defaultModel;
@@ -74,6 +76,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                 this.maxSequentialToolsInvocations <= 100 && this.maxSequentialToolsInvocations >= 1,
                 "maxIterations must be between 1 and 100");
         this.textToSqlRules = textToSqlRules;
+        this.humanInTheLoop = Optional.ofNullable(humanInTheLoop).orElse(true);
     }
 
     @Override
@@ -119,6 +122,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                         createText2SqlAgent(),
                         new Toolbox(contentStore, databaseAdapter, semanticModels, action, this)
                 );
+
         if (mcpTransports != null && !mcpTransports.isEmpty()) {
             List<McpClient> mcpClients = mcpTransports.entrySet().stream()
                     .map(e -> {
@@ -138,6 +142,32 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                     .build();
             aiServices.toolProvider(toolProvider);
         }
+
+        Map<ToolSpecification, ToolExecutor> tools = new HashMap<>();
+        if (humanInTheLoop) {
+            ToolSpecification toolSpecification = ToolSpecification.builder()
+                    .name("askUser")
+                    .description("An tool that asks the user for missing information")
+                    .parameters(JsonObjectSchema.builder()
+                            .addStringProperty("request", "The request of AI")
+                            .build())
+                    .build();
+            ToolExecutor toolExecutor = (toolExecutionRequest, memoryId) -> {
+                Map<?, ?> arguments = Json.fromJson(toolExecutionRequest.arguments(), Map.class);
+                String request = arguments.get("request").toString();
+                action.add(StreamEvent.from(HITL_ASK_USER, AI_REQUEST, request));
+                try {
+                    return this.waitForUserResponse();
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to wait for user response", e);
+                }
+            };
+            tools.put(toolSpecification, toolExecutor);
+        }
+        if (!tools.isEmpty()) {
+            aiServices.tools(tools);
+        }
+
         return aiServices.build();
     }
 
@@ -211,7 +241,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
     public interface Text2SqlAgent {
         @UserMessage("{{query}}")
         @Tool("A helpful assistant that converts natural language queries into ANSI SQL queries")
-        String text2Sql(@P("The query of natural language") @V("query") String query);
+        String text2Sql(@P("The question") @V("query") String query);
     }
 
     public record Toolbox(ContentStore contentStore, DatabaseAdapter databaseAdapter,
@@ -236,7 +266,8 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         }
 
         @Tool("The execute database dialect SQL query return the dataset")
-        public List<Map<String, Object>> executeSql(@P("The database dialect SQL") String dialectSql) throws SQLException {
+        public List<Map<String, Object>> executeSql(
+                @P("The database dialect SQL") String dialectSql) throws SQLException {
             try {
                 List<Map<String, Object>> results = databaseAdapter.executeQuery(dialectSql);
                 action.add(StreamEvent.from(SQL_EXECUTE_EVENT, DATA, results));
@@ -247,14 +278,10 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
             }
         }
 
-//        @Tool("An tool that asks the data schema of the user")
-//        public String askUser(String request) {
-//            action.add(StreamEvent.from(HITL_ASK_USER, AI_REQUEST, request));
-//            try {
-//                return askdataAgent.waitForUserResponse();
-//            } catch (Exception e) {
-//                throw new RuntimeException("Failed to wait for user response", e);
-//            }
-//        }
+        @Tool("Search semantic models by keywords or question to find relevant data schema")
+        public List<SemanticModel> searchSemanticModels(
+                @P("Keywords or question to search for semantic models") String query) {
+            return contentStore.retrieveMdl(query);
+        }
     }
 }

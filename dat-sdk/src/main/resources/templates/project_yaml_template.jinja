@@ -136,7 +136,7 @@ agents:
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    description:  # Ask data agent description" }}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    provider: " ~ item.provider }}
     {% if not item.display -%}{{ "#" }}{% endif -%}
-    {{ "    #semantic_models: # Optional" }}
+    {{ "    #semantic_models: # (List<String>, [Optional]) Specify the semantic model directly. Once specified, it will not be retrieved again." }}
     {% if not item.display -%}{{ "#" }}{% endif -%}
     {{ "      #- covid_cases  # You need to fill in correct semantic model name" }}
     {% if not item.display -%}{{ "#" }}{% endif -%}
