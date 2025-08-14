@@ -38,6 +38,8 @@ public abstract class AbstractAskdataAgent implements AskdataAgent {
         }
     });
 
+    protected final StreamAction action = new StreamAction();
+
     protected final ContentStore contentStore;
     protected final DatabaseAdapter databaseAdapter;
 
@@ -53,15 +55,15 @@ public abstract class AbstractAskdataAgent implements AskdataAgent {
     }
 
     @Override
-    public StreamAction ask(String question) {
+    public StreamAction ask(@NonNull String question) {
         return ask(question, Collections.emptyList());
     }
 
-    public StreamAction ask(String question, List<QuestionSqlPair> histories) {
-        StreamAction action = new StreamAction();
+    public StreamAction ask(@NonNull String question, @NonNull List<QuestionSqlPair> histories) {
+        action.start();
         executor.execute(() -> {
             try {
-                ask(question, action, histories);
+                run(question, histories);
             } catch (Exception e) {
                 log.error("Ask data exception", e);
                 action.add(StreamEvent.from(EXCEPTION_EVENT, MESSAGE, e.getMessage()));
@@ -72,11 +74,10 @@ public abstract class AbstractAskdataAgent implements AskdataAgent {
         return action;
     }
 
-    protected abstract void ask(String question, StreamAction action, List<QuestionSqlPair> histories);
+    protected abstract void run(String question, List<QuestionSqlPair> histories);
 
-    protected List<Map<String, Object>> executeQuery(String semanticSql,
-                                                     List<SemanticModel> semanticModels,
-                                                     StreamAction action) throws SQLException {
+    protected List<Map<String, Object>> executeQuery(@NonNull String semanticSql,
+                                                     @NonNull List<SemanticModel> semanticModels) throws SQLException {
         String sql;
         try {
             sql = databaseAdapter.generateSql(semanticSql, semanticModels);

@@ -26,6 +26,11 @@ Noun: {{ item.noun }} Synonyms: {{ item.synonyms|join(', ') }}
 {% endfor %}
 {% endif %}
 
+{% if instruction %}
+### USER INSTRUCTION ###
+{{ instruction }}
+{% endif %}
+
 ### QUESTION ###
 Current time: {{ query_time }}
 User's Question: {{ query }}

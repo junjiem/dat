@@ -84,6 +84,12 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
                     .withDescription("Customize the text-to-SQL rules. " +
                             "When the value is empty, use the built-in text-to-SQL rules.");
 
+    public static final ConfigOption<String> INSTRUCTION =
+            ConfigOptions.key("instruction")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("User instruction");
+
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
         return Collections.emptySet();
@@ -92,10 +98,9 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(
-                DEFAULT_LLM, LANGUAGE,
-                INTENT_CLASSIFICATION, INTENT_CLASSIFICATION_LLM,
+                DEFAULT_LLM, LANGUAGE, INTENT_CLASSIFICATION, INTENT_CLASSIFICATION_LLM,
                 SQL_GENERATION_REASONING, SQL_GENERATION_REASONING_LLM,
-                SQL_GENERATION_LLM, MAX_HISTORIES, TEXT_TO_SQL_RULES
+                SQL_GENERATION_LLM, MAX_HISTORIES, TEXT_TO_SQL_RULES, INSTRUCTION
         ));
     }
 
@@ -150,6 +155,7 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
                 .maxHistories(maxHistories);
 
         config.getOptional(TEXT_TO_SQL_RULES).ifPresent(builder::textToSqlRules);
+        config.getOptional(INSTRUCTION).ifPresent(builder::instruction);
 
         if (semanticModels != null && !semanticModels.isEmpty()) {
             builder.semanticModels(semanticModels);
@@ -159,6 +165,9 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
     }
 
     private void validateConfigOptions(ReadableConfig config, Map<String, ChatModelInstance> instances) {
+        config.getOptional(MAX_HISTORIES)
+                .ifPresent(n -> Preconditions.checkArgument(n > 0,
+                        "'" + MAX_HISTORIES.key() + "' value must be greater than 0"));
         String llmNames = String.join(", ", instances.keySet());
         String errorMessageFormat = "'%s' value must be one of [%s]";
         config.getOptional(DEFAULT_LLM)

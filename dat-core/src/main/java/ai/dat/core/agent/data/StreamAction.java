@@ -31,6 +31,14 @@ public class StreamAction implements Iterable<StreamEvent> {
     }
 
     /**
+     * 标记流开始
+     */
+    public void start() {
+        finished = false;
+        eventQueue.clear(); // 清空队列
+    }
+
+    /**
      * 标记流结束
      */
     public void finished() {

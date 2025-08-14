@@ -103,7 +103,7 @@ public class AgenticEventOptions {
             .dataOptions(Set.of(CONTENT, ERROR))
             .build();
 
-    // ----------------------------- agent_answer --------------------------
+    // ----------------------------- Human-in-the-loop ask_user --------------------------
 
     public static final ConfigOption<String> AI_REQUEST =
             ConfigOptions.key("ai_request")
@@ -111,12 +111,23 @@ public class AgenticEventOptions {
                     .noDefaultValue()
                     .withDescription("AI request");
 
-    // ----------------------------- Human-in-the-loop ask_user --------------------------
-
     public static final EventOption HITL_ASK_USER = EventOption.builder()
             .name("hitl_ask_user")
             .hitlAiRequestOption(AI_REQUEST)
             .dataOptions(Set.of(AI_REQUEST))
             .build();
 
+    // ----------------------------- Human-in-the-loop tool_approval --------------------------
+
+    public static final ConfigOption<String> ACTION_PROMPT =
+            ConfigOptions.key("action_prompt")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Action prompt");
+
+    public static final EventOption HITL_TOOL_APPROVAL = EventOption.builder()
+            .name("hitl_tool_approval")
+            .hitlActionPromptOption(ACTION_PROMPT)
+            .dataOptions(Set.of(ACTION_PROMPT))
+            .build();
 }

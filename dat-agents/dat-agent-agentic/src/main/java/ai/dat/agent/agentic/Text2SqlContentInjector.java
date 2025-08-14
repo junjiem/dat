@@ -1,13 +1,14 @@
 package ai.dat.agent.agentic;
 
 import ai.dat.core.adapter.DatabaseAdapter;
-import ai.dat.core.agent.DefaultAskdataAgent;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.data.NounSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.SemanticModelUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.segment.TextSegment;
@@ -16,18 +17,15 @@ import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.injector.ContentInjector;
 import lombok.NonNull;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static ai.dat.core.contentstore.DefaultContentStore.METADATA_CONTENT_TYPE;
 
 /**
  * @Author JunjieM
@@ -35,14 +33,23 @@ import java.util.stream.Collectors;
  */
 class Text2SqlContentInjector implements ContentInjector {
 
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private static final String TEXT_TO_SQL_RULES;
+    public static final String HISTORIES_CONTENT_TYPE = "histories";
+
     private static final PromptTemplate PROMPT_TEMPLATE;
+    private static final PromptTemplate FOLLOWUP_PROMPT_TEMPLATE;
+
+    private static final String TEXT_TO_SQL_RULES;
 
     static {
+        PROMPT_TEMPLATE = PromptTemplate.from(loadText(
+                "prompts/agentic/text_to_sql_user_prompt.txt"));
+        FOLLOWUP_PROMPT_TEMPLATE = PromptTemplate.from(loadText(
+                "prompts/agentic/text_to_sql_with_followup_user_prompt.txt"));
         TEXT_TO_SQL_RULES = loadText("prompts/agentic/text_to_sql_rules.txt");
-        PROMPT_TEMPLATE = PromptTemplate.from(loadText("prompts/agentic/text_to_sql_user_prompt.txt"));
     }
 
     private static String loadText(String fromResource) {
@@ -107,7 +114,25 @@ class Text2SqlContentInjector implements ContentInjector {
             variables.put("query_time", queryTime);
             variables.put("query", query);
 
-            return PROMPT_TEMPLATE.apply(variables).toUserMessage();
+            List<QuestionSqlPair> histories = contents.stream()
+                    .map(Content::textSegment)
+                    .filter(textSegment -> HISTORIES_CONTENT_TYPE
+                            .equals(textSegment.metadata().getString(METADATA_CONTENT_TYPE)))
+                    .map(textSegment -> {
+                        try {
+                            return JSON_MAPPER.readValue(textSegment.text(), QuestionSqlPair.class);
+                        } catch (JsonProcessingException e) {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
+            if (histories.isEmpty()) {
+                return PROMPT_TEMPLATE.apply(variables).toUserMessage();
+            } else {
+                variables.put("histories", histories);
+                return FOLLOWUP_PROMPT_TEMPLATE.apply(variables).toUserMessage();
+            }
         }
     }
 }

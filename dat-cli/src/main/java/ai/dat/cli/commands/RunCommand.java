@@ -119,6 +119,7 @@ public class RunCommand implements Callable<Integer> {
                 lastIncremental = event.getIncrementalContent().isPresent();
                 String color = isException(eventName) ? "red" : "blue";
                 if (event.getHitlAiRequest().isPresent()) color = "magenta";
+                if (event.getHitlActionPrompt().isPresent()) color = "yellow";
                 System.out.println(AnsiUtil.string(
                         "--------------------- @|bold,underline,fg(" + color + ") "
                                 + eventName + "|@ ---------------------"));
@@ -154,6 +155,10 @@ public class RunCommand implements Callable<Integer> {
                 runner.userResponse(response);
                 return;
             }
+        });
+        event.getHitlActionPrompt().ifPresent(prompt -> {
+            String response = PROCESSOR.readLine(AnsiUtil.string("@|fg(yellow) ⚠️ " + prompt + ":|@"));
+            runner.userResponse(response);
         });
         event.getMessages().forEach((k, v) -> print(event, k, v));
     }

@@ -47,12 +47,31 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                     .withDescription("Specify the SQL generation LLM model name. " +
                             "If not specified, use the default llm.");
 
+    public static final ConfigOption<Integer> MAX_MESSAGES =
+            ConfigOptions.key("max-messages")
+                    .intType()
+                    .defaultValue(100)
+                    .withDescription("Maximum number of messages. " +
+                            "Messages covering the roles of user, assistant, and tool.");
+
+    public static final ConfigOption<Integer> MAX_HISTORIES =
+            ConfigOptions.key("max-histories")
+                    .intType()
+                    .defaultValue(20)
+                    .withDescription("Maximum number of histories");
+
     public static final ConfigOption<String> TEXT_TO_SQL_RULES =
             ConfigOptions.key("text-to-sql-rules")
                     .stringType()
                     .noDefaultValue()
                     .withDescription("Customize the text-to-SQL rules. " +
                             "When the value is empty, use the built-in text-to-SQL rules.");
+
+    public static final ConfigOption<String> INSTRUCTION =
+            ConfigOptions.key("instruction")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("User instruction");
 
     public static final ConfigOption<Map<String, Object>> MCP_SERVERS =
             ConfigOptions.key("mcp-servers")
@@ -82,9 +101,28 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
             ConfigOptions.key("human-in-the-loop")
                     .booleanType()
                     .defaultValue(true)
-                    .withDescription("Enable HITL (human-in-the-loop). " +
-                            "Have a human in the loop, allowing the system to ask user's input " +
-                            "for missing information or approval before proceeding with certain actions.");
+                    .withDescription("Enable HITL (human-in-the-loop). The master switch of the human-in-the-loop.");
+
+    public static final ConfigOption<Boolean> HUMAN_IN_THE_LOOP_ASK_USER =
+            ConfigOptions.key("human-in-the-loop.ask-user")
+                    .booleanType()
+                    .defaultValue(true)
+                    .withDescription("""
+                            Enable HITL (human-in-the-loop) Ask User. 
+                            Have a human in the loop, allowing the system to ask user's input for \
+                            missing information or approval before proceeding with certain actions.
+                            """);
+
+    public static final ConfigOption<Boolean> HUMAN_IN_THE_LOOP_TOOL_APPROVAL =
+            ConfigOptions.key("human-in-the-loop.tool-approval")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("""
+                            Enable HITL (human-in-the-loop) Tool Approval. 
+                            Have a human in the loop, allowing the system to apply to the user for \
+                            approval before proceeding with execution tool.
+                            """);
+
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
@@ -94,8 +132,9 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(
-                DEFAULT_LLM, MAX_TOOLS_INVOCATIONS, SQL_GENERATION_LLM,
-                TEXT_TO_SQL_RULES, HUMAN_IN_THE_LOOP, MCP_SERVERS
+                DEFAULT_LLM, MAX_MESSAGES, MAX_HISTORIES, MAX_TOOLS_INVOCATIONS, SQL_GENERATION_LLM,
+                TEXT_TO_SQL_RULES, INSTRUCTION, MCP_SERVERS,
+                HUMAN_IN_THE_LOOP, HUMAN_IN_THE_LOOP_ASK_USER, HUMAN_IN_THE_LOOP_TOOL_APPROVAL
         ));
     }
 
@@ -129,7 +168,11 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                 .map(instances::get).orElse(defaultInstance);
 
         Integer maxToolsInvocations = config.get(MAX_TOOLS_INVOCATIONS);
+        Integer maxMessages = config.get(MAX_MESSAGES);
+        Integer maxHistories = config.get(MAX_HISTORIES);
         Boolean humanInTheLoop = config.get(HUMAN_IN_THE_LOOP);
+        Boolean humanInTheLoopAskUser = config.get(HUMAN_IN_THE_LOOP_ASK_USER);
+        Boolean humanInTheLoopToolApproval = config.get(HUMAN_IN_THE_LOOP_TOOL_APPROVAL);
 
         AgenticAskdataAgent.AgenticAskdataAgentBuilder builder = AgenticAskdataAgent.builder()
                 .contentStore(contentStore)
@@ -137,10 +180,15 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                 .defaultModel(defaultInstance.getChatModel())
                 .defaultStreamingModel(defaultInstance.getStreamingChatModel())
                 .text2sqlModel(sqlGenerationInstance.getChatModel())
-                .maxSequentialToolsInvocations(maxToolsInvocations)
-                .humanInTheLoop(humanInTheLoop);
+                .maxToolsInvocations(maxToolsInvocations)
+                .maxMessages(maxMessages)
+                .maxHistories(maxHistories)
+                .humanInTheLoop(humanInTheLoop)
+                .humanInTheLoopAskUser(humanInTheLoopAskUser)
+                .humanInTheLoopToolApproval(humanInTheLoopToolApproval);
 
         config.getOptional(TEXT_TO_SQL_RULES).ifPresent(builder::textToSqlRules);
+        config.getOptional(INSTRUCTION).ifPresent(builder::instruction);
 
         if (semanticModels != null && !semanticModels.isEmpty()) {
             builder.semanticModels(semanticModels);
@@ -159,6 +207,12 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
     }
 
     private void validateConfigOptions(ReadableConfig config, Map<String, ChatModelInstance> instances) {
+        config.getOptional(MAX_MESSAGES)
+                .ifPresent(n -> Preconditions.checkArgument(n > 0,
+                        "'" + MAX_MESSAGES.key() + "' value must be greater than 0"));
+        config.getOptional(MAX_HISTORIES)
+                .ifPresent(n -> Preconditions.checkArgument(n > 0,
+                        "'" + MAX_HISTORIES.key() + "' value must be greater than 0"));
         config.getOptional(MAX_TOOLS_INVOCATIONS)
                 .ifPresent(n -> Preconditions.checkArgument(n <= 100 && n >= 1,
                         "'" + MAX_TOOLS_INVOCATIONS.key() + "' value must be between 1 and 100"));

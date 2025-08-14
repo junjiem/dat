@@ -2,6 +2,7 @@ package ai.dat.core.adapter;
 
 import ai.dat.core.semantic.SemanticSqlConverter;
 import ai.dat.core.semantic.data.SemanticModel;
+import lombok.NonNull;
 import org.apache.calcite.sql.parser.SqlParseException;
 
 import javax.sql.DataSource;
@@ -31,7 +32,7 @@ public abstract class GenericSqlDatabaseAdapter implements DatabaseAdapter {
     }
 
     @Override
-    public String generateSql(String semanticSql, List<SemanticModel> semanticModels) {
+    public String generateSql(@NonNull String semanticSql, @NonNull List<SemanticModel> semanticModels) {
         SemanticSqlConverter converter = new SemanticSqlConverter(semanticAdapter, semanticModels);
         try {
             return converter.convert(semanticSql);

@@ -76,12 +76,18 @@ public class StreamEvent {
         return eventOption.getHitlAiRequestOption().flatMap(data::getOptional);
     }
 
+    public Optional<String> getHitlActionPrompt() {
+        return eventOption.getHitlActionPromptOption().flatMap(data::getOptional);
+    }
+
     public Map<String, Object> getMessages() {
         List<String> keys = new ArrayList<>();
         eventOption.getIncrementalOption().ifPresent(o -> keys.add(o.key()));
         eventOption.getSemanticSqlOption().ifPresent(o -> keys.add(o.key()));
         eventOption.getQuerySqlOption().ifPresent(o -> keys.add(o.key()));
         eventOption.getQueryDataOption().ifPresent(o -> keys.add(o.key()));
+        eventOption.getHitlAiRequestOption().ifPresent(o -> keys.add(o.key()));
+        eventOption.getHitlActionPromptOption().ifPresent(o -> keys.add(o.key()));
         return eventOption.getDataOptions().stream()
                 .filter(o -> !keys.contains(o.key()))
                 .collect(Collectors.toMap(o -> o, data::getOptional))

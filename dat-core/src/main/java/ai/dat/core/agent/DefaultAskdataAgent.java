@@ -65,6 +65,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
     private final boolean sqlGenerationReasoning;
     private final String textToSqlRules;
     private final Integer maxHistories;
+    private final String instruction;
 
     private final Assistant assistant;
     private final Assistant streamingAssistant;
@@ -86,7 +87,8 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                 @NonNull StreamingChatModel sqlGenerationReasoningModel,
                                 @NonNull ChatModel sqlGenerationModel,
                                 String textToSqlRules,
-                                Integer maxHistories) {
+                                Integer maxHistories,
+                                String instruction) {
         super(contentStore, databaseAdapter);
         SemanticModelUtil.validateSemanticModels(semanticModels);
         this.semanticModels = semanticModels;
@@ -95,6 +97,8 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         this.sqlGenerationReasoning = Optional.ofNullable(sqlGenerationReasoning).orElse(true);
         this.textToSqlRules = Optional.ofNullable(textToSqlRules).orElse(TEXT_TO_SQL_RULES);
         this.maxHistories = Optional.ofNullable(maxHistories).orElse(20);
+        this.instruction = Optional.ofNullable(instruction).orElse("");
+
         this.assistant = AiServices.builder(Assistant.class)
                 .chatModel(defaultModel)
                 .build();
@@ -121,9 +125,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
     }
 
     @Override
-    protected void ask(@NonNull String question,
-                       @NonNull StreamAction action,
-                       @NonNull List<QuestionSqlPair> histories) {
+    protected void run(@NonNull String question, @NonNull List<QuestionSqlPair> histories) {
         String userQuestion = question;
         String questionTime = LocalDateTime.now().format(FORMATTER);
 
@@ -202,11 +204,11 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
 
         // 生成语义SQL
         String semanticSql = generateSql(action, semantics, sqlSamples, synonyms, docs,
-                histories, questionTime, userQuestion);
+                instruction, histories, questionTime, userQuestion);
 
         // 转换和执行
         try {
-            List<Map<String, Object>> results = executeQuery(semanticSql, semanticModels, action);
+            List<Map<String, Object>> results = executeQuery(semanticSql, semanticModels);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -233,6 +235,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                List<QuestionSqlPair> sqlSamples,
                                List<NounSynonymPair> synonyms,
                                List<String> docs,
+                               String instruction,
                                List<QuestionSqlPair> histories,
                                String questionTime,
                                String question) {
@@ -241,10 +244,12 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
             TokenStream tokenStream;
             if (histories.isEmpty()) {
                 tokenStream = sqlGenerationReasoningAssistant.sqlGenerateReasoning(
-                        semanticContexts, sqlSamples, synonyms, docs, questionTime, question, language);
+                        semanticContexts, sqlSamples, synonyms, docs, instruction,
+                        questionTime, question, language);
             } else {
                 tokenStream = sqlGenerationReasoningAssistant.followupSqlGenerateReasoning(
-                        semanticContexts, sqlSamples, synonyms, docs, histories, questionTime, question, language);
+                        semanticContexts, sqlSamples, synonyms, docs, instruction,
+                        histories, questionTime, question, language);
             }
             CompletableFuture<Void> future = new CompletableFuture<>();
             tokenStream.onPartialResponse(c -> {
@@ -263,10 +268,11 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         GenSql genSql;
         if (histories.isEmpty()) {
             genSql = sqlGenerationAssistant.sqlGenerate(textToSqlRules, semanticContexts,
-                    sqlSamples, synonyms, docs, questionTime, question, sqlGenerateReasoning.get());
+                    sqlSamples, synonyms, docs, instruction, questionTime, question, sqlGenerateReasoning.get());
         } else {
             genSql = sqlGenerationAssistant.followupSqlGenerate(textToSqlRules, semanticContexts,
-                    sqlSamples, synonyms, docs, histories, questionTime, question, sqlGenerateReasoning.get());
+                    sqlSamples, synonyms, docs, instruction, histories, questionTime, question,
+                    sqlGenerateReasoning.get());
         }
 
         action.add(StreamEvent.from(SQL_GENERATE_EVENT, SQL, genSql.sql));
@@ -338,6 +344,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                          @V("sql_samples") List<QuestionSqlPair> sqlSamples,
                                          @V("synonyms") List<NounSynonymPair> synonyms,
                                          @V("docs") List<String> docs,
+                                         @V("instruction") String instruction,
                                          @V("query_time") String queryTime,
                                          @V("query") String query,
                                          @V("language") String language);
@@ -348,6 +355,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                                  @V("sql_samples") List<QuestionSqlPair> sqlSamples,
                                                  @V("synonyms") List<NounSynonymPair> synonyms,
                                                  @V("docs") List<String> docs,
+                                                 @V("instruction") String instruction,
                                                  @V("histories") List<QuestionSqlPair> histories,
                                                  @V("query_time") String queryTime,
                                                  @V("query") String query,
@@ -360,6 +368,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                            @V("sql_samples") List<QuestionSqlPair> sqlSamples,
                            @V("synonyms") List<NounSynonymPair> synonyms,
                            @V("docs") List<String> docs,
+                           @V("instruction") String instruction,
                            @V("query_time") String queryTime,
                            @V("query") String query,
                            @V("sql_generation_reasoning") String sqlGenerationReasoning);
@@ -371,6 +380,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                    @V("sql_samples") List<QuestionSqlPair> sqlSamples,
                                    @V("synonyms") List<NounSynonymPair> synonyms,
                                    @V("docs") List<String> docs,
+                                   @V("instruction") String instruction,
                                    @V("histories") List<QuestionSqlPair> histories,
                                    @V("query_time") String queryTime,
                                    @V("query") String query,

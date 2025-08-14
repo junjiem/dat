@@ -6,25 +6,33 @@ import ai.dat.core.agent.data.EventOption;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.ContentStore;
+import ai.dat.core.contentstore.DefaultContentStore;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.SemanticModelUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.internal.Json;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.content.DefaultContent;
 import dev.langchain4j.rag.query.router.DefaultQueryRouter;
 import dev.langchain4j.service.*;
+import dev.langchain4j.service.memory.ChatMemoryAccess;
 import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -35,12 +43,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static ai.dat.agent.agentic.AgenticEventOptions.*;
+import static ai.dat.agent.agentic.Text2SqlContentInjector.HISTORIES_CONTENT_TYPE;
 
 /**
  * @Author JunjieM
  * @Date 2025/8/11
  */
 class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
+
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
+    private static final String ASK_USER_TOOL_NAME = "askUser";
 
     private final ChatModel defaultModel;
     private final StreamingChatModel defaultStreamingModel;
@@ -49,9 +62,18 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
     private final List<SemanticModel> semanticModels;
     private final Map<String, McpTransport> mcpTransports;
 
-    private final Integer maxSequentialToolsInvocations;
+    private final Integer maxToolsInvocations;
     private final String textToSqlRules;
+    private final String instruction;
+    private final Integer maxHistories;
+
     private final Boolean humanInTheLoop;
+    private final Boolean humanInTheLoopAskUser;
+    private final Boolean humanInTheLoopToolApproval;
+
+    private List<QuestionSqlPair> histories = Collections.emptyList();
+    private final MessageWindowChatMemory chatMemory;
+    private final MainAgent mainAgent;
 
     @Builder
     public AgenticAskdataAgent(@NonNull ContentStore contentStore,
@@ -61,9 +83,14 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                                @NonNull ChatModel text2sqlModel,
                                List<SemanticModel> semanticModels,
                                Map<String, McpTransport> mcpTransports,
-                               Integer maxSequentialToolsInvocations,
+                               Integer maxToolsInvocations,
                                String textToSqlRules,
-                               Boolean humanInTheLoop) {
+                               String instruction,
+                               Integer maxMessages,
+                               Integer maxHistories,
+                               Boolean humanInTheLoop,
+                               Boolean humanInTheLoopAskUser,
+                               Boolean humanInTheLoopToolApproval) {
         super(contentStore, databaseAdapter);
         SemanticModelUtil.validateSemanticModels(semanticModels);
         this.defaultModel = defaultModel;
@@ -71,38 +98,77 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         this.text2sqlModel = text2sqlModel;
         this.semanticModels = semanticModels;
         this.mcpTransports = mcpTransports;
-        this.maxSequentialToolsInvocations = Optional.ofNullable(maxSequentialToolsInvocations).orElse(10);
+        this.maxToolsInvocations = Optional.ofNullable(maxToolsInvocations).orElse(10);
         Preconditions.checkArgument(
-                this.maxSequentialToolsInvocations <= 100 && this.maxSequentialToolsInvocations >= 1,
+                this.maxToolsInvocations <= 100 && this.maxToolsInvocations >= 1,
                 "maxIterations must be between 1 and 100");
         this.textToSqlRules = textToSqlRules;
+        this.instruction = Optional.ofNullable(instruction).orElse("");
+        this.maxHistories = Optional.ofNullable(maxHistories).orElse(20);
+        Preconditions.checkArgument(this.maxHistories > 0,
+                "maxHistories must be greater than 0");
         this.humanInTheLoop = Optional.ofNullable(humanInTheLoop).orElse(true);
+        this.humanInTheLoopAskUser = Optional.ofNullable(humanInTheLoopAskUser).orElse(true);
+        this.humanInTheLoopToolApproval = Optional.ofNullable(humanInTheLoopToolApproval).orElse(false);
+        int chatMemoryMaxMessages = Optional.ofNullable(maxMessages).orElse(100);
+        Preconditions.checkArgument(chatMemoryMaxMessages > 0,
+                "maxMessages must be greater than 0");
+        this.chatMemory = MessageWindowChatMemory.withMaxMessages(chatMemoryMaxMessages);
+        this.mainAgent = createMainAgent();
     }
 
     @Override
     public Set<EventOption> eventOptions() {
-        return null;
+        return Set.of(SQL_GENERATE_EVENT, SEMANTIC_TO_SQL_EVENT, SQL_EXECUTE_EVENT,
+                BEFORE_TOOL_EXECUTION, TOOL_EXECUTION, AGENT_ANSWER, HITL_ASK_USER);
     }
 
     @Override
-    protected void ask(String question, StreamAction action, List<QuestionSqlPair> histories) {
-        MainAgent mainAgent = createMainAgent(action);
-        TokenStream tokenStream = mainAgent.ask(question);
+    protected void run(@NonNull String question, @NonNull List<QuestionSqlPair> histories) {
+        this.histories = histories.subList(Math.max(0, histories.size() - maxHistories), histories.size());
+
+        TokenStream tokenStream = mainAgent.ask(instruction, question);
         CompletableFuture<Void> future = new CompletableFuture<>();
         tokenStream.onPartialResponse(s -> action.add(StreamEvent.from(AGENT_ANSWER, CONTENT, s)))
-                .beforeToolExecution(bte ->
-                        action.add(
-                                StreamEvent.from(BEFORE_TOOL_EXECUTION, TOOL_NAME, bte.request().name())
-                                        .set(TOOL_ARGS, bte.request().arguments())
-                        )
-                )
-                .onToolExecuted(te ->
-                        action.add(
-                                StreamEvent.from(TOOL_EXECUTION, TOOL_NAME, te.request().name())
-                                        .set(TOOL_ARGS, te.request().arguments())
-                                        .set(TOOL_RESULT, te.result())
-                        )
-                )
+                .beforeToolExecution(te -> {
+                    String toolName = te.request().name();
+                    String toolArgs = te.request().arguments();
+                    if (!humanInTheLoop || !ASK_USER_TOOL_NAME.equals(toolName)) {
+                        action.add(StreamEvent.from(BEFORE_TOOL_EXECUTION, TOOL_NAME, toolName)
+                                .set(TOOL_ARGS, toolArgs));
+                    }
+                    if (!humanInTheLoop) {
+                        return;
+                    }
+                    if (humanInTheLoopAskUser && ASK_USER_TOOL_NAME.equals(toolName)) {
+                        Map<?, ?> arguments = Json.fromJson(toolArgs, Map.class);
+                        String request = arguments.get("request").toString();
+                        action.add(StreamEvent.from(HITL_ASK_USER, AI_REQUEST, request));
+                    } else if (humanInTheLoopToolApproval) {
+                        action.add(StreamEvent.from(HITL_TOOL_APPROVAL, ACTION_PROMPT,
+                                "Do you allow the execution of the '" + toolName + "' tool? " +
+                                        "(y/n) [User input/press Enter to use the y]"));
+                        String response;
+                        try {
+                            response = this.waitForUserResponse();
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to wait for user response", e);
+                        }
+                        boolean allow = response.equalsIgnoreCase("y") || response.isEmpty();
+                        if (!allow) {
+                            throw new RuntimeException("The user is not allowed to execute the '"
+                                    + toolName + "' tool!");
+                        }
+                    }
+                })
+                .onToolExecuted(te -> {
+                    String toolName = te.request().name();
+                    if (!humanInTheLoop || !humanInTheLoopAskUser || !ASK_USER_TOOL_NAME.equals(toolName)) {
+                        action.add(StreamEvent.from(TOOL_EXECUTION, TOOL_NAME, toolName)
+                                .set(TOOL_ARGS, te.request().arguments())
+                                .set(TOOL_RESULT, te.result()));
+                    }
+                })
                 .onCompleteResponse(r -> future.complete(null))
                 .onError(e -> {
                     action.add(StreamEvent.from(AGENT_ANSWER, ERROR, e.getMessage()));
@@ -112,16 +178,18 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         future.join();
     }
 
-    private MainAgent createMainAgent(StreamAction action) {
+    private MainAgent createMainAgent() {
         AiServices<MainAgent> aiServices = AiServices.builder(MainAgent.class)
                 .streamingChatModel(defaultStreamingModel)
-                .maxSequentialToolsInvocations(maxSequentialToolsInvocations)
+                .maxSequentialToolsInvocations(maxToolsInvocations)
                 .tools(
                         createMisleadingAssistanceAgent(),
                         createDataAssistanceAgent(),
                         createText2SqlAgent(),
                         new Toolbox(contentStore, databaseAdapter, semanticModels, action, this)
-                );
+                )
+                .inputGuardrails()
+                .chatMemoryProvider(memoryId -> chatMemory);
 
         if (mcpTransports != null && !mcpTransports.isEmpty()) {
             List<McpClient> mcpClients = mcpTransports.entrySet().stream()
@@ -144,18 +212,18 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         }
 
         Map<ToolSpecification, ToolExecutor> tools = new HashMap<>();
-        if (humanInTheLoop) {
+        if (humanInTheLoop && humanInTheLoopAskUser) {
             ToolSpecification toolSpecification = ToolSpecification.builder()
-                    .name("askUser")
+                    .name(ASK_USER_TOOL_NAME)
                     .description("An tool that asks the user for missing information")
                     .parameters(JsonObjectSchema.builder()
                             .addStringProperty("request", "The request of AI")
                             .build())
                     .build();
             ToolExecutor toolExecutor = (toolExecutionRequest, memoryId) -> {
-                Map<?, ?> arguments = Json.fromJson(toolExecutionRequest.arguments(), Map.class);
-                String request = arguments.get("request").toString();
-                action.add(StreamEvent.from(HITL_ASK_USER, AI_REQUEST, request));
+//                Map<?, ?> arguments = Json.fromJson(toolExecutionRequest.arguments(), Map.class);
+//                String request = arguments.get("request").toString();
+//                action.add(StreamEvent.from(HITL_ASK_USER, AI_REQUEST, request));
                 try {
                     return this.waitForUserResponse();
                 } catch (Exception e) {
@@ -177,7 +245,20 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                         contentStore.getMdlContentRetriever(),
                         contentStore.getSqlContentRetriever(),
                         contentStore.getSynContentRetriever(),
-                        contentStore.getDocContentRetriever()
+                        contentStore.getDocContentRetriever(),
+                        query -> histories.stream().map(pair -> {
+                            String json;
+                            try {
+                                json = JSON_MAPPER.writeValueAsString(pair);
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(
+                                        "Failed to serialize historical question sql pair to JSON: "
+                                                + e.getMessage(), e);
+                            }
+                            Metadata metadata = Metadata.from(
+                                    DefaultContentStore.METADATA_CONTENT_TYPE, HISTORIES_CONTENT_TYPE);
+                            return new DefaultContent(TextSegment.from(json, metadata));
+                        }).collect(Collectors.toList())
                 ))
                 .contentInjector(new Text2SqlContentInjector(
                         contentStore, databaseAdapter, semanticModels, textToSqlRules))
@@ -212,17 +293,10 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                 .build();
     }
 
-    private interface MainAgent {
-        @SystemMessage("""
-                You are a data analysis expert that is provided with a set of tools. 
-                You don't take any assumptions about the user request, the only thing that you can do is relying on the provided tools. 
-                Your role is to analyze the user request and decide which of the provided tool to call next to address it. 
-                Generate the tool invocation also considering the past messages and in the same language of the user request. 
-                """)
-        @UserMessage("""
-                The user request is: '{{it}}'.
-                """)
-        TokenStream ask(String query);
+    private interface MainAgent extends ChatMemoryAccess {
+        @SystemMessage(fromResource = "prompts/agentic/main_agent_system_prompt.txt")
+        @UserMessage(fromResource = "prompts/agentic/main_agent_user_prompt.txt")
+        TokenStream ask(@V("instruction") String instruction, @V("query") String query);
     }
 
     public interface MisleadingAssistanceAgent {

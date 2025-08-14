@@ -26,6 +26,11 @@ Noun: {{ item.noun }} Synonyms: {{ item.synonyms|join(', ') }}
 {% endfor %}
 {% endif %}
 
+{% if instruction %}
+### USER INSTRUCTION ###
+{{ instruction }}
+{% endif %}
+
 ### User's QUERY HISTORY ###
 {% for history in histories %}
 Question: {{ history.question }}
