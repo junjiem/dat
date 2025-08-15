@@ -2,7 +2,7 @@
 <configuration>
     <timestamp key="startup_timestamp" datePattern="yyyyMMdd-HHmmss-SSS"/>
 
-    <property name="LOG_FILE_NAME" value="dat-cli-${startup_timestamp}-${PID:-unknown}" />
+    <property name="LOG_FILE_NAME" value="dat-cli-${startup_timestamp}" />
     
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

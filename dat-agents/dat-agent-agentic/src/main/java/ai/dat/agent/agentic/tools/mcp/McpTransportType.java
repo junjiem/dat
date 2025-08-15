@@ -1,4 +1,4 @@
-package ai.dat.agent.agentic.mcp;
+package ai.dat.agent.agentic.tools.mcp;
 
 public enum McpTransportType {
     STDIO("stdio"),

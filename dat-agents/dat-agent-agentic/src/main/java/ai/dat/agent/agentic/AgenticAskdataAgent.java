@@ -1,5 +1,6 @@
 package ai.dat.agent.agentic;
 
+import ai.dat.agent.agentic.tools.email.EmailSender;
 import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.agent.AbstractHitlAskdataAgent;
 import ai.dat.core.agent.data.EventOption;
@@ -33,6 +34,8 @@ import dev.langchain4j.rag.content.DefaultContent;
 import dev.langchain4j.rag.query.router.DefaultQueryRouter;
 import dev.langchain4j.service.*;
 import dev.langchain4j.service.memory.ChatMemoryAccess;
+import dev.langchain4j.service.tool.BeforeToolExecution;
+import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -60,6 +63,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
     private final ChatModel text2sqlModel;
 
     private final List<SemanticModel> semanticModels;
+    private final EmailSender emailSender;
     private final Map<String, McpTransport> mcpTransports;
 
     private final Integer maxToolsInvocations;
@@ -82,6 +86,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                                @NonNull StreamingChatModel defaultStreamingModel,
                                @NonNull ChatModel text2sqlModel,
                                List<SemanticModel> semanticModels,
+                               EmailSender emailSender,
                                Map<String, McpTransport> mcpTransports,
                                Integer maxToolsInvocations,
                                String textToSqlRules,
@@ -97,6 +102,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         this.defaultStreamingModel = defaultStreamingModel;
         this.text2sqlModel = text2sqlModel;
         this.semanticModels = semanticModels;
+        this.emailSender = emailSender;
         this.mcpTransports = mcpTransports;
         this.maxToolsInvocations = Optional.ofNullable(maxToolsInvocations).orElse(10);
         Preconditions.checkArgument(
@@ -130,45 +136,8 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         TokenStream tokenStream = mainAgent.ask(instruction, question);
         CompletableFuture<Void> future = new CompletableFuture<>();
         tokenStream.onPartialResponse(s -> action.add(StreamEvent.from(AGENT_ANSWER, CONTENT, s)))
-                .beforeToolExecution(te -> {
-                    String toolName = te.request().name();
-                    String toolArgs = te.request().arguments();
-                    if (!humanInTheLoop || !ASK_USER_TOOL_NAME.equals(toolName)) {
-                        action.add(StreamEvent.from(BEFORE_TOOL_EXECUTION, TOOL_NAME, toolName)
-                                .set(TOOL_ARGS, toolArgs));
-                    }
-                    if (!humanInTheLoop) {
-                        return;
-                    }
-                    if (humanInTheLoopAskUser && ASK_USER_TOOL_NAME.equals(toolName)) {
-                        Map<?, ?> arguments = Json.fromJson(toolArgs, Map.class);
-                        String request = arguments.get("request").toString();
-                        action.add(StreamEvent.from(HITL_ASK_USER, AI_REQUEST, request));
-                    } else if (humanInTheLoopToolApproval) {
-                        action.add(StreamEvent.from(HITL_TOOL_APPROVAL, ACTION_PROMPT,
-                                "Do you allow the execution of the '" + toolName + "' tool? " +
-                                        "(y/n) [User input/press Enter to use the y]"));
-                        String response;
-                        try {
-                            response = this.waitForUserResponse();
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to wait for user response", e);
-                        }
-                        boolean allow = response.equalsIgnoreCase("y") || response.isEmpty();
-                        if (!allow) {
-                            throw new RuntimeException("The user is not allowed to execute the '"
-                                    + toolName + "' tool!");
-                        }
-                    }
-                })
-                .onToolExecuted(te -> {
-                    String toolName = te.request().name();
-                    if (!humanInTheLoop || !humanInTheLoopAskUser || !ASK_USER_TOOL_NAME.equals(toolName)) {
-                        action.add(StreamEvent.from(TOOL_EXECUTION, TOOL_NAME, toolName)
-                                .set(TOOL_ARGS, te.request().arguments())
-                                .set(TOOL_RESULT, te.result()));
-                    }
-                })
+                .beforeToolExecution(this::beforeToolExecution)
+                .onToolExecuted(this::onToolExecuted)
                 .onCompleteResponse(r -> future.complete(null))
                 .onError(e -> {
                     action.add(StreamEvent.from(AGENT_ANSWER, ERROR, e.getMessage()));
@@ -176,6 +145,47 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                 })
                 .start();
         future.join();
+    }
+
+    private void beforeToolExecution(BeforeToolExecution beforeToolExecution) {
+        String toolName = beforeToolExecution.request().name();
+        String toolArgs = beforeToolExecution.request().arguments();
+        if (!humanInTheLoop || !ASK_USER_TOOL_NAME.equals(toolName)) {
+            action.add(StreamEvent.from(BEFORE_TOOL_EXECUTION, TOOL_NAME, toolName)
+                    .set(TOOL_ARGS, toolArgs));
+        }
+        if (!humanInTheLoop) {
+            return;
+        }
+        if (humanInTheLoopAskUser && ASK_USER_TOOL_NAME.equals(toolName)) {
+            Map<?, ?> arguments = Json.fromJson(toolArgs, Map.class);
+            String request = arguments.get("request").toString();
+            action.add(StreamEvent.from(HITL_ASK_USER, AI_REQUEST, request));
+        } else if (humanInTheLoopToolApproval) {
+            action.add(StreamEvent.from(HITL_TOOL_APPROVAL, ACTION_PROMPT,
+                    "Do you allow the execution of the '" + toolName + "' tool? " +
+                            "(y/n) [User input/press Enter to use the y]"));
+            String response;
+            try {
+                response = this.waitForUserResponse();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to wait for user response", e);
+            }
+            boolean allow = response.equalsIgnoreCase("y") || response.isEmpty();
+            if (!allow) {
+                throw new RuntimeException("The user is not allowed to execute the '"
+                        + toolName + "' tool!");
+            }
+        }
+    }
+
+    private void onToolExecuted(ToolExecution toolExecution) {
+        String toolName = toolExecution.request().name();
+        if (!humanInTheLoop || !humanInTheLoopAskUser || !ASK_USER_TOOL_NAME.equals(toolName)) {
+            action.add(StreamEvent.from(TOOL_EXECUTION, TOOL_NAME, toolName)
+                    .set(TOOL_ARGS, toolExecution.request().arguments())
+                    .set(TOOL_RESULT, toolExecution.result()));
+        }
     }
 
     private MainAgent createMainAgent() {
@@ -186,10 +196,59 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                         createMisleadingAssistanceAgent(),
                         createDataAssistanceAgent(),
                         createText2SqlAgent(),
-                        new Toolbox(contentStore, databaseAdapter, semanticModels, action, this)
+                        new Toolbox(contentStore, databaseAdapter, semanticModels, action)
                 )
                 .inputGuardrails()
                 .chatMemoryProvider(memoryId -> chatMemory);
+
+        if (emailSender != null) {
+            ToolSpecification toolSpecification = ToolSpecification.builder()
+                    .name("sendEmail")
+                    .description("Send email to recipients (and CC recipients) with specified subject and content")
+                    .parameters(JsonObjectSchema.builder()
+                            .addStringProperty("recipients", "Recipient email address(es), separated by comma")
+                            .addStringProperty("ccRecipients", "CC recipient email address(es), separated by comma")
+                            .addStringProperty("subject", "Email subject")
+                            .addStringProperty("content", "Email content")
+                            .addBooleanProperty("isHtml", "Whether the content is HTML format")
+                            .required("recipients", "subject", "content", "isHtml")
+                            .build())
+                    .build();
+            ToolExecutor toolExecutor = (toolExecutionRequest, memoryId) -> {
+                try {
+                    Map<?, ?> arguments = Json.fromJson(toolExecutionRequest.arguments(), Map.class);
+                    String recipients = arguments.get("recipients").toString();
+                    String[] to = Arrays.stream(recipients.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .toList()
+                            .toArray(new String[]{});
+                    String ccRecipients = null;
+                    String[] cc = null;
+                    if (arguments.containsKey("ccRecipients")) {
+                        ccRecipients = arguments.get("ccRecipients").toString();
+                        cc = Arrays.stream(ccRecipients.split(","))
+                                .map(String::trim)
+                                .filter(s -> !s.isEmpty())
+                                .toList()
+                                .toArray(new String[]{});
+                    }
+                    String subject = arguments.get("subject").toString();
+                    String content = arguments.get("content").toString();
+                    boolean isHtml = (boolean) arguments.get("isHtml");
+                    if (cc != null && cc.length > 0) {
+                        emailSender.sendEmailWithCc(to, cc, subject, content, isHtml);
+                        return String.format("The email has been successfully sent：%s, CC：%s", recipients, ccRecipients);
+                    } else {
+                        emailSender.sendEmail(to, subject, content, isHtml);
+                        return String.format("The email has been successfully sent：%s", recipients);
+                    }
+                } catch (Exception e) {
+                    return e.getMessage();
+                }
+            };
+            aiServices.tools(Map.of(toolSpecification, toolExecutor));
+        }
 
         if (mcpTransports != null && !mcpTransports.isEmpty()) {
             List<McpClient> mcpClients = mcpTransports.entrySet().stream()
@@ -211,29 +270,23 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
             aiServices.toolProvider(toolProvider);
         }
 
-        Map<ToolSpecification, ToolExecutor> tools = new HashMap<>();
         if (humanInTheLoop && humanInTheLoopAskUser) {
             ToolSpecification toolSpecification = ToolSpecification.builder()
                     .name(ASK_USER_TOOL_NAME)
                     .description("An tool that asks the user for missing information")
                     .parameters(JsonObjectSchema.builder()
                             .addStringProperty("request", "The request of AI")
+                            .required("request")
                             .build())
                     .build();
             ToolExecutor toolExecutor = (toolExecutionRequest, memoryId) -> {
-//                Map<?, ?> arguments = Json.fromJson(toolExecutionRequest.arguments(), Map.class);
-//                String request = arguments.get("request").toString();
-//                action.add(StreamEvent.from(HITL_ASK_USER, AI_REQUEST, request));
                 try {
                     return this.waitForUserResponse();
                 } catch (Exception e) {
-                    throw new RuntimeException("Failed to wait for user response", e);
+                    return "Failed to wait for user response: " + e.getMessage();
                 }
             };
-            tools.put(toolSpecification, toolExecutor);
-        }
-        if (!tools.isEmpty()) {
-            aiServices.tools(tools);
+            aiServices.tools(Map.of(toolSpecification, toolExecutor));
         }
 
         return aiServices.build();
@@ -319,8 +372,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
     }
 
     public record Toolbox(ContentStore contentStore, DatabaseAdapter databaseAdapter,
-                          List<SemanticModel> semanticModels, StreamAction action,
-                          AgenticAskdataAgent askdataAgent) {
+                          List<SemanticModel> semanticModels, StreamAction action) {
         @Tool("Convert the given ANSI SQL into the dialect SQL of the target database")
         public String ansiSql2dialectSql(@P("The ANSI SQL") String ansiSql) {
             action.add(StreamEvent.from(SQL_GENERATE_EVENT, SQL, ansiSql));

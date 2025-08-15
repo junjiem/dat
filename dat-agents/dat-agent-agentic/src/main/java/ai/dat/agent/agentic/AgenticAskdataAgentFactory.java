@@ -1,6 +1,7 @@
 package ai.dat.agent.agentic;
 
-import ai.dat.agent.agentic.mcp.McpTransportFactory;
+import ai.dat.agent.agentic.tools.email.EmailSenderFactory;
+import ai.dat.agent.agentic.tools.mcp.McpTransportFactory;
 import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.agent.AskdataAgent;
 import ai.dat.core.configuration.ConfigOption;
@@ -73,6 +74,20 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                     .noDefaultValue()
                     .withDescription("User instruction");
 
+    public static final ConfigOption<Map<String, Object>> EMAIL_SENDER =
+            ConfigOptions.key("email-sender")
+                    .mapObjectType()
+                    .noDefaultValue()
+                    .withDescription("""
+                            If email sender is configured, it will be auto added to the Agent as a tool.
+                            For example:
+                            ```
+                            email-sender:
+                            %s
+                            ```
+                            """.formatted(new EmailSenderFactory().template())
+                    );
+
     public static final ConfigOption<Map<String, Object>> MCP_SERVERS =
             ConfigOptions.key("mcp-servers")
                     .mapObjectType()
@@ -123,7 +138,6 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                             approval before proceeding with execution tool.
                             """);
 
-
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
         return Collections.emptySet();
@@ -133,7 +147,7 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
     public Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(
                 DEFAULT_LLM, MAX_MESSAGES, MAX_HISTORIES, MAX_TOOLS_INVOCATIONS, SQL_GENERATION_LLM,
-                TEXT_TO_SQL_RULES, INSTRUCTION, MCP_SERVERS,
+                TEXT_TO_SQL_RULES, INSTRUCTION, EMAIL_SENDER, MCP_SERVERS,
                 HUMAN_IN_THE_LOOP, HUMAN_IN_THE_LOOP_ASK_USER, HUMAN_IN_THE_LOOP_TOOL_APPROVAL
         ));
     }
@@ -146,7 +160,7 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
     @Override
     public String factoryDescription() {
         return "The ask data agent is implemented using the tools (Function Calling) agent mode " +
-                "and supports the addition of MCP tools.";
+                "and supports the addition of MCP tools and HITL (human-in-the-loop) interactions.";
     }
 
     @Override
@@ -193,6 +207,10 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
         if (semanticModels != null && !semanticModels.isEmpty()) {
             builder.semanticModels(semanticModels);
         }
+
+        config.getOptional(EMAIL_SENDER)
+                .ifPresent(configs -> builder.emailSender(
+                        new EmailSenderFactory().create(Configuration.fromMap(configs))));
 
         config.getOptional(MCP_SERVERS).ifPresent(mcpServers -> {
             Map<String, McpTransport> mcpTransports = mcpServers.entrySet().stream()

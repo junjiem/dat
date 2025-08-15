@@ -1,4 +1,7 @@
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/junjiem/dat)
+
+
 ![DAT](./images/dat.png)
 
 DAT (Data Ask Tool): Dating with your data.

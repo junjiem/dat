@@ -200,19 +200,15 @@ public class PreBuildValidator {
                                 }
                             }).toList();
                     try {
-                        String sql = "SELECT COUNT(DISTINCT " + d.getName() + ") AS distinct_count"
-                                + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
-                        long distinctCount = (long) databaseAdapter.executeQuery(sql).get(0)
-                                .entrySet().iterator().next().getValue();
-                        if (distinctCount > 1000) {
+                        if (dimensionDistinctCount(d, databaseAdapter, semanticModelSql) > 1000) {
                             return "Dimension '" + d.getName()
                                     + "' -> The number of COUNT DISTINCT in this dimension field " +
                                     "in the database exceeds 1000, and not recommended to set enum values";
                         }
-                        sql = "SELECT DISTINCT " + d.getName()
+                        String sql = "SELECT DISTINCT " + d.getName()
                                 + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
                         Set<String> values = databaseAdapter.executeQuery(sql).stream()
-                                .map(map -> map.get(map.keySet().stream().findFirst().orElse(d.getName())))
+                                .map(map -> map.entrySet().iterator().next().getValue())
                                 .filter(Objects::nonNull).map(Object::toString).collect(Collectors.toSet());
                         if (values.containsAll(enumValues)) {
                             return null;
@@ -229,6 +225,21 @@ public class PreBuildValidator {
         }
         return new ValidationMessage(semanticModel.getName(),
                 new ValidationException(String.join("\n", messages)));
+    }
+
+    private static long dimensionDistinctCount(Dimension dimension,
+                                               DatabaseAdapter databaseAdapter,
+                                               String semanticModelSql) throws SQLException {
+        String sql = "SELECT COUNT(DISTINCT " + dimension.getName() + ") AS distinct_count"
+                + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
+        Object value = databaseAdapter.executeQuery(sql).get(0)
+                .entrySet().iterator().next().getValue();
+        if (value instanceof Number number) {
+            return number.longValue();
+        } else {
+            throw new ValidationException("The type " + value.getClass().getSimpleName()
+                    + " cannot be converted to a numeric type");
+        }
     }
 
     private static void validateDataTypes(@NonNull String projectId,

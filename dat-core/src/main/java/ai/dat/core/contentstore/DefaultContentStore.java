@@ -7,6 +7,7 @@ import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.SemanticModelUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
@@ -71,7 +72,11 @@ public class DefaultContentStore implements ContentStore {
         this.synEmbeddingStore = synEmbeddingStore;
         this.docEmbeddingStore = docEmbeddingStore;
         this.maxResults = Optional.ofNullable(maxResults).orElse(5);
+        Preconditions.checkArgument(this.maxResults <= 10 && this.maxResults >= 1,
+                "maxResults must be between 1 and 10");
         this.minScore = Optional.ofNullable(minScore).orElse(0.6);
+        Preconditions.checkArgument(this.minScore >= 0.0 && this.minScore <= 1.0,
+                "minScore must be between 0.0 and 1.0");
     }
 
     @Override

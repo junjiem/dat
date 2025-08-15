@@ -1,4 +1,4 @@
-package ai.dat.agent.agentic.mcp;
+package ai.dat.agent.agentic.tools.mcp;
 
 import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigOptions;

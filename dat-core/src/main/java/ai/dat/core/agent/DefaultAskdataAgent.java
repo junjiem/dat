@@ -97,6 +97,8 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         this.sqlGenerationReasoning = Optional.ofNullable(sqlGenerationReasoning).orElse(true);
         this.textToSqlRules = Optional.ofNullable(textToSqlRules).orElse(TEXT_TO_SQL_RULES);
         this.maxHistories = Optional.ofNullable(maxHistories).orElse(20);
+        Preconditions.checkArgument(this.maxHistories > 0,
+                "maxHistories must be greater than 0");
         this.instruction = Optional.ofNullable(instruction).orElse("");
 
         this.assistant = AiServices.builder(Assistant.class)
