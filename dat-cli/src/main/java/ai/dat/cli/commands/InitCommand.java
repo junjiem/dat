@@ -40,6 +40,7 @@ import java.util.stream.Stream;
  */
 @Command(
         name = "init",
+        mixinStandardHelpOptions = true,
         description = "Initialization DAT project"
 )
 @Slf4j

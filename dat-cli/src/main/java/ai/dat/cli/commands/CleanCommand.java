@@ -18,6 +18,7 @@ import java.util.concurrent.Callable;
  */
 @Command(
         name = "clean",
+        mixinStandardHelpOptions = true,
         description = "Clean DAT project state and cache"
 )
 @Slf4j

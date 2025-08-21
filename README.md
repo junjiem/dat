@@ -66,6 +66,43 @@ dat的“语言”涵盖了在dat项目中编写的所有内容。也可以将�
 - 8. 指标的配置（构建语义模型后可以更进一步添加指标）；（TODO）
 
 
+---
+
+## CLI
+
+### Commands
+
+![DAT CLI](./images/dat_cli.png)
+
+#### Init command
+
+```shell
+dat init -h
+```
+
+![DAT CLI INIT HELP](./images/dat_cli_init_help.png)
+
+```shell
+dat init
+```
+
+![DAT CLI INIT DEMO](./images/dat_cli_init_demo.png)
+
+
+#### Run command
+
+```shell
+dat run -h
+```
+
+![DAT CLI RUN HELP](./images/dat_cli_run_help.png)
+
+```shell
+dat run -p <project-path> -a <agent-name>
+```
+
+![DAT CLI RUN DEMO](./images/dat_cli_run_demo.png)
+
 
 ---
 

@@ -18,6 +18,7 @@ import java.util.concurrent.Callable;
  */
 @Command(
         name = "build",
+        mixinStandardHelpOptions = true,
         description = "Build DAT project"
 )
 @Slf4j

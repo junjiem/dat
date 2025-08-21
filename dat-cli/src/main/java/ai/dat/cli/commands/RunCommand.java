@@ -31,6 +31,7 @@ import java.util.concurrent.Callable;
  */
 @Command(
         name = "run",
+        mixinStandardHelpOptions = true,
         description = "Run DAT project and start interactive Q&A"
 )
 @Slf4j

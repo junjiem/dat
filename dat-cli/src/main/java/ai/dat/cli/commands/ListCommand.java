@@ -20,6 +20,7 @@ import java.util.concurrent.Callable;
  */
 @Command(
         name = "list",
+        mixinStandardHelpOptions = true,
         description = "List DAT project information"
 )
 @Slf4j
