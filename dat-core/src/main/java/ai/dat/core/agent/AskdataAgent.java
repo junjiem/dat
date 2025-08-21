@@ -33,4 +33,13 @@ public interface AskdataAgent {
     default void userResponse(String response) {
         throw new UnsupportedFeatureException("Not supported yet.");
     }
+
+    /**
+     * Human-in-the-loop user (human) approval
+     *
+     * @param approval
+     */
+    default void userApproval(Boolean approval) {
+        throw new UnsupportedFeatureException("Not supported yet.");
+    }
 }

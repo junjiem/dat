@@ -20,67 +20,67 @@ import java.util.stream.Collectors;
  */
 public class EmailSenderFactory {
 
-    public static final ConfigOption<String> SMTP_HOST =
+    private static final ConfigOption<String> SMTP_HOST =
             ConfigOptions.key("smtp-host")
                     .stringType()
                     .noDefaultValue()
                     .withDescription("SMTP server address, such as: smtp.gmail.com");
 
-    public static final ConfigOption<Integer> SMTP_PORT =
+    private static final ConfigOption<Integer> SMTP_PORT =
             ConfigOptions.key("smtp-port")
                     .intType()
                     .defaultValue(587)
                     .withDescription("SMTP server ports, commonly used ports: 25, 465, 587");
 
-    public static final ConfigOption<Boolean> AUTH_ENABLED =
+    private static final ConfigOption<Boolean> AUTH_ENABLED =
             ConfigOptions.key("auth-enabled")
                     .booleanType()
                     .defaultValue(true)
                     .withDescription("Whether SMTP authentication is enabled");
 
-    public static final ConfigOption<Boolean> TLS_ENABLED =
+    private static final ConfigOption<Boolean> TLS_ENABLED =
             ConfigOptions.key("tls-enabled")
                     .booleanType()
                     .defaultValue(true)
                     .withDescription("Whether TLS encrypted transmission is enabled");
 
-    public static final ConfigOption<String> USERNAME =
+    private static final ConfigOption<String> USERNAME =
             ConfigOptions.key("username")
                     .stringType()
                     .noDefaultValue()
                     .withDescription("SMTP authentication username (usually an email address)");
 
-    public static final ConfigOption<String> PASSWORD =
+    private static final ConfigOption<String> PASSWORD =
             ConfigOptions.key("password")
                     .stringType()
                     .noDefaultValue()
                     .withDescription("SMTP authentication password");
 
-    public static final ConfigOption<String> FROM_ADDRESS =
+    private static final ConfigOption<String> FROM_ADDRESS =
             ConfigOptions.key("from-address")
                     .stringType()
                     .noDefaultValue()
                     .withDescription("Sender's email address");
 
-    public static final ConfigOption<String> FROM_NAME =
+    private static final ConfigOption<String> FROM_NAME =
             ConfigOptions.key("from-name")
                     .stringType()
                     .defaultValue("DAT Agent")
                     .withDescription("Sender display name");
 
-    public static final ConfigOption<Duration> SMTP_CONNECTION_TIMEOUT =
+    private static final ConfigOption<Duration> SMTP_CONNECTION_TIMEOUT =
             ConfigOptions.key("smtp-connection-timeout")
                     .durationType()
                     .defaultValue(Duration.ofSeconds(30))
                     .withDescription("SMTP connection timeout");
 
-    public static final ConfigOption<Duration> SMTP_TIMEOUT =
+    private static final ConfigOption<Duration> SMTP_TIMEOUT =
             ConfigOptions.key("smtp-timeout")
                     .durationType()
                     .defaultValue(Duration.ofSeconds(30))
                     .withDescription("SMTP timeout");
 
-    public static final ConfigOption<Duration> SMTP_WRITE_TIMEOUT =
+    private static final ConfigOption<Duration> SMTP_WRITE_TIMEOUT =
             ConfigOptions.key("smtp-write-timeout")
                     .durationType()
                     .defaultValue(Duration.ofSeconds(30))
@@ -125,9 +125,9 @@ public class EmailSenderFactory {
 
     private void validateConfigOptions(ReadableConfig config) {
         FactoryUtil.validateFactoryOptions(requiredOptions(), optionalOptions(), config);
-        config.getOptional(SMTP_PORT)
-                .ifPresent(n -> Preconditions.checkArgument(n > 0,
-                        "'" + SMTP_PORT.key() + "' value must be greater than 0"));
+        Integer smtpPort = config.get(SMTP_PORT);
+        Preconditions.checkArgument(smtpPort > 0,
+                "'" + SMTP_PORT.key() + "' value must be greater than 0");
     }
 
 }

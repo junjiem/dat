@@ -36,6 +36,13 @@
             <version>4.7.7</version>
         </dependency>
 
+        <!-- JLine console -->
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>3.30.5</version>
+        </dependency>
+
         <!-- Jansi -->
         <dependency>
             <groupId>org.fusesource.jansi</groupId>

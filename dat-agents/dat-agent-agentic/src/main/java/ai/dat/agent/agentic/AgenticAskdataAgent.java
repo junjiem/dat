@@ -37,6 +37,7 @@ import dev.langchain4j.service.memory.ChatMemoryAccess;
 import dev.langchain4j.service.tool.BeforeToolExecution;
 import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.service.tool.ToolExecutor;
+import dev.langchain4j.service.tool.ToolProvider;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -57,6 +58,8 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private static final String ASK_USER_TOOL_NAME = "askUser";
+
+    private static final String TOOL_NOT_APPROVAL_MESSAGE = "The user is not approval to execute the tool!";
 
     private final ChatModel defaultModel;
     private final StreamingChatModel defaultStreamingModel;
@@ -126,7 +129,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
     @Override
     public Set<EventOption> eventOptions() {
         return Set.of(SQL_GENERATE_EVENT, SEMANTIC_TO_SQL_EVENT, SQL_EXECUTE_EVENT,
-                BEFORE_TOOL_EXECUTION, TOOL_EXECUTION, AGENT_ANSWER, HITL_ASK_USER);
+                BEFORE_TOOL_EXECUTION, TOOL_EXECUTION, AGENT_ANSWER, HITL_AI_REQUEST);
     }
 
     @Override
@@ -160,23 +163,23 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         if (humanInTheLoopAskUser && ASK_USER_TOOL_NAME.equals(toolName)) {
             Map<?, ?> arguments = Json.fromJson(toolArgs, Map.class);
             String request = arguments.get("request").toString();
-            action.add(StreamEvent.from(HITL_ASK_USER, AI_REQUEST, request));
+            action.add(StreamEvent.from(HITL_AI_REQUEST, AI_REQUEST, request));
         } else if (humanInTheLoopToolApproval) {
-            action.add(StreamEvent.from(HITL_TOOL_APPROVAL, ACTION_PROMPT,
-                    "Do you allow the execution of the '" + toolName + "' tool? " +
-                            "(y/n) [User input/press Enter to use the y]"));
-            String response;
+            action.add(StreamEvent.from(HITL_TOOL_APPROVAL, TOOL_APPROVAL,
+                    "Do you approval the execution of the '" + toolName + "' tool?"));
+        }
+    }
+
+    private boolean isToolApproval() throws Exception {
+        boolean approval = true;
+        if (humanInTheLoop && humanInTheLoopToolApproval) {
             try {
-                response = this.waitForUserResponse();
+                approval = this.waitForUserApproval();
             } catch (Exception e) {
-                throw new RuntimeException("Failed to wait for user response", e);
-            }
-            boolean allow = response.equalsIgnoreCase("y") || response.isEmpty();
-            if (!allow) {
-                throw new RuntimeException("The user is not allowed to execute the '"
-                        + toolName + "' tool!");
+                throw new Exception("Failed to wait for user approval: " + e.getMessage(), e);
             }
         }
+        return approval;
     }
 
     private void onToolExecuted(ToolExecution toolExecution) {
@@ -200,6 +203,48 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                 )
                 .inputGuardrails()
                 .chatMemoryProvider(memoryId -> chatMemory);
+        aiServices.tools(createTools());
+        ToolProvider toolProvider = createToolProvider();
+        if (toolProvider != null) {
+            aiServices.toolProvider(toolProvider);
+        }
+        return aiServices.build();
+    }
+
+    private ToolProvider createToolProvider() {
+        if (mcpTransports == null || mcpTransports.isEmpty()) {
+            return null;
+        }
+        List<McpClient> mcpClients = mcpTransports.entrySet().stream()
+                .map(e -> {
+                            try {
+                                return new DefaultMcpClient.Builder()
+                                        .key(e.getKey())
+                                        .transport(e.getValue())
+                                        .build();
+                            } catch (Exception ex) {
+                                throw new RuntimeException("Create '" + e.getKey()
+                                        + "' MCP client failed: " + ex.getMessage(), ex);
+                            }
+                        }
+                ).collect(Collectors.toList());
+        return McpToolProvider.builder()
+                .mcpClients(mcpClients)
+                .toolWrapper(toolExecutor -> {
+                    boolean approval;
+                    try {
+                        approval = isToolApproval();
+                    } catch (Exception e) {
+                        return (toolExecutionRequest, memoryId) -> e.getMessage();
+                    }
+                    return approval ? toolExecutor :
+                            (toolExecutionRequest, memoryId) -> TOOL_NOT_APPROVAL_MESSAGE;
+                })
+                .build();
+    }
+
+    private Map<ToolSpecification, ToolExecutor> createTools() {
+        Map<ToolSpecification, ToolExecutor> tools = new HashMap<>();
 
         if (emailSender != null) {
             ToolSpecification toolSpecification = ToolSpecification.builder()
@@ -215,6 +260,13 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                             .build())
                     .build();
             ToolExecutor toolExecutor = (toolExecutionRequest, memoryId) -> {
+                try {
+                    if (!isToolApproval()) {
+                        return TOOL_NOT_APPROVAL_MESSAGE;
+                    }
+                } catch (Exception e) {
+                    return e.getMessage();
+                }
                 try {
                     Map<?, ?> arguments = Json.fromJson(toolExecutionRequest.arguments(), Map.class);
                     String recipients = arguments.get("recipients").toString();
@@ -247,27 +299,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                     return e.getMessage();
                 }
             };
-            aiServices.tools(Map.of(toolSpecification, toolExecutor));
-        }
-
-        if (mcpTransports != null && !mcpTransports.isEmpty()) {
-            List<McpClient> mcpClients = mcpTransports.entrySet().stream()
-                    .map(e -> {
-                                try {
-                                    return new DefaultMcpClient.Builder()
-                                            .key(e.getKey())
-                                            .transport(e.getValue())
-                                            .build();
-                                } catch (Exception ex) {
-                                    throw new RuntimeException("Create '" + e.getKey()
-                                            + "' MCP client failed: " + ex.getMessage(), ex);
-                                }
-                            }
-                    ).collect(Collectors.toList());
-            McpToolProvider toolProvider = McpToolProvider.builder()
-                    .mcpClients(mcpClients)
-                    .build();
-            aiServices.toolProvider(toolProvider);
+            tools.put(toolSpecification, toolExecutor);
         }
 
         if (humanInTheLoop && humanInTheLoopAskUser) {
@@ -286,10 +318,10 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                     return "Failed to wait for user response: " + e.getMessage();
                 }
             };
-            aiServices.tools(Map.of(toolSpecification, toolExecutor));
+            tools.put(toolSpecification, toolExecutor);
         }
 
-        return aiServices.build();
+        return tools;
     }
 
     private Text2SqlAgent createText2SqlAgent() {
@@ -410,4 +442,5 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
             return contentStore.retrieveMdl(query);
         }
     }
+
 }

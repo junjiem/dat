@@ -305,8 +305,7 @@ public final class FactoryUtil {
         }
     }
 
-    public static boolean isSensitive(String key) {
-        Preconditions.checkNotNull(key, "key is null");
+    public static boolean isSensitive(@NonNull String key) {
         final String keyInLower = key.toLowerCase();
         for (String hideKey : SENSITIVE_KEYS) {
             if (keyInLower.length() >= hideKey.length() && keyInLower.contains(hideKey)) {

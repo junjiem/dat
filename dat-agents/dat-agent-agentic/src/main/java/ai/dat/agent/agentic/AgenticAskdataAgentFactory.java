@@ -146,8 +146,8 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(
-                DEFAULT_LLM, MAX_MESSAGES, MAX_HISTORIES, MAX_TOOLS_INVOCATIONS, SQL_GENERATION_LLM,
-                TEXT_TO_SQL_RULES, INSTRUCTION, EMAIL_SENDER, MCP_SERVERS,
+                DEFAULT_LLM, MAX_MESSAGES, MAX_HISTORIES, MAX_TOOLS_INVOCATIONS,
+                SQL_GENERATION_LLM, TEXT_TO_SQL_RULES, INSTRUCTION, EMAIL_SENDER, MCP_SERVERS,
                 HUMAN_IN_THE_LOOP, HUMAN_IN_THE_LOOP_ASK_USER, HUMAN_IN_THE_LOOP_TOOL_APPROVAL
         ));
     }
@@ -215,6 +215,7 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
         config.getOptional(MCP_SERVERS).ifPresent(mcpServers -> {
             Map<String, McpTransport> mcpTransports = mcpServers.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> {
+                        @SuppressWarnings("unchecked")
                         Map<String, Object> map = (Map<String, Object>) e.getValue();
                         return new McpTransportFactory().create(Configuration.fromMap(map));
                     }));

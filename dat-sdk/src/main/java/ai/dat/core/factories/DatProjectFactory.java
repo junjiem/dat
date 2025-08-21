@@ -5,6 +5,7 @@ import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigOptions;
 import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.data.project.DatProject;
+import ai.dat.core.exception.ValidationException;
 import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.JinjaTemplateUtil;
 import ai.dat.core.utils.YamlTemplateUtil;
@@ -13,7 +14,6 @@ import ai.dat.llm.openai.OpneAiChatModelFactory;
 import ai.dat.storer.weaviate.duckdb.DuckDBEmbeddingStoreFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.networknt.schema.ValidationMessage;
-import jinjava.org.jsoup.helper.ValidationException;
 import lombok.Getter;
 import lombok.NonNull;
 

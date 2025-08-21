@@ -53,4 +53,8 @@ public class ProjectRunner {
     public void userResponse(String response) {
         agent.userResponse(response);
     }
+
+    public void userApproval(Boolean approval) {
+        agent.userApproval(approval);
+    }
 }

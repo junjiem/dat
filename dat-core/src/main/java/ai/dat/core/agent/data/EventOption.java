@@ -51,9 +51,9 @@ public class EventOption {
     private final Optional<ConfigOption<String>> hitlAiRequestOption;
 
     /**
-     * Human-in-the-loop Action Prompt Option
+     * Human-in-the-loop Tool Approval Option
      */
-    private final Optional<ConfigOption<String>> hitlActionPromptOption;
+    private final Optional<ConfigOption<String>> hitlToolApprovalOption;
 
     private final Set<ConfigOption<?>> dataOptions;
 
@@ -64,7 +64,7 @@ public class EventOption {
                        ConfigOption<String> querySqlOption,
                        ConfigOption<List<Map<String, Object>>> queryDataOption,
                        ConfigOption<String> hitlAiRequestOption,
-                       ConfigOption<String> hitlActionPromptOption,
+                       ConfigOption<String> hitlToolApprovalOption,
                        Set<ConfigOption<?>> dataOptions) {
         this.name = Optional.ofNullable(name).orElse("message");
         this.description = Optional.ofNullable(description).orElse(Description.builder().text("").build());
@@ -73,7 +73,7 @@ public class EventOption {
         this.querySqlOption = Optional.ofNullable(querySqlOption);
         this.queryDataOption = Optional.ofNullable(queryDataOption);
         this.hitlAiRequestOption = Optional.ofNullable(hitlAiRequestOption);
-        this.hitlActionPromptOption = Optional.ofNullable(hitlActionPromptOption);
+        this.hitlToolApprovalOption = Optional.ofNullable(hitlToolApprovalOption);
         this.dataOptions = Optional.ofNullable(dataOptions).orElse(Collections.emptySet());
     }
 }

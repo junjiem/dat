@@ -33,28 +33,9 @@ public class StreamEvent {
         return eventOption.getDescription();
     }
 
-//    public EventOption eventOption() {
-//        return eventOption;
-//    }
-
     public long timestamp() {
         return timestamp;
     }
-
-//    public <T> T get(ConfigOption<T> option) {
-//        return data.get(option);
-//    }
-//
-//    public <T> Optional<T> getOptional(ConfigOption<T> option) {
-//        return data.getOptional(option);
-//    }
-
-//    public Map<String, Object> getAllMessages() {
-//        return eventOption.getDataOptions().stream()
-//                .collect(Collectors.toMap(o -> o, data::getOptional))
-//                .entrySet().stream().filter(e -> e.getValue().isPresent())
-//                .collect(Collectors.toMap(e -> e.getKey().key(), e -> e.getValue().get()));
-//    }
 
     public Optional<String> getIncrementalContent() {
         return eventOption.getIncrementalOption().flatMap(data::getOptional);
@@ -76,8 +57,8 @@ public class StreamEvent {
         return eventOption.getHitlAiRequestOption().flatMap(data::getOptional);
     }
 
-    public Optional<String> getHitlActionPrompt() {
-        return eventOption.getHitlActionPromptOption().flatMap(data::getOptional);
+    public Optional<String> getHitlToolApproval() {
+        return eventOption.getHitlToolApprovalOption().flatMap(data::getOptional);
     }
 
     public Map<String, Object> getMessages() {
@@ -87,7 +68,7 @@ public class StreamEvent {
         eventOption.getQuerySqlOption().ifPresent(o -> keys.add(o.key()));
         eventOption.getQueryDataOption().ifPresent(o -> keys.add(o.key()));
         eventOption.getHitlAiRequestOption().ifPresent(o -> keys.add(o.key()));
-        eventOption.getHitlActionPromptOption().ifPresent(o -> keys.add(o.key()));
+        eventOption.getHitlToolApprovalOption().ifPresent(o -> keys.add(o.key()));
         return eventOption.getDataOptions().stream()
                 .filter(o -> !keys.contains(o.key()))
                 .collect(Collectors.toMap(o -> o, data::getOptional))

@@ -17,7 +17,8 @@ import java.util.concurrent.TimeoutException;
  */
 public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
 
-    private CompletableFuture<String> future = new CompletableFuture<>();
+    private CompletableFuture<String> userResponseFuture = new CompletableFuture<>();
+    private CompletableFuture<Boolean> userApprovalFuture = new CompletableFuture<>();
 
     public AbstractHitlAskdataAgent(@NonNull ContentStore contentStore,
                                     @NonNull DatabaseAdapter databaseAdapter) {
@@ -31,7 +32,17 @@ public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
      */
     @Override
     public void userResponse(String response) {
-        future.complete(response);
+        userResponseFuture.complete(response);
+    }
+
+    /**
+     * user approval
+     *
+     * @param approval
+     */
+    @Override
+    public void userApproval(Boolean approval) {
+        userApprovalFuture.complete(approval);
     }
 
     /**
@@ -44,9 +55,25 @@ public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
     public String waitForUserResponse()
             throws InterruptedException, ExecutionException {
         try {
-            return future.get();
+            return userResponseFuture.get();
         } finally {
-            future = new CompletableFuture<>();
+            userResponseFuture = new CompletableFuture<>();
+        }
+    }
+
+    /**
+     * 等待 user approval
+     *
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    public Boolean waitForUserApproval()
+            throws InterruptedException, ExecutionException {
+        try {
+            return userApprovalFuture.get();
+        } finally {
+            userApprovalFuture = new CompletableFuture<>();
         }
     }
 
@@ -60,9 +87,25 @@ public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
     public String waitForUserResponse(long timeout, TimeUnit unit)
             throws InterruptedException, TimeoutException, ExecutionException {
         try {
-            return future.get(timeout, unit);
+            return userResponseFuture.get(timeout, unit);
         } finally {
-            future = new CompletableFuture<>();
+            userResponseFuture = new CompletableFuture<>();
+        }
+    }
+
+    /**
+     * 等待 user approval，支持超时
+     *
+     * @param timeout 超时时间
+     * @param unit    时间单位
+     * @return response，如果超时则抛出 TimeoutException
+     */
+    public Boolean waitForUserApproval(long timeout, TimeUnit unit)
+            throws InterruptedException, TimeoutException, ExecutionException {
+        try {
+            return userApprovalFuture.get(timeout, unit);
+        } finally {
+            userApprovalFuture = new CompletableFuture<>();
         }
     }
 }

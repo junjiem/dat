@@ -6,10 +6,13 @@ import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigurationUtils;
 import ai.dat.core.factories.*;
+import ai.dat.core.utils.FactoryUtil;
 import ai.dat.core.utils.JinjaTemplateUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.UserInterruptException;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -104,14 +107,25 @@ public class InitCommand implements Callable<Integer> {
         try {
             Path path = Paths.get(workspacePath).toAbsolutePath();
             log.info("Init project in {}", path);
-            // 交互模式
             System.out.println("📁 Workspace path: " + path);
             System.out.println("Edit profile of the DAT project");
             System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
-            projectBasicConfiguration();
-            if (projectConfig.isBootMode()) { // 进入配置引导模式
-                projectDbConfiguration();
-                projectLlmConfiguration();
+            try {
+                projectBasicConfiguration();
+                if (projectConfig.isBootMode()) { // 进入配置引导模式
+                    projectDbConfiguration();
+                    projectLlmConfiguration();
+                }
+            } catch (EndOfFileException e) {
+                // Ctrl+D (EOF) - 优雅退出
+                log.debug("EOF received (Ctrl+D)");
+                System.out.println("👋 Exit!");
+                return 2;
+            } catch (UserInterruptException e) {
+                // Ctrl+C - 中断信号
+                log.debug("User interrupt received (Ctrl+C)");
+                System.out.println("👋 Exit!");
+                return 2;
             }
             System.out.println(AnsiUtil.string("@|fg(green) " + ("─".repeat(100)) + "|@"));
             System.out.println(AnsiUtil.string("@|fg(red) 📢 For more project configurations, " +
@@ -194,11 +208,15 @@ public class InitCommand implements Callable<Integer> {
         while (true) {
             String choice = PROCESSOR.readLine(AnsiUtil.string(
                     "@|fg(yellow) Please select a provider|@" + hint + ": "));
-            if (providers.size() == 1 && choice.isEmpty()) {
-                return providerMap.get("1");
+            if(choice.isEmpty() && providers.size()== 1){
+                choice = "1";
             }
-            if (choice.isEmpty() || !providerMap.containsKey(choice)) continue;
-            return providerMap.get(choice);
+            String provider = providerMap.get(choice);
+            if (provider != null) {
+                System.out.println(AnsiUtil.string("@|fg(green) ✓ Selected: " + provider + "|@"));
+                return provider;
+            }
+            System.out.println(AnsiUtil.string("@|fg(red) ⚠️ Invalid choice, please try again|@"));
         }
     }
 
@@ -230,21 +248,26 @@ public class InitCommand implements Callable<Integer> {
         Map<String, Object> configs = new HashMap<>();
         requiredOptions.forEach(option -> {
             while (true) {
+                String key = option.key();
                 boolean hasDefaultValue = option.hasDefaultValue();
                 String hint = " [User input]";
+                String defaultValue = null;
                 if (hasDefaultValue) {
-                    String defaultValue = ConfigurationUtils.convertValue(option.defaultValue(), String.class);
+                    defaultValue = ConfigurationUtils.convertValue(option.defaultValue(), String.class);
                     hint = " @|fg(green) (Default: " + defaultValue + ")|@" +
                             " [User input/press Enter to use the default value]";
                 }
-                String input = PROCESSOR.readLine(AnsiUtil.string(
-                        "@|fg(cyan) " + option.key() + "|@" + hint + ": "));
-                Object value = input;
-                if (input.isEmpty()) {
-                    if (!hasDefaultValue) continue;
-                    value = option.defaultValue();
+                String prompt = AnsiUtil.string("@|fg(cyan) " + key + "|@" + hint + ": ");
+                String input;
+                if (hasDefaultValue) {
+                    input = PROCESSOR.readLine(prompt, defaultValue);
+                } else if (FactoryUtil.isSensitive(key)) {
+                    input = PROCESSOR.readPassword(prompt);
+                } else {
+                    input = PROCESSOR.readLine(prompt);
                 }
-                configs.put(option.key(), value);
+                if (input.isEmpty()) continue;
+                configs.put(option.key(), input);
                 return;
             }
         });

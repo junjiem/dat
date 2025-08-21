@@ -21,7 +21,7 @@ import java.util.Set;
  */
 public class McpTransportFactory {
 
-    public static final ConfigOption<McpTransportType> TRANSPORT =
+    private static final ConfigOption<McpTransportType> TRANSPORT =
             ConfigOptions.key("transport")
                     .enumType(McpTransportType.class)
                     .noDefaultValue()
@@ -29,7 +29,7 @@ public class McpTransportFactory {
 
     //------------------------------- stdio -------------------------------
 
-    public static final ConfigOption<List<String>> COMMAND =
+    private static final ConfigOption<List<String>> COMMAND =
             ConfigOptions.key("command")
                     .stringType()
                     .asList()
@@ -37,7 +37,7 @@ public class McpTransportFactory {
                     .withDescription("Stdio command list. " +
                             "For example: [\"/usr/bin/npm\", \"exec\", \"@modelcontextprotocol/server-everything@0.6.2\"]");
 
-    public static final ConfigOption<Boolean> LOG_EVENTS =
+    private static final ConfigOption<Boolean> LOG_EVENTS =
             ConfigOptions.key("log-events")
                     .booleanType()
                     .defaultValue(false)
@@ -45,25 +45,25 @@ public class McpTransportFactory {
 
     //------------------------------- http -------------------------------
 
-    public static final ConfigOption<String> SSE_URL =
+    private static final ConfigOption<String> SSE_URL =
             ConfigOptions.key("sse-url")
                     .stringType()
                     .noDefaultValue()
                     .withDescription("Http SSE url. For example: http://localhost:3001/sse");
 
-    public static final ConfigOption<Duration> TIMEOUT =
+    private static final ConfigOption<Duration> TIMEOUT =
             ConfigOptions.key("timeout")
                     .durationType()
                     .defaultValue(Duration.ofSeconds(60))
                     .withDescription("Http timeout");
 
-    public static final ConfigOption<Boolean> LOG_REQUESTS =
+    private static final ConfigOption<Boolean> LOG_REQUESTS =
             ConfigOptions.key("log-requests")
                     .booleanType()
                     .defaultValue(false)
                     .withDescription("If you want to see the traffic in the log");
 
-    public static final ConfigOption<Boolean> LOG_RESPONSES =
+    private static final ConfigOption<Boolean> LOG_RESPONSES =
             ConfigOptions.key("log-responses")
                     .booleanType()
                     .defaultValue(false)
