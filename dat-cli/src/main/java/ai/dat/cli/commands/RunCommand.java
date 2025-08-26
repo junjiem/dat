@@ -2,6 +2,7 @@ package ai.dat.cli.commands;
 
 import ai.dat.boot.ProjectRunner;
 import ai.dat.boot.utils.ProjectUtil;
+import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.processor.InputProcessor;
 import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.cli.utils.TablePrinter;
@@ -32,6 +33,7 @@ import java.util.concurrent.Callable;
 @Command(
         name = "run",
         mixinStandardHelpOptions = true,
+        versionProvider = VersionProvider.class,
         description = "Run DAT project and start interactive Q&A"
 )
 @Slf4j
@@ -224,9 +226,9 @@ public class RunCommand implements Callable<Integer> {
         System.out.println(AnsiUtil.string("@|bold,fg(cyan) 📖 DAT Interactive Help|@"));
         System.out.println();
         System.out.println(AnsiUtil.string("@|bold Commands:|@"));
-        System.out.println(AnsiUtil.string("  @|fg(green) help|@     - Show this help message"));
-        System.out.println(AnsiUtil.string("  @|fg(green) clear|@    - Clear the screen"));
-        System.out.println(AnsiUtil.string("  @|fg(green) quit/exit|@     - Exit the application"));
+        System.out.println(AnsiUtil.string("  @|fg(green) help|@         - Show this help message"));
+        System.out.println(AnsiUtil.string("  @|fg(green) clear|@        - Clear the screen"));
+        System.out.println(AnsiUtil.string("  @|fg(green) quit/exit|@    - Exit the conversation"));
         System.out.println();
         System.out.println(AnsiUtil.string("@|bold Keyboard Shortcuts:|@"));
         System.out.println(AnsiUtil.string("  @|fg(yellow) ↑/↓|@         - Navigate command history"));

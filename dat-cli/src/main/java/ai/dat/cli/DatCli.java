@@ -1,6 +1,7 @@
 package ai.dat.cli;
 
 import ai.dat.cli.commands.*;
+import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.utils.AnsiUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.fusesource.jansi.AnsiConsole;
@@ -25,12 +26,13 @@ import java.util.concurrent.Callable;
 @Command(
         name = "dat",
         mixinStandardHelpOptions = true,
-        version = "DAT CLI 0.0.1-beta5",
+        versionProvider = VersionProvider.class,
         description = "DAT (Data Ask Tool) Command Line Interface",
         subcommands = {
                 InitCommand.class,
                 BuildCommand.class,
                 RunCommand.class,
+                ServerCommand.class,
                 CleanCommand.class,
                 ListCommand.class
         }
@@ -77,5 +79,5 @@ public class DatCli implements Callable<Integer> {
         AnsiConsole.systemUninstall(); // cleanup when done
         System.exit(exitCode);
     }
-
 }
+

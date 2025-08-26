@@ -7,8 +7,10 @@ import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
+import ai.dat.core.data.project.AgentConfig;
 import ai.dat.core.data.project.DatProject;
 import ai.dat.core.semantic.data.SemanticModel;
+import com.google.common.base.Preconditions;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -16,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @Author JunjieM
@@ -28,6 +31,10 @@ public class ProjectRunner {
 
     public ProjectRunner(@NonNull Path projectPath, @NonNull String agentName) {
         DatProject project = ProjectUtil.loadProject(projectPath);
+        Map<String, AgentConfig> agentMap = project.getAgents().stream()
+                .collect(Collectors.toMap(AgentConfig::getName, o -> o));
+        Preconditions.checkArgument(agentMap.containsKey(agentName),
+                "The project doesn't exist agent: " + agentName);
         Path modelsPath = projectPath.resolve(ProjectUtil.MODELS_DIR_NAME);
         Map<Path, DatSchema> schemas = ProjectUtil.loadAllSchema(modelsPath);
         Map<Path, DatModel> models = ProjectUtil.loadAllModel(modelsPath);
@@ -42,19 +49,19 @@ public class ProjectRunner {
         this.agent = ProjectUtil.createAskdataAgent(project, agentName, allSemanticModels, projectPath);
     }
 
-    public StreamAction ask(String question) {
+    public StreamAction ask(@NonNull String question) {
         return agent.ask(question);
     }
 
-    public StreamAction ask(String question, List<QuestionSqlPair> histories) {
+    public StreamAction ask(@NonNull String question, @NonNull List<QuestionSqlPair> histories) {
         return agent.ask(question, histories);
     }
 
-    public void userResponse(String response) {
+    public void userResponse(@NonNull String response) {
         agent.userResponse(response);
     }
 
-    public void userApproval(Boolean approval) {
+    public void userApproval(@NonNull Boolean approval) {
         agent.userApproval(approval);
     }
 }

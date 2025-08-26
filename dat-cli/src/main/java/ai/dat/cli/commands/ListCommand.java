@@ -1,5 +1,6 @@
 package ai.dat.cli.commands;
 
+import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.data.project.AgentConfig;
 import ai.dat.core.data.project.DatProject;
@@ -21,6 +22,7 @@ import java.util.concurrent.Callable;
 @Command(
         name = "list",
         mixinStandardHelpOptions = true,
+        versionProvider = VersionProvider.class,
         description = "List DAT project information"
 )
 @Slf4j

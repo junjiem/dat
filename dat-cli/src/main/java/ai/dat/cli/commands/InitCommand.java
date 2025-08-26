@@ -1,6 +1,7 @@
 package ai.dat.cli.commands;
 
 import ai.dat.boot.utils.ProjectUtil;
+import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.processor.InputProcessor;
 import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.configuration.ConfigOption;
@@ -35,12 +36,15 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
+ * Initialization project commands
+ *
  * @Author JunjieM
  * @Date 2025/7/23
  */
 @Command(
         name = "init",
         mixinStandardHelpOptions = true,
+        versionProvider = VersionProvider.class,
         description = "Initialization DAT project"
 )
 @Slf4j

@@ -60,10 +60,12 @@ dat的“语言”涵盖了在dat项目中编写的所有内容。也可以将�
 - 2. 语义模型（与数据模型绑定）的配置，包括：实体、维度、度量等；
 - 3. 基于LLM的生成语义SQL，将语义SQL转真实SQL，最后执行返回数据；
 - 4. 智能问数支持 HITL (Human-in-the-Loop) 交互；
-- 5. 基于LLM的数据探查辅助生成语义模型；（TODO）
-- 6. 数据模型、语义模型、智能问数的单元测试；（TODO）
-- 7. SQL问答对、文本内容等向量化入库与检索；（TODO）
-- 8. 指标的配置（构建语义模型后可以更进一步添加指标）；（TODO）
+- 5. 支持将智能问数项目对外提供OpenAPI的服务；
+- 6. 支持将智能问数项目对外提供MCP的服务；（TODO）
+- 7. 基于LLM的数据探查辅助生成语义模型；（TODO）
+- 8. 数据模型、语义模型、智能问数的单元测试；（TODO）
+- 9. SQL问答对、同义词、业务知识等向量化入库与检索；（TODO）
+- 10. 指标的配置（构建语义模型后可以更进一步添加指标）；（TODO）
 
 
 ---
@@ -102,6 +104,40 @@ dat run -p <project-path> -a <agent-name>
 ```
 
 ![DAT CLI RUN DEMO](./images/dat_cli_run_demo.png)
+
+
+#### Server command
+
+```shell
+dat server -h
+```
+
+![DAT CLI SERVER HELP](./images/dat_cli_server_help.png)
+
+##### 1、OpenAPI Server
+
+```shell
+dat server openapi -h
+```
+
+![DAT CLI SERVER OPENAPI HELP](./images/dat_cli_server_openapi_help.png)
+
+```shell
+dat server openapi -p <project-path>
+```
+
+![DAT CLI SERVER OPENAPI DEMO](./images/dat_cli_server_openapi_demo.png)
+
+Swagger UI:
+![DAT OPENAPI SERVER SWAGGER UI](./images/swagger-ui.png)
+
+Example:
+```shell
+curl -X POST http://localhost:8080/api/v1/ask/stream \
+-H "Content-Type: application/json" \
+-d '{"question": "各个国家的病例总数"}' \
+--no-buffer
+```
 
 
 ---

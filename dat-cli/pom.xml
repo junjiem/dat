@@ -57,6 +57,13 @@
             <version>${logback.version}</version>
         </dependency>
 
+        <!-- DAT OpenAPI Server-->
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-server-openapi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -98,14 +105,36 @@
                 </configuration>
             </plugin>
 
-            <!-- Maven Shade Plugin for creating executable JAR -->
+            <!-- Spring Boot Maven Plugin for proper Spring Boot packaging -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <mainClass>ai.dat.cli.DatCli</mainClass>
+                    <layers>
+                        <enabled>true</enabled>
+                    </layers>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Maven Shade Plugin for creating executable JAR (backup approach) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.4.1</version>
                 <executions>
                     <execution>
-                        <phase>package</phase>
+                        <id>shade-jar</id>
+<!--                        <phase>package</phase>-->
+                        <phase>none</phase> <!-- 禁用，优先使用Spring Boot Plugin -->
                         <goals>
                             <goal>shade</goal>
                         </goals>
@@ -116,6 +145,22 @@
                                 </transformer>
                                 <!-- merge META-INF/services files -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <!-- Spring Boot specific transformers -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring.handlers</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring.schemas</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring.tooling</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports</resource>
+                                </transformer>
                             </transformers>
                             <filters>
                                 <filter>

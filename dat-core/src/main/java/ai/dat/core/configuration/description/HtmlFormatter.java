@@ -1,5 +1,6 @@
 package ai.dat.core.configuration.description;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 
 /**
@@ -32,7 +33,7 @@ public class HtmlFormatter extends Formatter {
             suffix = "</code>";
         }
         state.append(prefix);
-        state.append(String.format(escapedFormat, elements));
+        state.append(String.format(escapedFormat, Arrays.stream(elements)));
         state.append(suffix);
     }
 

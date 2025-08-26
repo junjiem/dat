@@ -1,0 +1,26 @@
+# DAT OpenAPI Server 配置
+server:
+  port: 8080
+
+dat:
+  server:
+    project-path: "."
+    host: "localhost"
+    cors-enabled: true
+
+springdoc:
+  swagger-ui:
+    try-it-out-enabled: true
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    ai.dat: INFO
+    org.springframework: WARN
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %logger{20} - %msg%n"
+
+spring:
+  jackson:
+    default-property-inclusion: non_null

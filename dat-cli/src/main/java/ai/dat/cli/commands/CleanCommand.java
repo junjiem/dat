@@ -1,6 +1,7 @@
 package ai.dat.cli.commands;
 
 import ai.dat.boot.ProjectBuilder;
+import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.utils.AnsiUtil;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
@@ -19,6 +20,7 @@ import java.util.concurrent.Callable;
 @Command(
         name = "clean",
         mixinStandardHelpOptions = true,
+        versionProvider = VersionProvider.class,
         description = "Clean DAT project state and cache"
 )
 @Slf4j
