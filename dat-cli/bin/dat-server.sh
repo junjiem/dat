@@ -12,7 +12,7 @@ PROJECT_PATH="$(pwd)"
 # ==================== Service Type Configuration ====================
 
 # Service type configuration - manage all supported service types here
-SERVICE_TYPES=("openapi" "mcp" "a2a" "web")
+SERVICE_TYPES=("openapi" "mcp" "web")
 
 # Get all service type keys (for validation)
 get_service_type_keys() {
