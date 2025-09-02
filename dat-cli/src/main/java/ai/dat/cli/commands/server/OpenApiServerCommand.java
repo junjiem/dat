@@ -1,5 +1,6 @@
 package ai.dat.cli.commands.server;
 
+import ai.dat.boot.ProjectBuilder;
 import ai.dat.cli.provider.VersionProvider;
 import ai.dat.server.openapi.Application;
 import lombok.extern.slf4j.Slf4j;
@@ -52,8 +53,12 @@ public class OpenApiServerCommand implements Callable<Integer> {
     public Integer call() {
         try {
             Path path = Paths.get(projectPath).toAbsolutePath();
-            System.out.println("🚀 Starting DAT OpenAPI Server...");
             System.out.println("📁 Project path: " + path);
+            ProjectBuilder builder = new ProjectBuilder(path);
+            builder.build();
+
+            System.out.println();
+            System.out.println("🚀 Starting DAT OpenAPI Server...");
             System.out.println("🌐 Server Address: http://" + host + ":" + port);
             System.out.println();
 

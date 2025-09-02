@@ -22,3 +22,6 @@ logs/
 .cursor
 .cursorrules
 **/src/test
+
+.claude
+CLAUDE.md

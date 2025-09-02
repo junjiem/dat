@@ -100,7 +100,7 @@ public class InitCommand implements Callable<Integer> {
         }
     }
 
-    @Option(names = {"-p", "--workspace-path"},
+    @Option(names = {"-w", "--workspace-path"},
             description = "Project workspace path (default: current directory)",
             defaultValue = ".")
     private String workspacePath;

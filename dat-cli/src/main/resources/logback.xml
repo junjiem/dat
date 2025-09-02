@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <timestamp key="startup_timestamp" datePattern="yyyyMMdd-HHmmss-SSS"/>
+<!--    <timestamp key="startup_timestamp" datePattern="yyyyMMdd-HHmmss-SSS"/>-->
 
-    <property name="LOG_FILE_NAME" value="dat-cli-${startup_timestamp}" />
+    <!-- Project path from system property, default to current directory -->
+    <property name="PROJECT_PATH" value="${dat.project.path:-./}" />
+
+    <property name="LOG_FILE_NAME" value="dat" />
+<!--    <property name="LOG_FILE_NAME" value="dat-cli-${startup_timestamp}" />-->
     
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -11,10 +15,10 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/${LOG_FILE_NAME}.log</file>
+        <file>${PROJECT_PATH}/logs/${LOG_FILE_NAME}.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>logs/${LOG_FILE_NAME}.%i.log</fileNamePattern>
-            <maxIndex>3</maxIndex>
+            <fileNamePattern>${PROJECT_PATH}/logs/${LOG_FILE_NAME}.%i.log</fileNamePattern>
+            <maxIndex>5</maxIndex>
             <minIndex>1</minIndex>
         </rollingPolicy>
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
@@ -28,6 +32,7 @@
 
     <logger name="ai.dat.cli" level="WARN" additivity="false">
         <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
     </logger>
 
     <root level="INFO">
