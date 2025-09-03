@@ -72,8 +72,8 @@ public class DefaultContentStore implements ContentStore {
         this.synEmbeddingStore = synEmbeddingStore;
         this.docEmbeddingStore = docEmbeddingStore;
         this.maxResults = Optional.ofNullable(maxResults).orElse(5);
-        Preconditions.checkArgument(this.maxResults <= 10 && this.maxResults >= 1,
-                "maxResults must be between 1 and 10");
+        Preconditions.checkArgument(this.maxResults <= 20 && this.maxResults >= 1,
+                "maxResults must be between 1 and 20");
         this.minScore = Optional.ofNullable(minScore).orElse(0.6);
         Preconditions.checkArgument(this.minScore >= 0.0 && this.minScore <= 1.0,
                 "minScore must be between 0.0 and 1.0");

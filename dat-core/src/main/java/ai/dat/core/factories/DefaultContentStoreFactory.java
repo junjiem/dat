@@ -28,7 +28,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
             ConfigOptions.key("max-results")
                     .intType()
                     .defaultValue(5)
-                    .withDescription("Content store retrieve TopK maximum value, must be between 1 and 10");
+                    .withDescription("Content store retrieve TopK maximum value, must be between 1 and 20");
 
     public static final ConfigOption<Double> MIN_SCORE =
             ConfigOptions.key("min-score")
@@ -91,8 +91,8 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
 
     private void validateConfigOptions(ReadableConfig config, Map<String, ChatModelInstance> instances) {
         Integer maxResults = config.get(MAX_RESULTS);
-        Preconditions.checkArgument(maxResults >= 1 && maxResults <= 10,
-                "'" + MAX_RESULTS.key() + "' value must be between 1 and 10");
+        Preconditions.checkArgument(maxResults >= 1 && maxResults <= 20,
+                "'" + MAX_RESULTS.key() + "' value must be between 1 and 20");
         Double minScore = config.get(MIN_SCORE);
         Preconditions.checkArgument(minScore >= 0.0 && minScore <= 1.0,
                 "'" + MIN_SCORE.key() + "' value must be between 0.0 and 1.0");

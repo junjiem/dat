@@ -31,7 +31,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -75,6 +74,9 @@ public class AskController {
 
     // 用于定时发送ping事件的线程池
     private final ScheduledExecutorService pingScheduler = Executors.newScheduledThreadPool(1);
+
+    private static final Map<String, List<QuestionSqlPair>> historiesPool = new HashMap<>();
+    private static final String NOT_GENERATE = "<not generate>";
 
     @Operation(summary = "Ask data (Streaming)",
             description = "Ask data using natural language and return the SSE (Server-Sent Events) stream")
@@ -170,7 +172,8 @@ public class AskController {
     public SseEmitter askStream(@Valid @RequestBody AskRequest request) {
         String conversationId = request.getConversationId() == null || request.getConversationId().isBlank() ?
                 UUID.randomUUID().toString() : request.getConversationId();
-        List<QuestionSqlPair> histories = convertHistories(request.getHistories());
+
+        List<QuestionSqlPair> histories = historiesPool.getOrDefault(conversationId, Collections.emptyList());
 
         SseEmitter emitter = new SseEmitter();
 
@@ -189,6 +192,9 @@ public class AskController {
 
         // 异步处理流式响应
         new Thread(() -> {
+            String sql = NOT_GENERATE;
+            boolean isAccurateSql = false;
+
             try {
                 StreamAction action = runnerService.ask(conversationId,
                         request.getAgentName(), request.getQuestion(), histories);
@@ -199,6 +205,13 @@ public class AskController {
                 // 处理流式事件
                 for (StreamEvent event : action) {
                     if (event == null) break;
+
+                    if (event.getSemanticSql().isPresent()) {
+                        sql = event.getSemanticSql().get();
+                    }
+                    if (event.getQueryData().isPresent()) {
+                        isAccurateSql = true;
+                    }
 
                     String eventName = event.name();
                     if (!lastEvent.equals(eventName)) {
@@ -225,13 +238,13 @@ public class AskController {
                         eventData.put(ANSWER_ID, finalEventId);
                         eventData.put(ANSWER, content);
                     });
-                    event.getSemanticSql().ifPresent(sql -> {
+                    event.getSemanticSql().ifPresent(semanticSql -> {
                         reference.set(SQL_GENERATE_EVENT);
-                        eventData.put(SEMANTIC_SQL, sql);
+                        eventData.put(SEMANTIC_SQL, semanticSql);
                     });
-                    event.getQuerySql().ifPresent(sql -> {
+                    event.getQuerySql().ifPresent(querySql -> {
                         reference.set(SEMANTIC_TO_SQL_EVENT);
-                        eventData.put(QUERY_SQL, sql);
+                        eventData.put(QUERY_SQL, querySql);
                     });
                     event.getQueryData().ifPresent(data -> {
                         reference.set(SQL_EXECUTE_EVENT);
@@ -268,6 +281,14 @@ public class AskController {
                     }
                 }
 
+                if (lastIncremental) {
+                    emitter.send(SseEmitter.event()
+                            .name(AGENT_ANSWER_END_EVENT)
+                            .data(Map.of(ANSWER_ID, eventId,
+                                    TIMESTAMP, System.currentTimeMillis(),
+                                    CONVERSATION_ID, conversationId)));
+                }
+
                 // 发送完成事件
                 emitter.send(SseEmitter.event()
                         .name(FINISHED_EVENT)
@@ -301,6 +322,13 @@ public class AskController {
             } finally {
                 // 取消ping任务
                 pingTask.cancel(false);
+                // 添加历史记录
+                if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
+                    sql = "/* Incorrect SQL */ " + sql;
+                }
+                List<QuestionSqlPair> list = new ArrayList<>(histories);
+                list.add(QuestionSqlPair.from(request.getQuestion(), sql));
+                historiesPool.put(conversationId, list);
             }
         }).start();
 
@@ -351,15 +379,5 @@ public class AskController {
             return ResponseEntity.internalServerError()
                     .body(Map.of("status", "error", "message", e.getMessage()));
         }
-    }
-
-    private List<QuestionSqlPair> convertHistories(List<AskRequest.QuestionSqlPair> histories) {
-        if (histories == null || histories.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return histories.stream()
-                .map(h -> QuestionSqlPair
-                        .from(h.getQuestion(), h.getSql()))
-                .collect(Collectors.toList());
     }
 }
