@@ -21,15 +21,13 @@ if errorlevel 1 (
     exit /b 1
 )
 
-cd /d "%CURR_DIR%"
-
 :: Find JAR file
 set JAR_FILE=
-for %%f in (%CURR_DIR%\dat-cli-*.jar) do (
+for %%f in (%CURR_DIR%\..\dat-cli-*.jar) do (
     set JAR_FILE=%%f
     goto :jar_found
 )
-echo ❌ Error: DAT CLI jar file not found in %CURR_DIR%
+echo ❌ Error: DAT CLI jar file not found in %CURR_DIR%\..
 exit /b 1
 
 :jar_found
@@ -41,23 +39,32 @@ set COMMAND=%1
 
 :: Check if -p or --project-path parameter is already specified
 set HAS_PROJECT_PATH=false
+:: Check if -w or --workspace-path parameter is already specified
+set HAS_WORKSPACE_PATH=false
 setlocal enabledelayedexpansion
 for %%a in (%*) do (
     if "%%a"=="-p" set HAS_PROJECT_PATH=true
     if "%%a"=="--project-path" set HAS_PROJECT_PATH=true
+    if "%%a"=="-w" set HAS_WORKSPACE_PATH=true
+    if "%%a"=="--workspace-path" set HAS_WORKSPACE_PATH=true
 )
 
 :: Check if command supports -p/--project-path parameter
 set SUPPORTS_PROJECT_PATH=false
 if not "%COMMAND%"=="" (
-    :: server command always supports project-path parameter
-    if "%COMMAND%"=="server" (
-        set SUPPORTS_PROJECT_PATH=true
-    ) else (
-        :: Get command help info and check if it contains exactly "-p, --project-path=" pattern
-        %JAVA_CMD% -jar "%JAR_FILE%" %COMMAND% --help 2>nul | findstr /R /C:"^[ ]*-p,[ ]*--project-path=" >nul 2>&1
-        if not errorlevel 1 set SUPPORTS_PROJECT_PATH=true
-    )
+    :: Check if command is one of the supported commands
+    if "%COMMAND%"=="build" set SUPPORTS_PROJECT_PATH=true
+    if "%COMMAND%"=="clean" set SUPPORTS_PROJECT_PATH=true
+    if "%COMMAND%"=="list" set SUPPORTS_PROJECT_PATH=true
+    if "%COMMAND%"=="run" set SUPPORTS_PROJECT_PATH=true
+    if "%COMMAND%"=="server" set SUPPORTS_PROJECT_PATH=true
+)
+
+:: Check if command supports -w/--workspace-path parameter
+set SUPPORTS_WORKSPACE_PATH=false
+if not "%COMMAND%"=="" (
+    :: Check if command is one of the supported commands
+    if "%COMMAND%"=="init" set SUPPORTS_WORKSPACE_PATH=true
 )
 
 :: Extract project path from arguments for logging
@@ -73,23 +80,49 @@ for %%a in (%*) do (
     )
 )
 
-:: Convert to absolute path if possible
-if exist "%PROJECT_PATH%" (
-    pushd "%PROJECT_PATH%" >nul 2>&1
-    set PROJECT_PATH=!CD!
-    popd >nul 2>&1
+:: Convert to absolute path
+for %%i in ("%PROJECT_PATH%") do set PROJECT_PATH=%%~fi
+
+:: Extract workspace path from arguments for logging
+set WORKSPACE_PATH=%USER_PWD%
+set SKIP_NEXT_W=false
+for %%a in (%*) do (
+    if "!SKIP_NEXT_W!"=="true" (
+        set WORKSPACE_PATH=%%~a
+        set SKIP_NEXT_W=false
+    ) else (
+        if "%%a"=="-w" set SKIP_NEXT_W=true
+        if "%%a"=="--workspace-path" set SKIP_NEXT_W=true
+    )
 )
+
+:: Convert to absolute path
+for %%i in ("%WORKSPACE_PATH%") do set WORKSPACE_PATH=%%~fi
 
 :: Build arguments list
 set ARGS=%*
 if "%HAS_PROJECT_PATH%"=="false" (
     if "%SUPPORTS_PROJECT_PATH%"=="true" (
-        set ARGS=%* -p "%PROJECT_PATH%"
+        set ARGS=!ARGS! -p "%PROJECT_PATH%"
     )
 )
 
-:: Execute Java program with project path for logging
-%JAVA_CMD% -Ddat.project.path="%PROJECT_PATH%" -jar "%JAR_FILE%" %ARGS%
+:: Check if need to add workspace path parameter
+if "%HAS_WORKSPACE_PATH%"=="false" (
+    if "%SUPPORTS_WORKSPACE_PATH%"=="true" (
+        set ARGS=!ARGS! -w "%WORKSPACE_PATH%"
+    )
+)
+
+:: Set logs root path based on whether command supports project path
+if "%SUPPORTS_PROJECT_PATH%"=="true" (
+    set LOGS_ROOT_PATH=%PROJECT_PATH%
+) else (
+    set LOGS_ROOT_PATH=%CURR_DIR%\..
+)
+
+:: Execute Java program with logs root path for logging
+%JAVA_CMD% -Ddat.logs.root.path="%LOGS_ROOT_PATH%" -jar "%JAR_FILE%" %ARGS%
 
 :end
 endlocal

@@ -53,7 +53,9 @@ public class OpenApiServerCommand implements Callable<Integer> {
     public Integer call() {
         try {
             Path path = Paths.get(projectPath).toAbsolutePath();
+            log.info("Start openapi server the project: {}", path);
             System.out.println("📁 Project path: " + path);
+
             ProjectBuilder builder = new ProjectBuilder(path);
             builder.build();
 

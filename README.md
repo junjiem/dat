@@ -86,7 +86,6 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 ### 📋 环境要求
 
 - **Java 17+** - 推荐使用OpenJDK
-- **Maven 3.6+** - 项目构建工具
 - **数据库** - MySQL/PostgreSQL/Oracle任选其一
 - **LLM API** - OpenAI或Anthropic Claude API密钥
 
@@ -94,14 +93,28 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 
 #### 1️⃣ 安装DAT CLI
 
+##### 🐧 Linux/macOS 系统
+
 ```bash
 # 下载最新版本
 wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.0.1.tar.gz
 
 # 解压并配置环境变量
-tar -xzf dat-cli-0.0.1.tar.gz
-export PATH=$PATH:$(pwd)/dat-cli-0.0.1/bin
+tar -xzf dat-cli-x.x.x.tar.gz
+mv dat-cli-x.x.x dat-cli
+ln -s $(pwd)/dat-cli/bin/dat.sh $(pwd)/dat-cli/bin/dat
+export PATH=$PATH:$(pwd)/dat-cli/bin
 ```
+
+##### 🪟 Windows 系统
+
+1. 访问 [Releases页面](https://github.com/junjiem/dat/releases/latest)
+2. 下载 `dat-cli-x.x.x.tar.gz` 文件
+3. 使用WinRAR、7-Zip或Windows内置解压工具解压
+4. 将解压后的 `dat-cli\bin` 目录添加到系统PATH环境变量中：
+   - 右键"此电脑" → "属性" → "高级系统设置"
+   - 点击"环境变量" → 编辑"Path"变量
+   - 添加DAT CLI的bin目录路径
 
 #### 2️⃣ 初始化项目
 

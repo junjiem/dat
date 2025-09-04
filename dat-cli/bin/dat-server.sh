@@ -7,7 +7,9 @@ export LC_ALL=en_US.UTF-8
 
 CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JAR_FILE=""
-PROJECT_PATH="$(pwd)"
+# Current working directory where user executes the script
+USER_PWD="$(pwd)"
+PROJECT_PATH="$(cd "$USER_PWD" 2>/dev/null && pwd || echo "$USER_PWD")"
 
 # ==================== Service Type Configuration ====================
 
@@ -109,10 +111,10 @@ parse_and_validate_service_type() {
 # Function to check JAR file and Java
 check_jar_and_java() {
     # Find JAR file
-    JAR_FILE=$(ls "$CURR_DIR"/dat-cli-*.jar 2>/dev/null | head -n 1)
+    JAR_FILE=$(ls "$CURR_DIR"/../dat-cli-*.jar 2>/dev/null | head -n 1)
     
     if [[ ! -f "$JAR_FILE" ]]; then
-        echo "❌ Error: DAT CLI jar file not found in $CURR_DIR"
+        echo "❌ Error: DAT CLI jar file not found in $CURR_DIR/.."
         return 1
     fi
 
@@ -181,6 +183,8 @@ start_server() {
                 -p|--project-path)
                     # Pass project path arguments to both script and Java
                     PROJECT_PATH="$2"
+                    # Convert to absolute path
+                    PROJECT_PATH="$(cd "$PROJECT_PATH" 2>/dev/null && pwd || echo "$PROJECT_PATH")"
                     remaining_args+=("$1" "$2")
                     shift 2
                     ;;
@@ -215,7 +219,7 @@ start_server() {
     local project_log_file="$(get_log_file "$service_type")"
     
     # Start the server in background with dynamic subcommand
-    nohup java -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 \
+    nohup java -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Ddat.logs.root.path="$PROJECT_PATH" \
         -jar "$JAR_FILE" server $service_type \
         "${remaining_args[@]}" \
         > "$project_log_file" 2>&1 &
@@ -261,6 +265,8 @@ stop_server() {
         case $1 in
             -p|--project-path)
                 PROJECT_PATH="$2"
+                # Convert to absolute path
+                PROJECT_PATH="$(cd "$PROJECT_PATH" 2>/dev/null && pwd || echo "$PROJECT_PATH")"
                 shift 2
                 ;;
             *)
@@ -329,6 +335,8 @@ show_status() {
         case $1 in
             -p|--project-path)
                 PROJECT_PATH="$2"
+                # Convert to absolute path
+                PROJECT_PATH="$(cd "$PROJECT_PATH" 2>/dev/null && pwd || echo "$PROJECT_PATH")"
                 shift 2
                 ;;
             *)

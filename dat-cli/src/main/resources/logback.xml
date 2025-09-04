@@ -2,8 +2,8 @@
 <configuration>
 <!--    <timestamp key="startup_timestamp" datePattern="yyyyMMdd-HHmmss-SSS"/>-->
 
-    <!-- Project path from system property, default to current directory -->
-    <property name="PROJECT_PATH" value="${dat.project.path:-./}" />
+    <!-- Logs root path from system property, default to current directory -->
+    <property name="LOGS_ROOT_PATH" value="${dat.logs.root.path:-./}" />
 
     <property name="LOG_FILE_NAME" value="dat" />
 <!--    <property name="LOG_FILE_NAME" value="dat-cli-${startup_timestamp}" />-->
@@ -15,9 +15,9 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${PROJECT_PATH}/logs/${LOG_FILE_NAME}.log</file>
+        <file>${LOGS_ROOT_PATH}/logs/${LOG_FILE_NAME}.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${PROJECT_PATH}/logs/${LOG_FILE_NAME}.%i.log</fileNamePattern>
+            <fileNamePattern>${LOGS_ROOT_PATH}/logs/${LOG_FILE_NAME}.%i.log</fileNamePattern>
             <maxIndex>5</maxIndex>
             <minIndex>1</minIndex>
         </rollingPolicy>

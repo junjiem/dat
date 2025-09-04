@@ -16,9 +16,9 @@ fi
 cd "$CURR_DIR"
 
 # Find JAR file
-JAR_FILE=$(ls "$CURR_DIR"/dat-cli-*.jar 2>/dev/null | head -n 1)
+JAR_FILE=$(ls "$CURR_DIR"/../dat-cli-*.jar 2>/dev/null | head -n 1)
 if [[ ! -f "$JAR_FILE" ]]; then
-    echo "❌ Error: DAT CLI jar file not found in $CURR_DIR"
+    echo "❌ Error: DAT CLI jar file not found in $CURR_DIR/.."
     exit 1
 fi
 
@@ -34,28 +34,42 @@ check_supports_project_path() {
         return 1
     fi
     
-    # server command always supports project-path parameter
-    if [[ "$command" == "server" ]]; then
-        return 0
-    fi
-    
-    # Try to get command help info and check if it contains -p, --project-path parameter
-    local help_output
-    help_output=$(eval "$JAVA_CMD -jar \"$JAR_FILE\" \"$command\" --help" 2>/dev/null)
-    
-    # Check if help output contains exactly "-p, --project-path=" pattern
-    if echo "$help_output" | grep -q -E "^\s*-p,\s*--project-path="; then
-        return 0
-    else
+    # Check if command is one of the supported commands
+    case "$command" in
+        "build"|"clean"|"list"|"run"|"server")
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# Function: Check if command supports -w/--workspace-path parameter
+check_supports_workspace_path() {
+    local command="$1"
+
+    # Return false if no command provided
+    if [[ -z "$command" ]]; then
         return 1
     fi
+
+    # Check if command is one of the supported commands
+    case "$command" in
+        "init")
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 # Get first parameter as command
 COMMAND="$1"
 
 # Extract project path from arguments for logging
-PROJECT_PATH="$USER_PWD"
+PROJECT_PATH="$(cd "$USER_PWD" 2>/dev/null && pwd || echo "$USER_PWD")"
 for i in "${!@}"; do
     if [[ "${!i}" == "-p" ]] || [[ "${!i}" == "--project-path" ]]; then
         next_index=$((i + 1))
@@ -63,6 +77,20 @@ for i in "${!@}"; do
             PROJECT_PATH="${!next_index}"
             # Convert to absolute path
             PROJECT_PATH="$(cd "$PROJECT_PATH" 2>/dev/null && pwd || echo "$PROJECT_PATH")"
+        fi
+        break
+    fi
+done
+
+# Extract workspace path from arguments for logging
+WORKSPACE_PATH="$(cd "$USER_PWD" 2>/dev/null && pwd || echo "$USER_PWD")"
+for i in "${!@}"; do
+    if [[ "${!i}" == "-w" ]] || [[ "${!i}" == "--workspace-path" ]]; then
+        next_index=$((i + 1))
+        if [[ $next_index -le $# ]]; then
+            WORKSPACE_PATH="${!next_index}"
+            # Convert to absolute path
+            WORKSPACE_PATH="$(cd "$WORKSPACE_PATH" 2>/dev/null && pwd || echo "$WORKSPACE_PATH")"
         fi
         break
     fi
@@ -76,5 +104,17 @@ if [[ ! " $* " =~ " -p " ]] && [[ ! " $* " =~ " --project-path " ]] && check_sup
     ARGS=("$@" -p "$PROJECT_PATH")
 fi
 
-# Execute Java program with project path for logging
-eval "$JAVA_CMD -Ddat.project.path=\"$PROJECT_PATH\" -jar \"$JAR_FILE\" ${ARGS[*]@Q}"
+# Check if need to add workspace path parameter
+if [[ ! " $* " =~ " -w " ]] && [[ ! " $* " =~ " --workspace-path " ]] && check_supports_workspace_path "$COMMAND"; then
+    ARGS=("$@" -w "$WORKSPACE_PATH")
+fi
+
+# Set logs root path based on whether command supports project path
+if check_supports_project_path "$COMMAND"; then
+    LOGS_ROOT_PATH="$PROJECT_PATH"
+else
+    LOGS_ROOT_PATH="$CURR_DIR/.."
+fi
+
+# Execute Java program with logs root path for logging
+eval "$JAVA_CMD -Ddat.logs.root.path=\"$LOGS_ROOT_PATH\" -jar \"$JAR_FILE\" ${ARGS[*]@Q}"
