@@ -1,6 +1,6 @@
 package ai.dat.core.contentstore;
 
-import ai.dat.core.contentstore.data.NounSynonymPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
@@ -202,7 +202,7 @@ public class DefaultContentStore implements ContentStore {
     }
 
     @Override
-    public List<String> addSyns(List<NounSynonymPair> synonymPairs) {
+    public List<String> addSyns(List<WordSynonymPair> synonymPairs) {
         List<TextSegment> textSegments = synonymPairs.stream()
                 .map(pair -> {
                     String json;
@@ -229,7 +229,7 @@ public class DefaultContentStore implements ContentStore {
     }
 
     @Override
-    public List<NounSynonymPair> retrieveSyn(String question) {
+    public List<WordSynonymPair> retrieveSyn(String question) {
         List<TextSegment> textSegments = getSynContentRetriever()
                 .retrieve(Query.from(question))
                 .stream()

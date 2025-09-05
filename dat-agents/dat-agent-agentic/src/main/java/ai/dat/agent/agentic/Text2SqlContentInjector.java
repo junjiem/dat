@@ -2,7 +2,7 @@ package ai.dat.agent.agentic;
 
 import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.contentstore.ContentStore;
-import ai.dat.core.contentstore.data.NounSynonymPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
@@ -99,7 +99,7 @@ class Text2SqlContentInjector implements ContentInjector {
             List<QuestionSqlPair> sqlSamples = ContentStoreUtil.toQuestionSqlPairs(sqlTextSegments);
             List<TextSegment> synTextSegments = contents.stream()
                     .map(Content::textSegment).filter(contentStore::isSyn).toList();
-            List<NounSynonymPair> synonyms = ContentStoreUtil.toNounSynonymPairs(synTextSegments);
+            List<WordSynonymPair> synonyms = ContentStoreUtil.toNounSynonymPairs(synTextSegments);
             List<TextSegment> docTextSegments = contents.stream()
                     .map(Content::textSegment).filter(contentStore::isDoc).toList();
             List<String> docs = ContentStoreUtil.toDocs(docTextSegments);

@@ -1,6 +1,6 @@
 package ai.dat.core.contentstore.utils;
 
-import ai.dat.core.contentstore.data.NounSynonymPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.semantic.data.SemanticModel;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -55,11 +55,11 @@ public class ContentStoreUtil {
                 .collect(Collectors.toList());
     }
 
-    public static List<NounSynonymPair> toNounSynonymPairs(List<TextSegment> textSegments) {
+    public static List<WordSynonymPair> toNounSynonymPairs(List<TextSegment> textSegments) {
         return textSegments.stream()
                 .map(textSegment -> {
                     try {
-                        return JSON_MAPPER.readValue(textSegment.text(), NounSynonymPair.class);
+                        return JSON_MAPPER.readValue(textSegment.text(), WordSynonymPair.class);
                     } catch (JsonProcessingException e) {
                         return null;
                     }

@@ -1,10 +1,9 @@
 package ai.dat.core.contentstore;
 
-import ai.dat.core.contentstore.data.NounSynonymPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.semantic.data.SemanticModel;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 
 import java.util.Collection;
@@ -65,15 +64,15 @@ public interface ContentStore {
 
     // ---------------名词和同义词对-------------------
 
-    default String addSyn(NounSynonymPair synonymPair) {
+    default String addSyn(WordSynonymPair synonymPair) {
         return addSyns(List.of(synonymPair)).get(0);
     }
 
-    List<String> addSyns(List<NounSynonymPair> synonymPairs);
+    List<String> addSyns(List<WordSynonymPair> synonymPairs);
 
     ContentRetriever getSynContentRetriever();
 
-    List<NounSynonymPair> retrieveSyn(String question);
+    List<WordSynonymPair> retrieveSyn(String question);
 
     boolean isSyn(TextSegment textSegment);
 
