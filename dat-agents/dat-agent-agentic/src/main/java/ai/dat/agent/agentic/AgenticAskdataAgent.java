@@ -113,7 +113,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                 "maxIterations must be between 1 and 100");
         this.textToSqlRules = textToSqlRules;
         this.instruction = Optional.ofNullable(instruction).orElse("");
-        this.maxHistories = Optional.ofNullable(maxHistories).orElse(20);
+        this.maxHistories = Optional.ofNullable(maxHistories).orElse(0);
         Preconditions.checkArgument(this.maxHistories > 0,
                 "maxHistories must be greater than 0");
         this.humanInTheLoop = Optional.ofNullable(humanInTheLoop).orElse(true);

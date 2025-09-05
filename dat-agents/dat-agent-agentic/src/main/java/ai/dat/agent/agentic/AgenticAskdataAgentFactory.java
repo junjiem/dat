@@ -58,8 +58,9 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
     public static final ConfigOption<Integer> MAX_HISTORIES =
             ConfigOptions.key("max-histories")
                     .intType()
-                    .defaultValue(20)
-                    .withDescription("Maximum number of histories");
+                    .defaultValue(0)
+                    .withDescription("Maximum number of user's Q&A SQL pair history. " +
+                            "Value must be greater than or equal to 0.");
 
     public static final ConfigOption<String> TEXT_TO_SQL_RULES =
             ConfigOptions.key("text-to-sql-rules")
@@ -230,8 +231,8 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                 .ifPresent(n -> Preconditions.checkArgument(n > 0,
                         "'" + MAX_MESSAGES.key() + "' value must be greater than 0"));
         config.getOptional(MAX_HISTORIES)
-                .ifPresent(n -> Preconditions.checkArgument(n > 0,
-                        "'" + MAX_HISTORIES.key() + "' value must be greater than 0"));
+                .ifPresent(n -> Preconditions.checkArgument(n >= 0,
+                        "'" + MAX_HISTORIES.key() + "' value must be greater than or equal to 0"));
         config.getOptional(MAX_TOOLS_INVOCATIONS)
                 .ifPresent(n -> Preconditions.checkArgument(n <= 100 && n >= 1,
                         "'" + MAX_TOOLS_INVOCATIONS.key() + "' value must be between 1 and 100"));
