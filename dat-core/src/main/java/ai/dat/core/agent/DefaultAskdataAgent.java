@@ -5,7 +5,7 @@ import ai.dat.core.agent.data.EventOption;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.ContentStore;
-import ai.dat.core.contentstore.data.NounSynonymPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.SemanticModelUtil;
@@ -146,7 +146,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                         databaseAdapter.semanticAdapter(), semanticModel))
                 .collect(Collectors.toList());
         List<QuestionSqlPair> sqlSamples = contentStore.retrieveSql(question);
-        List<NounSynonymPair> synonyms = contentStore.retrieveSyn(question);
+        List<WordSynonymPair> synonyms = contentStore.retrieveSyn(question);
         List<String> docs = contentStore.retrieveDoc(question);
 
         if (intentClassification) {
@@ -218,7 +218,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
 
     private IntentClassification intentClassification(List<String> semantics,
                                                       List<QuestionSqlPair> sqlSamples,
-                                                      List<NounSynonymPair> synonyms,
+                                                      List<WordSynonymPair> synonyms,
                                                       List<String> docs,
                                                       List<QuestionSqlPair> histories,
                                                       String questionTime,
@@ -235,7 +235,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
     private String generateSql(StreamAction action,
                                List<String> semanticContexts,
                                List<QuestionSqlPair> sqlSamples,
-                               List<NounSynonymPair> synonyms,
+                               List<WordSynonymPair> synonyms,
                                List<String> docs,
                                String instruction,
                                List<QuestionSqlPair> histories,
@@ -319,7 +319,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         @UserMessage(fromResource = "prompts/default/intent_classification_user_prompt_template.txt")
         IntentClassification intentClassification(@V("semantic_models") List<String> semanticModels,
                                                   @V("sql_samples") List<QuestionSqlPair> sqlSamples,
-                                                  @V("synonyms") List<NounSynonymPair> synonyms,
+                                                  @V("synonyms") List<WordSynonymPair> synonyms,
                                                   @V("docs") List<String> docs,
                                                   @V("histories") List<QuestionSqlPair> histories,
                                                   @V("query_time") String queryTime,
@@ -344,7 +344,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         @UserMessage(fromResource = "prompts/default/sql_generation_reasoning_user_prompt_template.txt")
         TokenStream sqlGenerateReasoning(@V("semantic_models") List<String> semanticModels,
                                          @V("sql_samples") List<QuestionSqlPair> sqlSamples,
-                                         @V("synonyms") List<NounSynonymPair> synonyms,
+                                         @V("synonyms") List<WordSynonymPair> synonyms,
                                          @V("docs") List<String> docs,
                                          @V("instruction") String instruction,
                                          @V("query_time") String queryTime,
@@ -355,7 +355,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         @UserMessage(fromResource = "prompts/default/sql_generation_reasoning_with_followup_user_prompt_template.txt")
         TokenStream followupSqlGenerateReasoning(@V("semantic_models") List<String> semanticModels,
                                                  @V("sql_samples") List<QuestionSqlPair> sqlSamples,
-                                                 @V("synonyms") List<NounSynonymPair> synonyms,
+                                                 @V("synonyms") List<WordSynonymPair> synonyms,
                                                  @V("docs") List<String> docs,
                                                  @V("instruction") String instruction,
                                                  @V("histories") List<QuestionSqlPair> histories,
@@ -368,7 +368,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         GenSql sqlGenerate(@V("text_to_sql_rules") String textToSqlRules,
                            @V("semantic_models") List<String> semanticModels,
                            @V("sql_samples") List<QuestionSqlPair> sqlSamples,
-                           @V("synonyms") List<NounSynonymPair> synonyms,
+                           @V("synonyms") List<WordSynonymPair> synonyms,
                            @V("docs") List<String> docs,
                            @V("instruction") String instruction,
                            @V("query_time") String queryTime,
@@ -380,7 +380,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         GenSql followupSqlGenerate(@V("text_to_sql_rules") String textToSqlRules,
                                    @V("semantic_models") List<String> semanticModels,
                                    @V("sql_samples") List<QuestionSqlPair> sqlSamples,
-                                   @V("synonyms") List<NounSynonymPair> synonyms,
+                                   @V("synonyms") List<WordSynonymPair> synonyms,
                                    @V("docs") List<String> docs,
                                    @V("instruction") String instruction,
                                    @V("histories") List<QuestionSqlPair> histories,

@@ -11,14 +11,14 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 名词与近义词对
+ * 词与其近义词对
  *
  * @Author JunjieM
  * @Date 2025/6/30
  */
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class NounSynonymPair {
+public class WordSynonymPair {
     @NonNull
     private final String noun;
 
@@ -28,14 +28,14 @@ public class NounSynonymPair {
     private String description;
 
     @JsonCreator
-    private NounSynonymPair(@JsonProperty("noun") @NonNull String noun,
+    private WordSynonymPair(@JsonProperty("noun") @NonNull String noun,
                             @JsonProperty("synonyms") @NonNull List<String> synonyms) {
         this.noun = noun;
         this.synonyms = synonyms;
     }
 
     @JsonCreator
-    private NounSynonymPair(@JsonProperty("noun") @NonNull String noun,
+    private WordSynonymPair(@JsonProperty("noun") @NonNull String noun,
                             @JsonProperty("synonyms") @NonNull List<String> synonyms,
                             @JsonProperty("description") String description) {
         this.noun = noun;
@@ -43,24 +43,24 @@ public class NounSynonymPair {
         this.description = description;
     }
 
-    public static NounSynonymPair from(@NonNull String noun, @NonNull String synonym, String description) {
-        return new NounSynonymPair(noun, Collections.singletonList(synonym), description);
+    public static WordSynonymPair from(@NonNull String noun, @NonNull String synonym, String description) {
+        return new WordSynonymPair(noun, Collections.singletonList(synonym), description);
     }
 
-    public static NounSynonymPair from(@NonNull String noun, @NonNull List<String> synonyms, String description) {
-        return new NounSynonymPair(noun, synonyms, description);
+    public static WordSynonymPair from(@NonNull String noun, @NonNull List<String> synonyms, String description) {
+        return new WordSynonymPair(noun, synonyms, description);
     }
 
-    public static NounSynonymPair from(@NonNull String noun, @NonNull String synonym) {
-        return new NounSynonymPair(noun, Collections.singletonList(synonym));
+    public static WordSynonymPair from(@NonNull String noun, @NonNull String synonym) {
+        return new WordSynonymPair(noun, Collections.singletonList(synonym));
     }
 
-    public static NounSynonymPair from(@NonNull String noun, @NonNull List<String> synonyms) {
-        return new NounSynonymPair(noun, synonyms);
+    public static WordSynonymPair from(@NonNull String noun, @NonNull List<String> synonyms) {
+        return new WordSynonymPair(noun, synonyms);
     }
 
-    public static NounSynonymPair from(@NonNull String noun, @NonNull String... synonyms) {
-        return new NounSynonymPair(noun, Arrays.asList(synonyms));
+    public static WordSynonymPair from(@NonNull String noun, @NonNull String... synonyms) {
+        return new WordSynonymPair(noun, Arrays.asList(synonyms));
     }
 
     public void add(@NonNull String synonym) {
