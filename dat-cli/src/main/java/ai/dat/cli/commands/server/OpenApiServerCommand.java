@@ -35,8 +35,8 @@ public class OpenApiServerCommand implements Callable<Integer> {
     private String projectPath;
 
     @Option(names = {"-H", "--host"},
-            description = "Server host (default: localhost)",
-            defaultValue = "localhost")
+            description = "Server host (default: 0.0.0.0)",
+            defaultValue = "0.0.0.0")
     private String host;
 
     @Option(names = {"-P", "--port"},
@@ -44,16 +44,11 @@ public class OpenApiServerCommand implements Callable<Integer> {
             defaultValue = "8080")
     private int port;
 
-    @Option(names = {"--cors"},
-            description = "Enable CORS (default: true)",
-            defaultValue = "true")
-    private boolean corsEnabled;
-
     @Override
     public Integer call() {
         try {
             Path path = Paths.get(projectPath).toAbsolutePath();
-            log.info("Start openapi server the project: {}", path);
+            log.info("Start OpenAPI server the project: {}", path);
             System.out.println("📁 Project path: " + path);
 
             ProjectBuilder builder = new ProjectBuilder(path);
@@ -70,9 +65,8 @@ public class OpenApiServerCommand implements Callable<Integer> {
 
             String[] args = {
                     "--server.port=" + port,
-                    "--dat.server.project-path=" + projectPath,
-                    "--dat.server.host=" + host,
-                    "--dat.server.cors-enabled=" + corsEnabled
+                    "--server.address=" + host,
+                    "--dat.server.project-path=" + projectPath
             };
 
             // 直接运行Spring Boot应用，它会阻塞当前线程
@@ -103,7 +97,7 @@ public class OpenApiServerCommand implements Callable<Integer> {
                     return 1;
                 }
             } catch (Exception e) {
-                log.error("Failed to start Spring Boot application", e);
+                log.error("Failed to start OpenAPI server", e);
                 System.err.println("❌ Failed to start server: " + e.getMessage());
                 return 1;
             }
