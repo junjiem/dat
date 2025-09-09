@@ -99,7 +99,7 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 
 ```bash
 # 下载最新版本
-wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.0.2.tar.gz
+wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.1.0.tar.gz
 
 # 解压并配置环境变量
 tar -xzf dat-cli-x.x.x.tar.gz
@@ -270,7 +270,7 @@ dat server -h
 ```
 ![DAT CLI SERVER HELP](./images/dat_cli_server_help.png)
 
-##### 🌐 OpenAPI服务
+##### 🌐 OpenAPI 服务
 
 ```bash
 dat server openapi -h
@@ -279,11 +279,14 @@ dat server openapi -h
 
 **启动服务**:
 ```bash
-# 标准启动
+# 当前工作目录为DAT项目目录
+dat server openapi
+
+# 指定DAT项目目录
 dat server openapi -p ./my-project
 
-# 自定义主机、端口和配置
-dat server openapi -p ./my-project --host=0.0.0.0 --port=9090 --cors=true
+# 自定义端口
+dat server openapi --port=9090
 ```
 
 ![DAT CLI SERVER OPENAPI DEMO](./images/dat_cli_server_openapi_demo.png)
@@ -299,6 +302,27 @@ curl -X POST http://localhost:8080/api/v1/ask/stream \
   -d '{"question": "各个国家的病例总数"}' \
   --no-buffer
 ```
+
+##### 🌐 MCP 服务
+
+```bash
+dat server mcp -h
+```
+![DAT CLI SERVER MCP HELP](./images/dat_cli_server_mcp_help.png)
+
+**启动服务**:
+```bash
+# 当前工作目录为DAT项目目录
+dat server mcp
+
+# 指定DAT项目目录
+dat server mcp -p ./my-project
+
+# 自定义端口
+dat server mcp --port=9091
+```
+
+![DAT CLI SERVER MCP DEMO](./images/dat_cli_server_mcp_demo.png)
 
 
 ---
@@ -331,6 +355,7 @@ dat-parent/
 ├── 🎭 dat-agents/        # 智能代理实现
 │   └── dat-agent-agentic/
 ├── 📡 dat-servers/       # 服务端组件
+│   ├── dat-server-mcp/
 │   └── dat-server-openapi/
 ├── 🛠️ dat-cli/           # 命令行工具
 └── 📚 dat-sdk/           # 开发工具包
@@ -416,7 +441,7 @@ Closes #123"
 - 3、基于LLM的生成语义SQL，将语义SQL转真实SQL，最后执行返回数据；
 - 4、智能问数支持 HITL (Human-in-the-Loop) 交互；
 - 5、支持将智能问数项目对外提供OpenAPI的服务；
-- 6、支持将智能问数项目对外提供MCP的服务；（TODO）
+- 6、支持将智能问数项目对外提供MCP的服务；
 - 7、基于LLM的数据探查辅助生成语义模型；（TODO）
 - 8、数据模型、语义模型、智能问数的单元测试；（TODO）
 - 9、SQL问答对、同义词、业务知识等向量化入库与检索；（TODO）
