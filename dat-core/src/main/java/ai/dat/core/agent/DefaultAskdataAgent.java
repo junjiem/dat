@@ -227,7 +227,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
             return intentClassificationAssistant.intentClassification(semantics, sqlSamples,
                     synonyms, docs, histories, questionTime, question, language);
         } catch (Exception e) {
-            log.error("Intent classification exception", e);
+            log.warn("Intent classification exception", e);
             return new IntentClassification(Intent.TEXT_TO_SQL);
         }
     }
