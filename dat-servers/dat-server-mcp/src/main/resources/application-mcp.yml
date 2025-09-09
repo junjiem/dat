@@ -1,0 +1,17 @@
+# DAT MCP Server 配置
+
+spring:
+  ai:
+    mcp:
+      server:
+        # Server identification
+        name: dat-mcp-server
+        version: 0.0.1
+        # Server type (SYNC/ASYNC)
+        type: SYNC
+        # Transport configuration
+        stdio: false
+        # Change notifications
+        tool-change-notification: true
+        resource-change-notification: true
+        prompt-change-notification: true

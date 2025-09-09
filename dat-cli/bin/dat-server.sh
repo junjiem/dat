@@ -14,7 +14,7 @@ PROJECT_PATH="$(cd "$USER_PWD" 2>/dev/null && pwd || echo "$USER_PWD")"
 # ==================== Service Type Configuration ====================
 
 # Service type configuration - manage all supported service types here
-SERVICE_TYPES=("openapi" "mcp" "web")
+SERVICE_TYPES=("openapi" "mcp" "a2a")
 
 # Get all service type keys (for validation)
 get_service_type_keys() {
@@ -29,10 +29,10 @@ get_service_type_description() {
             echo "OpenAPI server with Swagger UI"
             ;;
         "mcp")
-            echo "MCP server [Not supported yet]"
+            echo "MCP server"
             ;;
-        "web")
-            echo "WEB server [Not supported yet]"
+        "a2a")
+            echo "A2A server [Not supported yet]"
             ;;
         *)
             echo "Unknown service type: $service_type"
