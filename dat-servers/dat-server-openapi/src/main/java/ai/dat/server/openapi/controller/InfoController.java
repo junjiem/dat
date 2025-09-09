@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +31,12 @@ public class InfoController {
 
     private final ServerConfig serverConfig;
     private final ProjectService projectService;
+    
+    @Value("${server.address:0.0.0.0}")
+    private String serverAddress;
+    
+    @Value("${server.port:8080}")
+    private int serverPort;
 
     @Operation(summary = "Health checkup", description = "Health check endpoint")
     @ApiResponse(responseCode = "200", description = "Successful")
@@ -66,9 +73,8 @@ public class InfoController {
                         "name", "DAT OpenAPI Server",
                         "version", VersionUtil.getVersion(),
                         "description", "DAT (Data Ask Tool) OpenAPI Server",
-                        "host", serverConfig.getHost(),
-                        "port", serverConfig.getPort(),
-                        "corsEnabled", serverConfig.isCorsEnabled()
+                        "address", serverAddress,
+                        "port", serverPort
                 ),
                 "timestamp", LocalDateTime.now()
         ));

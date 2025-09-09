@@ -1,12 +1,11 @@
 # DAT OpenAPI Server 配置
 server:
   port: 8080
+  address: 0.0.0.0
 
 dat:
   server:
     project-path: "."
-    host: "localhost"
-    cors-enabled: true
 
 springdoc:
   swagger-ui:
@@ -22,5 +21,7 @@ logging:
     console: "%d{HH:mm:ss} %-5level %logger{20} - %msg%n"
 
 spring:
+  main:
+    banner-mode: off
   jackson:
     default-property-inclusion: non_null

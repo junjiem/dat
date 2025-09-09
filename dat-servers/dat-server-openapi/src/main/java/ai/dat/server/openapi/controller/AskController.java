@@ -326,9 +326,9 @@ public class AskController {
                 if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
                     sql = "/* Incorrect SQL */ " + sql;
                 }
-                List<QuestionSqlPair> list = new ArrayList<>(histories);
-                list.add(QuestionSqlPair.from(request.getQuestion(), sql));
-                historiesPool.put(conversationId, list);
+                List<QuestionSqlPair> copyHistories = new ArrayList<>(histories);
+                copyHistories.add(QuestionSqlPair.from(request.getQuestion(), sql));
+                historiesPool.put(conversationId, copyHistories);
             }
         }).start();
 
