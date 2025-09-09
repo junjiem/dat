@@ -14,6 +14,7 @@
 
     <modules>
         <module>dat-server-openapi</module>
+        <module>dat-server-mcp</module>
     </modules>
 
 </project>

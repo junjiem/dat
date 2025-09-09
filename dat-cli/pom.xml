@@ -64,6 +64,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- DAT MCP Server-->
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-server-mcp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

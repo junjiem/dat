@@ -1,5 +1,6 @@
 package ai.dat.cli.commands;
 
+import ai.dat.cli.commands.server.McpServerCommand;
 import ai.dat.cli.commands.server.OpenApiServerCommand;
 import ai.dat.cli.provider.VersionProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,8 @@ import java.util.concurrent.Callable;
         versionProvider = VersionProvider.class,
         description = "Start and manage DAT project server",
         subcommands = {
-                OpenApiServerCommand.class
+                OpenApiServerCommand.class,
+                McpServerCommand.class
         }
 )
 @Slf4j

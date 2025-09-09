@@ -1,0 +1,7 @@
+# DAT OpenAPI Server 配置
+
+springdoc:
+  swagger-ui:
+    try-it-out-enabled: true
+  api-docs:
+    path: /v3/api-docs

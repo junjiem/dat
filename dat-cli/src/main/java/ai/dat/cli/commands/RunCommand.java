@@ -143,6 +143,9 @@ public class RunCommand implements Callable<Integer> {
             if (event.getSemanticSql().isPresent()) {
                 sql = event.getSemanticSql().get();
             }
+            if (event.getQueryData().isPresent()) {
+                isAccurateSql = true;
+            }
             if (!lastEvent.equals(eventName)) {
                 if (lastIncremental) System.out.println();
                 lastEvent = eventName;
@@ -153,9 +156,6 @@ public class RunCommand implements Callable<Integer> {
                 System.out.println(AnsiUtil.string(
                         "--------------------- @|bold,underline,fg(" + color + ") "
                                 + eventName + "|@ ---------------------"));
-            }
-            if (event.getQueryData().isPresent()) {
-                isAccurateSql = true;
             }
             print(processor, runner, event);
         }

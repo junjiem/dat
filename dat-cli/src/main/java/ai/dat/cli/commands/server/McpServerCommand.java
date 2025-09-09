@@ -2,7 +2,7 @@ package ai.dat.cli.commands.server;
 
 import ai.dat.boot.ProjectBuilder;
 import ai.dat.cli.provider.VersionProvider;
-import ai.dat.server.openapi.Application;
+import ai.dat.server.mcp.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
@@ -15,19 +15,19 @@ import java.nio.file.Paths;
 import java.util.concurrent.Callable;
 
 /**
- * Project OpenAPI Server commands
+ * Project MCP Server commands
  *
  * @Author JunjieM
- * @Date 2025/8/26
+ * @Date 2025/9/8
  */
 @Command(
-        name = "openapi",
+        name = "mcp",
         mixinStandardHelpOptions = true,
         versionProvider = VersionProvider.class,
-        description = "Start DAT OpenAPI Server and Swagger UI"
+        description = "Start DAT MCP (SSE) Server"
 )
 @Slf4j
-public class OpenApiServerCommand implements Callable<Integer> {
+public class McpServerCommand implements Callable<Integer> {
 
     @Option(names = {"-p", "--project-path"},
             description = "Project path (default: current directory)",
@@ -40,22 +40,22 @@ public class OpenApiServerCommand implements Callable<Integer> {
     private String host;
 
     @Option(names = {"-P", "--port"},
-            description = "Server port (default: 8080)",
-            defaultValue = "8080")
+            description = "Server port (default: 8081)",
+            defaultValue = "8081")
     private int port;
 
     @Override
     public Integer call() {
         try {
             Path path = Paths.get(projectPath).toAbsolutePath();
-            log.info("Start OpenAPI server the project: {}", path);
+            log.info("Start MCP server the project: {}", path);
             System.out.println("📁 Project path: " + path);
 
             ProjectBuilder builder = new ProjectBuilder(path);
             builder.build();
 
             System.out.println();
-            System.out.println("🚀 Starting DAT OpenAPI Server...");
+            System.out.println("🚀 Starting DAT MCP Server...");
             System.out.println("🌐 Server Address: http://" + host + ":" + port);
             System.out.println();
 
@@ -64,7 +64,7 @@ public class OpenApiServerCommand implements Callable<Integer> {
             app.setBannerMode(Banner.Mode.OFF);
 
             String[] args = {
-                    "--spring.profiles.active=openapi",
+                    "--spring.profiles.active=mcp",
                     "--server.port=" + port,
                     "--server.address=" + host,
                     "--dat.server.project-path=" + projectPath
@@ -98,7 +98,7 @@ public class OpenApiServerCommand implements Callable<Integer> {
                     return 1;
                 }
             } catch (Exception e) {
-                log.error("Failed to start OpenAPI server", e);
+                log.error("Failed to start MCP server", e);
                 System.err.println("❌ Failed to start server: " + e.getMessage());
                 return 1;
             }
@@ -115,9 +115,7 @@ public class OpenApiServerCommand implements Callable<Integer> {
 
     private void printUrls() {
         String baseUrl = "http://" + host + ":" + port;
-        System.out.println("📖 Swagger UI: " + baseUrl + "/swagger-ui/index.html");
-        System.out.println("📄 API Docs:   " + baseUrl + "/v3/api-docs");
-        System.out.println("🏥 Health:     " + baseUrl + "/api/v1/health");
+        System.out.println("📖 MCP SSE url: " + baseUrl + "/sse");
         System.out.println();
         System.out.println("Press Ctrl+C to stop");
     }

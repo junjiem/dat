@@ -7,6 +7,8 @@
 
 *Dating with your data*
 
+[![Latest release](https://img.shields.io/github/v/release/junjiem/dat)](https://github.com/junjiem/dat/releases/latest)
+[![Stars](https://img.shields.io/github/stars/junjiem/dat?color=%231890FF&style=flat-square)](https://github.com/junjiem/dat)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/junjiem/dat/blob/main/LICENSE)
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/projects/jdk/17/)
 [![Maven](https://img.shields.io/badge/Maven-3.6+-green.svg)](https://maven.apache.org/)
