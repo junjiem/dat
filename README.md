@@ -241,8 +241,11 @@ dat init -h
 
 **使用示例**:
 ```bash
-# 交互式初始化
+# 交互式初始化DAT项目到当前工作目录下
 dat init
+
+# 交互式初始化DAT项目到指定项目工作空间目录下
+dat init -w ./my-workspace
 ```
 
 #### `dat run` - 智能问数
@@ -254,10 +257,13 @@ dat run -h
 
 **使用示例**:
 ```bash
-# 启动默认代理
-dat run -p ./my-project -a default
+# 当前工作目录为DAT项目目录并启动默认代理
+dat run
 
-# 启动特定代理
+# 当前工作目录为DAT项目目录并启动特定代理
+dat run -a sales-agent
+
+# 指定DAT项目目录并启动特定代理
 dat run -p ./my-project -a sales-agent
 ```
 
