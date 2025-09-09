@@ -139,6 +139,17 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                             approval before proceeding with execution tool.
                             """);
 
+    public static final ConfigOption<Boolean> HUMAN_IN_THE_LOOP_TOOL_NOT_APPROVAL_AND_FEEDBACK =
+            ConfigOptions.key("human-in-the-loop.tool-not-approval-and-feedback")
+                    .booleanType()
+                    .defaultValue(true)
+                    .withDescription("""
+                            Enable HITL (human-in-the-loop) Tool not approve and gave feedback. 
+                            Have a human in the loop, allowing the system to apply to the user for \
+                            approval before proceeding with execution tool, \
+                            and request gave feedback when not approve.
+                            """);
+
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
         return Collections.emptySet();
@@ -149,7 +160,8 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
         return new LinkedHashSet<>(List.of(
                 DEFAULT_LLM, MAX_MESSAGES, MAX_HISTORIES, MAX_TOOLS_INVOCATIONS,
                 SQL_GENERATION_LLM, TEXT_TO_SQL_RULES, INSTRUCTION, EMAIL_SENDER, MCP_SERVERS,
-                HUMAN_IN_THE_LOOP, HUMAN_IN_THE_LOOP_ASK_USER, HUMAN_IN_THE_LOOP_TOOL_APPROVAL
+                HUMAN_IN_THE_LOOP, HUMAN_IN_THE_LOOP_ASK_USER, HUMAN_IN_THE_LOOP_TOOL_APPROVAL,
+                HUMAN_IN_THE_LOOP_TOOL_NOT_APPROVAL_AND_FEEDBACK
         ));
     }
 
@@ -188,6 +200,8 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
         Boolean humanInTheLoop = config.get(HUMAN_IN_THE_LOOP);
         Boolean humanInTheLoopAskUser = config.get(HUMAN_IN_THE_LOOP_ASK_USER);
         Boolean humanInTheLoopToolApproval = config.get(HUMAN_IN_THE_LOOP_TOOL_APPROVAL);
+        Boolean humanInTheLoopToolNotApprovalAndFeedback =
+                config.get(HUMAN_IN_THE_LOOP_TOOL_NOT_APPROVAL_AND_FEEDBACK);
 
         AgenticAskdataAgent.AgenticAskdataAgentBuilder builder = AgenticAskdataAgent.builder()
                 .contentStore(contentStore)
@@ -200,7 +214,8 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                 .maxHistories(maxHistories)
                 .humanInTheLoop(humanInTheLoop)
                 .humanInTheLoopAskUser(humanInTheLoopAskUser)
-                .humanInTheLoopToolApproval(humanInTheLoopToolApproval);
+                .humanInTheLoopToolApproval(humanInTheLoopToolApproval)
+                .humanInTheLoopToolNotApprovalAndFeedback(humanInTheLoopToolNotApprovalAndFeedback);
 
         config.getOptional(TEXT_TO_SQL_RULES).ifPresent(builder::textToSqlRules);
         config.getOptional(INSTRUCTION).ifPresent(builder::instruction);

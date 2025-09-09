@@ -179,12 +179,8 @@ public class RunCommand implements Callable<Integer> {
         });
         event.getHitlAiRequest().ifPresent(request -> {
             System.out.println(AnsiUtil.string("@|fg(magenta) 🤖 AI: " + request + "|@"));
-            while (true) {
-                String response = processor.readLine(AnsiUtil.string("@|fg(yellow) 👨 > |@ "));
-                if (response.isEmpty()) continue;
-                runner.userResponse(response);
-                return;
-            }
+            String response = processor.readLine(AnsiUtil.string("@|fg(yellow) 👨 > |@ "));
+            runner.userResponse(response);
         });
         event.getHitlToolApproval().ifPresent(prompt -> {
             String request = prompt + " (y/n) [User input/press Enter to use the y]";

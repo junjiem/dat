@@ -40,6 +40,7 @@ import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -53,13 +54,16 @@ import static ai.dat.agent.agentic.Text2SqlContentInjector.HISTORIES_CONTENT_TYP
  * @Author JunjieM
  * @Date 2025/8/11
  */
+@Slf4j
 class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
 
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private static final String ASK_USER_TOOL_NAME = "askUser";
 
-    private static final String TOOL_NOT_APPROVAL_MESSAGE = "The user is not approval to execute the tool!";
+    private static final String TOOL_NOT_APPROVAL_MESSAGE = "The user did not approve the execution of this tool!";
+    private static final String TOOL_NOT_APPROVAL_AND_GAVE_FEEDBACK_MESSAGE =
+            "The user did not approve the execution of this tool and gave feedback: ";
 
     private final ChatModel defaultModel;
     private final StreamingChatModel defaultStreamingModel;
@@ -77,6 +81,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
     private final Boolean humanInTheLoop;
     private final Boolean humanInTheLoopAskUser;
     private final Boolean humanInTheLoopToolApproval;
+    private final Boolean humanInTheLoopToolNotApprovalAndFeedback;
 
     private List<QuestionSqlPair> histories = Collections.emptyList();
     private final MessageWindowChatMemory chatMemory;
@@ -98,7 +103,8 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                                Integer maxHistories,
                                Boolean humanInTheLoop,
                                Boolean humanInTheLoopAskUser,
-                               Boolean humanInTheLoopToolApproval) {
+                               Boolean humanInTheLoopToolApproval,
+                               Boolean humanInTheLoopToolNotApprovalAndFeedback) {
         super(contentStore, databaseAdapter);
         SemanticModelUtil.validateSemanticModels(semanticModels);
         this.defaultModel = defaultModel;
@@ -119,6 +125,8 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         this.humanInTheLoop = Optional.ofNullable(humanInTheLoop).orElse(true);
         this.humanInTheLoopAskUser = Optional.ofNullable(humanInTheLoopAskUser).orElse(true);
         this.humanInTheLoopToolApproval = Optional.ofNullable(humanInTheLoopToolApproval).orElse(false);
+        this.humanInTheLoopToolNotApprovalAndFeedback =
+                Optional.ofNullable(humanInTheLoopToolNotApprovalAndFeedback).orElse(true);
         int chatMemoryMaxMessages = Optional.ofNullable(maxMessages).orElse(100);
         Preconditions.checkArgument(chatMemoryMaxMessages > 0,
                 "maxMessages must be greater than 0");
@@ -166,7 +174,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
             action.add(StreamEvent.from(HITL_AI_REQUEST, AI_REQUEST, request));
         } else if (humanInTheLoopToolApproval) {
             action.add(StreamEvent.from(HITL_TOOL_APPROVAL, TOOL_APPROVAL,
-                    "Do you approval the execution of the '" + toolName + "' tool?"));
+                    "Do you approve the execution of the '" + toolName + "' tool?"));
         }
     }
 
@@ -260,15 +268,33 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                             .build())
                     .build();
             ToolExecutor toolExecutor = (toolExecutionRequest, memoryId) -> {
+                String toolName = toolExecutionRequest.name();
+                String toolArgs = toolExecutionRequest.arguments();
                 try {
                     if (!isToolApproval()) {
-                        return TOOL_NOT_APPROVAL_MESSAGE;
+                        String message = TOOL_NOT_APPROVAL_MESSAGE;
+                        if (humanInTheLoopToolNotApprovalAndFeedback) {
+                            action.add(StreamEvent.from(HITL_AI_REQUEST, AI_REQUEST,
+                                    "Please provide feedback regarding the rejection of the '"
+                                            + toolName + "' tool's execution."));
+                            try {
+                                String response = this.waitForUserResponse();
+                                if (response == null || response.isEmpty()) {
+                                    return message;
+                                }
+                                return TOOL_NOT_APPROVAL_AND_GAVE_FEEDBACK_MESSAGE + response;
+                            } catch (Exception e) {
+                                log.warn("Failed to wait for user feedback", e);
+                                return message;
+                            }
+                        }
+                        return message;
                     }
                 } catch (Exception e) {
                     return e.getMessage();
                 }
                 try {
-                    Map<?, ?> arguments = Json.fromJson(toolExecutionRequest.arguments(), Map.class);
+                    Map<?, ?> arguments = Json.fromJson(toolArgs, Map.class);
                     String recipients = arguments.get("recipients").toString();
                     String[] to = Arrays.stream(recipients.split(","))
                             .map(String::trim)
@@ -287,7 +313,10 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                     }
                     String subject = arguments.get("subject").toString();
                     String content = arguments.get("content").toString();
-                    boolean isHtml = (boolean) arguments.get("isHtml");
+                    boolean isHtml = false;
+                    if (arguments.containsKey("isHtml")) {
+                        isHtml = (boolean) arguments.get("isHtml");
+                    }
                     if (cc != null && cc.length > 0) {
                         emailSender.sendEmailWithCc(to, cc, subject, content, isHtml);
                         return String.format("The email has been successfully sent：%s, CC：%s", recipients, ccRecipients);
@@ -296,6 +325,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                         return String.format("The email has been successfully sent：%s", recipients);
                     }
                 } catch (Exception e) {
+                    log.error("Failed to send the email", e);
                     return e.getMessage();
                 }
             };
@@ -315,7 +345,8 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                 try {
                     return this.waitForUserResponse();
                 } catch (Exception e) {
-                    return "Failed to wait for user response: " + e.getMessage();
+                    log.warn("Failed to wait for user response", e);
+                    return "Failed to wait for user response.";
                 }
             };
             tools.put(toolSpecification, toolExecutor);
