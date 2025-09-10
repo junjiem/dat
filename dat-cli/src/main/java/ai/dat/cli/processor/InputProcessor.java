@@ -11,6 +11,8 @@ import org.jline.utils.InfoCmp;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * JLine 3 交互式输入处理器
@@ -88,6 +90,66 @@ public class InputProcessor implements AutoCloseable {
      */
     public String readLine(String prompt) {
         return lineReader.readLine(prompt);
+    }
+
+    /**
+     * 读取用户输入，支持超时（不使用第二个 LineReader，避免竞争 System.in）
+     * 简单行读取：支持回车结束、退格删除，字符回显。
+     *
+     * @param prompt  提示信息（可包含 ANSI 颜色）
+     * @param timeout 超时时长
+     * @param unit    时间单位
+     * @return 用户输入的字符串；超时抛异常TimeoutException
+     */
+    public String readLineWithTimeout(String prompt, long timeout, TimeUnit unit) throws TimeoutException {
+        System.out.print(prompt);
+        long timeoutMs = unit.toMillis(timeout);
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        StringBuilder sb = new StringBuilder();
+        var reader = terminal.reader(); // NonBlockingReader
+        try {
+            while (true) {
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) {
+                    // 超时：不再阻塞读取，返回 null 并换行
+                    terminal.writer().println();
+                    terminal.flush();
+                    throw new TimeoutException("read line timeout: " + timeoutMs + "ms");
+                }
+                int ch = reader.read(remaining);
+                if (ch == -1) {
+                    // Ctrl+D (EOF) - 优雅退出
+                    terminal.writer().println();
+                    terminal.flush();
+                    return sb.toString();
+                }
+                if (ch == -2) {
+                    // READ_EXPIRED（非阻塞读取超时片段），继续轮询
+                    continue;
+                }
+                char c = (char) ch;
+                // 回车/换行：结束输入
+                if (c == '\n' || c == '\r') {
+                    terminal.writer().println();
+                    terminal.flush();
+                    return sb.toString();
+                }
+                // 退格处理（支持 BS 和 DEL）
+                if (c == '\b' || ch == 127) {
+                    if (!sb.isEmpty()) {
+                        sb.deleteCharAt(sb.length() - 1);
+                        // 在终端上回显删除：回退一格、空格覆盖、再回退
+                        terminal.writer().print("\b \b");
+                        terminal.flush();
+                    }
+                    continue;
+                }
+                // 其他可见字符进行累加
+                sb.append(c);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read line with timeout", e);
+        }
     }
 
     /**

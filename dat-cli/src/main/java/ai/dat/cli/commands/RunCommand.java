@@ -184,20 +184,14 @@ public class RunCommand implements Callable<Integer> {
         if (timeout != null) {
             System.out.println(AnsiUtil.string(
                     "@|fg(red) ⏰ The timeout period for waiting for user input: " + timeout + "s|@"));
-            CompletableFuture<String> future = null;
-            try (InputProcessor inputProcessor = new InputProcessor()) {
-                future = CompletableFuture.supplyAsync(() ->
-                        inputProcessor.readLine(AnsiUtil.string("@|fg(yellow) 👨 >|@ ")));
-                response = future.get(timeout, TimeUnit.SECONDS);
+            try {
+                response = processor.readLineWithTimeout(AnsiUtil.string("@|fg(yellow) 👨 >|@ "),
+                        timeout, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 log.debug("Read line timeout after {} s", timeout);
-                future.cancel(true);
                 response = null;
-                System.out.println();
                 System.out.println(AnsiUtil.string(
                         "@|fg(red) ⏰ " + timeout + "s wait timeout, skip user input.|@"));
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
             }
         } else {
             response = processor.readLine(AnsiUtil.string("@|fg(yellow) 👨 >|@ "));
@@ -214,20 +208,14 @@ public class RunCommand implements Callable<Integer> {
         if (timeout != null) {
             System.out.println(AnsiUtil.string(
                     "@|fg(red) ⏰ The timeout period for waiting for user input: " + timeout + "s|@"));
-            CompletableFuture<String> future = null;
-            try (InputProcessor inputProcessor = new InputProcessor()) {
-                future = CompletableFuture.supplyAsync(() ->
-                        inputProcessor.readLine(AnsiUtil.string("@|fg(yellow) 👨 " + prompt + "|@ ")));
-                response = future.get(timeout, TimeUnit.SECONDS);
+            try {
+                response = processor.readLineWithTimeout(AnsiUtil.string("@|fg(yellow) 👨 " + prompt + "|@ "),
+                        timeout, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 log.debug("Read line timeout after {} s", timeout);
-                future.cancel(true);
                 response = null;
-                System.out.println();
                 System.out.println(AnsiUtil.string(
                         "@|fg(red) ⏰ " + timeout + "s wait timeout, approved by default.|@"));
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
             }
         } else {
             response = processor.readLine(AnsiUtil.string("@|fg(yellow) 👨 " + prompt + "|@ "));
