@@ -61,16 +61,21 @@ public class StreamEvent {
         return eventOption.getHitlToolApprovalOption().flatMap(data::getOptional);
     }
 
+    public Optional<Long> getHitlWaitTimeout() {
+        return eventOption.getHitlWaitTimeoutOption().flatMap(data::getOptional);
+    }
+
     public Map<String, Object> getMessages() {
-        List<String> keys = new ArrayList<>();
-        eventOption.getIncrementalOption().ifPresent(o -> keys.add(o.key()));
-        eventOption.getSemanticSqlOption().ifPresent(o -> keys.add(o.key()));
-        eventOption.getQuerySqlOption().ifPresent(o -> keys.add(o.key()));
-        eventOption.getQueryDataOption().ifPresent(o -> keys.add(o.key()));
-        eventOption.getHitlAiRequestOption().ifPresent(o -> keys.add(o.key()));
-        eventOption.getHitlToolApprovalOption().ifPresent(o -> keys.add(o.key()));
+        List<String> exclusions = new ArrayList<>();
+        eventOption.getIncrementalOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getSemanticSqlOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getQuerySqlOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getQueryDataOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getHitlAiRequestOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getHitlToolApprovalOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getHitlWaitTimeoutOption().ifPresent(o -> exclusions.add(o.key()));
         return eventOption.getDataOptions().stream()
-                .filter(o -> !keys.contains(o.key()))
+                .filter(o -> !exclusions.contains(o.key()))
                 .collect(Collectors.toMap(o -> o, data::getOptional))
                 .entrySet().stream().filter(e -> e.getValue().isPresent())
                 .collect(Collectors.toMap(e -> e.getKey().key(), e -> e.getValue().get()));

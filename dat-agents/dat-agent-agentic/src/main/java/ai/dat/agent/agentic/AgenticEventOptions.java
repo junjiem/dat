@@ -26,6 +26,12 @@ public class AgenticEventOptions {
                     .noDefaultValue()
                     .withDescription("error message");
 
+    public static final ConfigOption<Long> WAIT_TIMEOUT =
+            ConfigOptions.key("wait_timeout")
+                    .longType()
+                    .defaultValue(30L)
+                    .withDescription("Wait timeout seconds");
+
     // ----------------------------- sql_generate --------------------------
 
     public static final ConfigOption<String> SQL =
@@ -114,7 +120,8 @@ public class AgenticEventOptions {
     public static final EventOption HITL_AI_REQUEST = EventOption.builder()
             .name("hitl_ai_request")
             .hitlAiRequestOption(AI_REQUEST)
-            .dataOptions(Set.of(AI_REQUEST))
+            .hitlWaitTimeoutOption(WAIT_TIMEOUT)
+            .dataOptions(Set.of(AI_REQUEST, WAIT_TIMEOUT))
             .build();
 
     // ----------------------------- Human-in-the-loop tool_approval --------------------------
@@ -128,6 +135,7 @@ public class AgenticEventOptions {
     public static final EventOption HITL_TOOL_APPROVAL = EventOption.builder()
             .name("hitl_tool_approval")
             .hitlToolApprovalOption(TOOL_APPROVAL)
-            .dataOptions(Set.of(TOOL_APPROVAL))
+            .hitlWaitTimeoutOption(WAIT_TIMEOUT)
+            .dataOptions(Set.of(TOOL_APPROVAL, WAIT_TIMEOUT))
             .build();
 }

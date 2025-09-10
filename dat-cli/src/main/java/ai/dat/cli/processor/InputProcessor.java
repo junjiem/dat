@@ -84,7 +84,7 @@ public class InputProcessor implements AutoCloseable {
      * 读取用户输入
      *
      * @param prompt 提示信息
-     * @return 用户输入的字符串，去除前后空格；特殊值：null表示EOF(Ctrl+D)，EXIT_SIGNAL表示中断(Ctrl+C)
+     * @return 用户输入的字符串
      */
     public String readLine(String prompt) {
         return lineReader.readLine(prompt);
@@ -131,6 +131,21 @@ public class InputProcessor implements AutoCloseable {
         terminal.flush();
     }
 
+    public void println() {
+        terminal.writer().println();
+        terminal.flush();
+    }
+
+    public void println(String input) {
+        terminal.writer().println(input);
+        terminal.flush();
+    }
+
+    public void print(String input) {
+        terminal.writer().print(input);
+        terminal.flush();
+    }
+
     /**
      * 保存历史记录到文件
      * 当使用HISTORY_FILE配置时，JLine会自动保存历史记录
@@ -154,8 +169,8 @@ public class InputProcessor implements AutoCloseable {
         try {
             // 保存历史记录
             saveHistory();
-
             if (terminal != null) {
+                terminal.flush();
                 terminal.close();
             }
             log.debug("InputProcessor closed successfully");

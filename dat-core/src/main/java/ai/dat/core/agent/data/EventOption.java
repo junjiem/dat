@@ -55,6 +55,11 @@ public class EventOption {
      */
     private final Optional<ConfigOption<String>> hitlToolApprovalOption;
 
+    /**
+     * Human-in-the-loop Wait Timeout (seconds) Option
+     */
+    private final Optional<ConfigOption<Long>> hitlWaitTimeoutOption;
+
     private final Set<ConfigOption<?>> dataOptions;
 
     @Builder
@@ -65,6 +70,7 @@ public class EventOption {
                        ConfigOption<List<Map<String, Object>>> queryDataOption,
                        ConfigOption<String> hitlAiRequestOption,
                        ConfigOption<String> hitlToolApprovalOption,
+                       ConfigOption<Long> hitlWaitTimeoutOption,
                        Set<ConfigOption<?>> dataOptions) {
         this.name = Optional.ofNullable(name).orElse("message");
         this.description = Optional.ofNullable(description).orElse(Description.builder().text("").build());
@@ -74,6 +80,7 @@ public class EventOption {
         this.queryDataOption = Optional.ofNullable(queryDataOption);
         this.hitlAiRequestOption = Optional.ofNullable(hitlAiRequestOption);
         this.hitlToolApprovalOption = Optional.ofNullable(hitlToolApprovalOption);
+        this.hitlWaitTimeoutOption = Optional.ofNullable(hitlWaitTimeoutOption);
         this.dataOptions = Optional.ofNullable(dataOptions).orElse(Collections.emptySet());
     }
 }

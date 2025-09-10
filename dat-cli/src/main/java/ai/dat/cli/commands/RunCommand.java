@@ -2,8 +2,8 @@ package ai.dat.cli.commands;
 
 import ai.dat.boot.ProjectRunner;
 import ai.dat.boot.utils.ProjectUtil;
-import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.processor.InputProcessor;
+import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.cli.utils.TablePrinter;
 import ai.dat.core.agent.data.StreamAction;
@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.concurrent.*;
 
 /**
  * Run project commands
@@ -67,15 +67,13 @@ public class RunCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        InputProcessor processor = null;
-        try {
-            Path path = Paths.get(projectPath).toAbsolutePath();
-            log.info("Run project: {}, Agent: {}", path, agentName);
-            System.out.println("📁 Project path: " + path);
-            System.out.println("🤖 Agent: " + agentName);
+        Path path = Paths.get(projectPath).toAbsolutePath();
+        log.info("Run project: {}, Agent: {}", path, agentName);
+        System.out.println("📁 Project path: " + path);
+        System.out.println("🤖 Agent: " + agentName);
+        Path historyFilePath = path.resolve(ProjectUtil.DAT_DIR_NAME + "/" + RUN_COMMAND_HISTORY);
+        try (InputProcessor processor = new InputProcessor(historyFilePath)) {
             ProjectRunner runner = new ProjectRunner(path, agentName);
-            Path historyFilePath = path.resolve(ProjectUtil.DAT_DIR_NAME + "/" + RUN_COMMAND_HISTORY);
-            processor = new InputProcessor(historyFilePath);
             printHelp(); // 打印帮助信息
             int round = 1;
             while (true) {
@@ -125,10 +123,6 @@ public class RunCommand implements Callable<Integer> {
             System.err.println(AnsiUtil.string(
                     "@|fg(red) ❌ Run failed: " + e.getMessage() + "|@"));
             return 1;
-        } finally {
-            if (processor != null) {
-                processor.close();
-            }
         }
     }
 
@@ -177,18 +171,69 @@ public class RunCommand implements Callable<Integer> {
             System.out.println(AnsiUtil.string("@|fg(cyan) 📊 Query Results:|@"));
             TablePrinter.printTable(data);
         });
-        event.getHitlAiRequest().ifPresent(request -> {
-            System.out.println(AnsiUtil.string("@|fg(magenta) 🤖 AI: " + request + "|@"));
-            String response = processor.readLine(AnsiUtil.string("@|fg(yellow) 👨 > |@ "));
-            runner.userResponse(response);
-        });
-        event.getHitlToolApproval().ifPresent(prompt -> {
-            String request = prompt + " (y/n) [User input/press Enter to use the y]";
-            String response = processor.readLine(AnsiUtil.string("@|fg(yellow) ⚠️ " + request + ":|@"));
-            boolean approval = response.equalsIgnoreCase("y") || response.isEmpty();
-            runner.userApproval(approval);
-        });
+        event.getHitlAiRequest().ifPresent(request ->
+                printHitlAiRequest(request, processor, runner, event.getHitlWaitTimeout().orElse(null)));
+        event.getHitlToolApproval().ifPresent(request ->
+                printHitlToolApproval(request, processor, runner, event.getHitlWaitTimeout().orElse(null)));
         event.getMessages().forEach((k, v) -> print(event, k, v));
+    }
+
+    private void printHitlAiRequest(String request, InputProcessor processor, ProjectRunner runner, Long timeout) {
+        System.out.println(AnsiUtil.string("@|fg(magenta) 🤖 AI: " + request + "|@"));
+        String response;
+        if (timeout != null) {
+            System.out.println(AnsiUtil.string(
+                    "@|fg(red) ⏰ The timeout period for waiting for user input: " + timeout + "s|@"));
+            CompletableFuture<String> future = null;
+            try (InputProcessor inputProcessor = new InputProcessor()) {
+                future = CompletableFuture.supplyAsync(() ->
+                        inputProcessor.readLine(AnsiUtil.string("@|fg(yellow) 👨 >|@ ")));
+                response = future.get(timeout, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                log.debug("Read line timeout after {} s", timeout);
+                future.cancel(true);
+                response = null;
+                System.out.println();
+                System.out.println(AnsiUtil.string(
+                        "@|fg(red) ⏰ " + timeout + "s wait timeout, skip user input.|@"));
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            response = processor.readLine(AnsiUtil.string("@|fg(yellow) 👨 >|@ "));
+        }
+        if (response != null) {
+            runner.userResponse(response);
+        }
+    }
+
+    private void printHitlToolApproval(String request, InputProcessor processor, ProjectRunner runner, Long timeout) {
+        System.out.println(AnsiUtil.string("@|fg(yellow) ⚠️ " + request + "|@"));
+        String prompt = "(y/n) [User input/press Enter to use the y]:";
+        String response;
+        if (timeout != null) {
+            System.out.println(AnsiUtil.string(
+                    "@|fg(red) ⏰ The timeout period for waiting for user input: " + timeout + "s|@"));
+            CompletableFuture<String> future = null;
+            try (InputProcessor inputProcessor = new InputProcessor()) {
+                future = CompletableFuture.supplyAsync(() ->
+                        inputProcessor.readLine(AnsiUtil.string("@|fg(yellow) 👨 " + prompt + "|@ ")));
+                response = future.get(timeout, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                log.debug("Read line timeout after {} s", timeout);
+                future.cancel(true);
+                response = null;
+                System.out.println();
+                System.out.println(AnsiUtil.string(
+                        "@|fg(red) ⏰ " + timeout + "s wait timeout, approved by default.|@"));
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            response = processor.readLine(AnsiUtil.string("@|fg(yellow) 👨 " + prompt + "|@ "));
+        }
+        boolean approval = response == null || response.equalsIgnoreCase("y") || response.isEmpty();
+        runner.userApproval(approval);
     }
 
     private void print(StreamEvent event, String key, Object value) {

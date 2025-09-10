@@ -34,6 +34,11 @@
             <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
             <version>1.0.1</version>
             <exclusions>
+                <!-- 排除spring-jcl，避免与commons-logging冲突 -->
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-jcl</artifactId>
+                </exclusion>
                 <!-- 与dat-server-openapi中io.swagger.core.v3相关JAR包之间依赖版本冲突 -->
                 <exclusion>
                     <groupId>io.swagger.core.v3</groupId>
