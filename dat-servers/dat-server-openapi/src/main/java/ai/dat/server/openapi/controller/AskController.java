@@ -62,6 +62,7 @@ public class AskController {
     private static final String ANSWER_ID = "answer_id";
     private static final String AI_REQUEST = "ai_request";
     private static final String TOOL_APPROVAL = "tool_approval";
+    private static final String WAIT_TIMEOUT = "wait_timeout";
     private static final String ERROR = "error";
     private static final String STATUS = "status";
     private static final String SUB_EVENT = "sub_event";
@@ -129,18 +130,22 @@ public class AskController {
                                                     + ANSWER + "\":\"We are analyzing the data for you ...\"}\n\n"),
                                     @ExampleObject(name = HITL_AI_REQUEST_EVENT,
                                             summary = "Human-in-the-loop AI request event",
-                                            description = "Requests that require additional input from the user (" + AI_REQUEST + ")",
+                                            description = "Requests that require additional input from the user (" + AI_REQUEST + "). " +
+                                                    "Human-in-the-loop waiting timeout time seconds (" + WAIT_TIMEOUT + " [optional]).",
                                             value = "event: " + HITL_AI_REQUEST_EVENT + "\n" +
                                                     "data: {\"" + CONVERSATION_ID + "\":\"<id>\",\""
                                                     + TIMESTAMP + "\":1756051200000,\""
-                                                    + AI_REQUEST + "\":\"Please provide the time range for screening\"}\n\n"),
+                                                    + AI_REQUEST + "\":\"Please provide the time range for screening\",\""
+                                                    + WAIT_TIMEOUT + "\":30}\n\n"),
                                     @ExampleObject(name = HITL_TOOL_APPROVAL_EVENT,
                                             summary = "Human-in-the-loop tool approval event",
-                                            description = "Requests that tool approval from the user (" + TOOL_APPROVAL + ")",
+                                            description = "Requests that tool approval from the user (" + TOOL_APPROVAL + "). " +
+                                                    "Human-in-the-loop waiting timeout time seconds (" + WAIT_TIMEOUT + " [optional]).",
                                             value = "event: " + HITL_TOOL_APPROVAL_EVENT + "\n" +
                                                     "data: {\"" + CONVERSATION_ID + "\":\"<id>\",\""
                                                     + TIMESTAMP + "\":1756051200000,\""
-                                                    + TOOL_APPROVAL + "\":\"Is it allowed to perform the operation of sending emails?\"}\n\n"),
+                                                    + TOOL_APPROVAL + "\":\"Is it allowed to perform the operation of sending emails?\",\""
+                                                    + WAIT_TIMEOUT + "\":30}\n\n"),
                                     @ExampleObject(name = ERROR_EVENT,
                                             summary = "Error event",
                                             description = "Exceptions that occur during the streaming process " +
@@ -253,10 +258,12 @@ public class AskController {
                     event.getHitlAiRequest().ifPresent(aiRequest -> {
                         reference.set(HITL_AI_REQUEST_EVENT);
                         eventData.put(AI_REQUEST, aiRequest);
+                        event.getHitlWaitTimeout().ifPresent(timeout -> eventData.put(WAIT_TIMEOUT, timeout));
                     });
                     event.getHitlToolApproval().ifPresent(approval -> {
                         reference.set(HITL_TOOL_APPROVAL_EVENT);
                         eventData.put(TOOL_APPROVAL, approval);
+                        event.getHitlWaitTimeout().ifPresent(timeout -> eventData.put(WAIT_TIMEOUT, timeout));
                     });
                     Map<String, Object> messages = event.getMessages();
                     if (OTHER_EVENT.equals(reference.get())) {
