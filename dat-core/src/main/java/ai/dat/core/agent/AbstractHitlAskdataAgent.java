@@ -46,7 +46,7 @@ public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
     }
 
     /**
-     * 等待 user response
+     * wait user response
      *
      * @return
      * @throws InterruptedException
@@ -62,7 +62,7 @@ public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
     }
 
     /**
-     * 等待 user approval
+     * wait user approval
      *
      * @return
      * @throws InterruptedException
@@ -78,11 +78,11 @@ public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
     }
 
     /**
-     * 等待 user response，支持超时
+     * wait user response, supports timeout
      *
-     * @param timeout 超时时间
-     * @param unit    时间单位
-     * @return response，如果超时则抛出 TimeoutException
+     * @param timeout Timeout
+     * @param unit    Time Unit
+     * @return response. If it times out, thrown TimeoutException
      */
     public String waitForUserResponse(long timeout, TimeUnit unit)
             throws InterruptedException, TimeoutException, ExecutionException {
@@ -94,11 +94,11 @@ public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
     }
 
     /**
-     * 等待 user approval，支持超时
+     * wait user approval, supports timeout
      *
-     * @param timeout 超时时间
-     * @param unit    时间单位
-     * @return response，如果超时则抛出 TimeoutException
+     * @param timeout Timeout
+     * @param unit    Time Unit
+     * @return is approval? If it times out, thrown TimeoutException
      */
     public Boolean waitForUserApproval(long timeout, TimeUnit unit)
             throws InterruptedException, TimeoutException, ExecutionException {

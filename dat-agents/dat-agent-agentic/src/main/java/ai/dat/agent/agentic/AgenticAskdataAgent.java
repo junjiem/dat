@@ -45,6 +45,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static ai.dat.agent.agentic.AgenticEventOptions.*;
@@ -274,17 +276,21 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                     if (!isToolApproval()) {
                         String message = TOOL_NOT_APPROVAL_MESSAGE;
                         if (humanInTheLoopToolNotApprovalAndFeedback) {
-                            action.add(StreamEvent.from(HITL_AI_REQUEST, AI_REQUEST,
-                                    "Please provide feedback regarding the rejection of the '"
-                                            + toolName + "' tool's execution."));
+                            long timeout = 30;
+                            action.add(StreamEvent
+                                    .from(HITL_AI_REQUEST, AI_REQUEST,
+                                            "Please provide feedback regarding the rejection of the '"
+                                                    + toolName + "' tool's execution.")
+                                    .set(WAIT_TIMEOUT, timeout)
+                            );
                             try {
-                                String response = this.waitForUserResponse();
+                                String response = this.waitForUserResponse(timeout, TimeUnit.SECONDS);
                                 if (response == null || response.isEmpty()) {
                                     return message;
                                 }
                                 return TOOL_NOT_APPROVAL_AND_GAVE_FEEDBACK_MESSAGE + response;
-                            } catch (Exception e) {
-                                log.warn("Failed to wait for user feedback", e);
+                            } catch (TimeoutException e) {
+                                log.warn("Timeout to wait for user feedback", e);
                                 return message;
                             }
                         }
