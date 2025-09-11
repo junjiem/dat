@@ -85,10 +85,18 @@ semantic_models:
 
 #### 方式三：配置库表名
 
+完整表名
 ```yaml
 semantic_models:
   - name: covid_cases
     model: covid.covid_cases
+```
+
+简单表名
+```yaml
+semantic_models:
+  - name: covid_cases
+    model: covid_cases
 ```
 
 #### 方式四：不配置model
@@ -125,7 +133,7 @@ semantic_models:
 | **description** | 实体的描述                       | 可选 | String |
 | **alias**       | 实体的别名                       | 可选 | String |
 | **expr**        | 引用现有列或使用SQL表达式创建新列          | 可选 | String |
-| **data_type**   | 数据类型                        | 可选 | String |
+| **data_type**   | 数据类型（这因数据库而异）          | 可选 | String |
 
 #### 实体配置示例
 
@@ -182,7 +190,7 @@ entities:
 | **alias** | 维度的别名 | 可选 | String |
 | **expr** | 定义底层列或SQL查询 | 可选 | String |
 | **enum_values** | 分类维度的枚举值定义 | 可选 | Array  |
-| **data_type** | 数据类型 | 可选 | String |
+| **data_type** | 数据类型（这因数据库而异） | 可选 | String |
 
 #### 分类维度示例
 
@@ -264,7 +272,7 @@ dimensions:
 | **description** | 描述计算的度量 | 可选 | String |
 | **alias** | 度量的别名 | 可选 | String |
 | **expr** | 引用现有列或使用SQL表达式创建新列 | 可选 | String |
-| **data_type** | 数据类型 | 可选 | String |
+| **data_type** | 数据类型（这因数据库而异） | 可选 | String |
 | **agg** | 聚合类型 | 可选 | String |
 | **agg_time_dimension** | 时间字段，默认为语义模型的默认聚合时间维度 | 可选 | String |
 | **non_additive_dimension** | 为无法按某些维度聚合的度量指定非加性维度 | 可选 | Object |
