@@ -6,7 +6,7 @@
 * [语义模型组件](#语义模型组件)
   * [基本属性](#基本属性)
   * [实体配置](#实体配置)
-  * [维度配置](#维度配置)  
+  * [维度配置](#维度配置)
   * [度量配置](#度量配置)
 * [配置示例](#配置示例)
 * [文件结构和组织](#文件结构和组织)
@@ -37,7 +37,7 @@ version: 1
 semantic_models:
   - name: 语义模型名称                    ## 必填
     description: 模型描述               ## 可选
-    model: "ref('some_model')"         ## 必填 
+    model: 详见model配置示例          ## 可选
     alias: 语义模型别名                 ## 可选
     tags: [标签列表]                   ## 可选
     defaults:                         ## 必填
@@ -52,17 +52,57 @@ semantic_models:
 
 下表描述了语义模型的基本属性：
 
-| 组件 | 描述                                   | 必填 | 类型     |
-|-----|--------------------------------------|------|--------|
-| **name** | 语义模型的唯一名称。                           | 必填 | String |
-| **description** | 包含重要详细信息的描述                          | 可选 | String |
-| **model** | 使用ref函数指定数据模型                        | 必填 | String |
-| **alias** | 语义模型的别名                              | 可选 | String |
-| **tags** | 语义模型的标签，用于分类和检索的标签数组          | 可选 | Array  |
-| **defaults** | 模型的默认配置，目前仅支持agg_time_dimension      | 必填 | Object |
-| **entities** | 作为连接键的列，指示其类型为primary、foreign或unique | 必填 | List   |
-| **dimensions** | 对度量进行分组或切片的不同方式，可以是时间或分类             | 必填 | List   |
-| **measures** | 应用于数据模型中列的聚合。可以是最终度量或复杂度量的构建块        | 可选 | List   |
+| 组件                        | 描述                                                   | 必填 | 类型     |
+|---------------------------|------------------------------------------------------|------|--------|
+| **name**                  | 语义模型的唯一名称。                                           | 必填 | String |
+| **description**           | 包含重要详细信息的描述                                          | 可选 | String |
+| **[model](#model配置示例)**   | 使用`ref`函数指定数据模型、设置`查询SQL语句`或配置`库表名`，不填默认将`语义模型名直接映射为数据模型名` | 可选 | String |
+| **alias**                 | 语义模型的别名                                              | 可选 | String |
+| **tags**                  | 语义模型的标签，用于分类和检索的标签数组                                 | 可选 | Array  |
+| **defaults**              | 模型的默认配置，目前仅支持agg_time_dimension                      | 必填 | Object |
+| **[entities](#实体配置)**     | 作为连接键的列，指示其类型为primary、foreign或unique                 | 必填 | List   |
+| **[dimensions](#维度配置)** | 对度量进行分组或切片的不同方式，可以是时间或分类                             | 必填 | List   |
+| **[measures](#度量配置)**     | 应用于数据模型中列的聚合。可以是最终度量或复杂度量的构建块                        | 可选 | List   |
+
+
+#### model配置示例
+
+#### 方式一：引用数据模型（推荐）
+
+```yaml
+semantic_models:
+  - name: covid_cases
+    model: ref('country_covid_cases')
+```
+
+#### 方式二：设置查询SQL语句
+
+```yaml
+semantic_models:
+  - name: covid_cases
+    model: select * from ...
+```
+
+#### 方式三：配置库表名
+
+```yaml
+semantic_models:
+  - name: covid_cases
+    model: covid.covid_cases
+```
+
+#### 方式四：不配置model
+
+```yaml
+semantic_models:
+  - name: covid_cases
+```
+等同于
+```yaml
+semantic_models:
+  - name: covid_cases
+    model: ref('covid_cases')
+```
 
 ### 实体配置
 

@@ -20,7 +20,6 @@
         "required": [
           "name",
           "description",
-          "model",
           "defaults",
           "entities",
           "dimensions"
