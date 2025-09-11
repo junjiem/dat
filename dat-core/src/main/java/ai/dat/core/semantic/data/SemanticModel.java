@@ -21,6 +21,14 @@ public class SemanticModel {
     @NonNull
     private String name;
 
+    public void setName(String name) {
+        this.name = name;
+        // semantic model name directly mapped to model name
+        if (model == null || model.isEmpty()) {
+            this.model = "ref('" + name + "')";
+        }
+    }
+
     @NonNull
     private String description;
 
