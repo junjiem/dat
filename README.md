@@ -99,7 +99,7 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 
 ```bash
 # 下载最新版本
-wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.1.0.tar.gz
+wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.1.2.tar.gz
 
 # 解压并配置环境变量
 tar -xzf dat-cli-x.x.x.tar.gz
