@@ -27,7 +27,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "pattern": "^[a-zA-Z][A-Za-z0-9_\\-]*$",
+            "pattern": "^[a-zA-Z][A-Za-z0-9_]*$",
             "description": "唯一的语义模型名称"
           },
           "description": {

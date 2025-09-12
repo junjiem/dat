@@ -54,7 +54,8 @@ public class InitCommand implements Callable<Integer> {
     private final static String PROJECT_CONFIG_TEMPLATE_FILE_NAME =
             ProjectUtil.PROJECT_CONFIG_FILE_NAME_YAML + ".template";
 
-    private static final Pattern PROJECT_NAME_PATTERN = Pattern.compile("^[a-zA-Z][A-Za-z0-9_\\-]*$");
+    private static final String PROJECT_NAME_REGEX = "^[a-zA-Z][A-Za-z0-9_\\-]*$";
+    private static final Pattern PROJECT_NAME_PATTERN = Pattern.compile(PROJECT_NAME_REGEX);
     private static final InputProcessor PROCESSOR = new InputProcessor();
 
     private static final String TEMPLATE_DIR_NAME = "project_init_template";
@@ -155,7 +156,7 @@ public class InitCommand implements Callable<Integer> {
             if (name.isEmpty()) continue;
             if (!isProjectName(name)) {
                 System.out.println(AnsiUtil.string("@|fg(red) ⚠️ Project name needs to conform " +
-                        "'^[a-zA-Z][A-Za-z0-9_\\-]*$' regular!|@"));
+                        "'" + PROJECT_NAME_REGEX + "' regular expression!|@"));
                 continue;
             }
             projectConfig.setName(name);
@@ -213,7 +214,7 @@ public class InitCommand implements Callable<Integer> {
         while (true) {
             String choice = PROCESSOR.readLine(AnsiUtil.string(
                     "@|fg(yellow) Please select a provider|@" + hint + ": "));
-            if(choice.isEmpty() && providers.size()== 1){
+            if (choice.isEmpty() && providers.size() == 1) {
                 choice = "1";
             }
             String provider = providerMap.get(choice);
