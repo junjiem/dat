@@ -125,14 +125,14 @@ public class DatSchemaUtil {
         return null;
     }
 
-    private static boolean isSelectSql(String str) {
+    public static boolean isSelectSql(String str) {
         String sql = removeSqlComments(str).trim();
         return Pattern.compile("^\\s*select\\b", Pattern.CASE_INSENSITIVE).matcher(sql).find();
     }
 
-    private static String removeSqlComments(String sql) {
+    public static String removeSqlComments(String sql) {
         return sql.replaceAll("--.*", "") // 移除单行注释 (-- 注释)
-                .replaceAll("/\\*.*?\\*/", ""); // 移除多行注释 (/* 注释 */)
+                .replaceAll("/\\*[\\s\\S]*?\\*/", ""); // 移除多行注释 (/*\n 注释 \n*/)
     }
 
     private static String convertSql(String sql) {
