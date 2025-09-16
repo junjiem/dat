@@ -4,7 +4,7 @@ semantic_models:
   - name: covid_cases
     description: 各国的covid病例。
     model: |
-      -- 这是一个 MySQL 方言示例查询SQL
+      -- 这是一个 MySQL 方言的示例查询SQL
       select
       CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
       cases,
