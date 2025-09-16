@@ -74,7 +74,7 @@ public class ProjectSeeder {
             }
         });
 
-        DatabaseAdapter databaseAdapter = ProjectUtil.createDatabaseAdapter(project);
+        DatabaseAdapter databaseAdapter = ProjectUtil.createDatabaseAdapter(project, projectPath);
 
         log.info("Total seeds: {}", seeds.size());
         System.out.println("🔢 Total seeds: " + seeds.size());

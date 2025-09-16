@@ -149,7 +149,7 @@ public class BuildStateManager {
             return files.filter(path -> {
                         String fileName = path.getFileName().toString();
                         return (fileName.startsWith(STATE_FILE_PREFIX) && fileName.endsWith(STATE_FILE_SUFFIX))
-                                || fileName.startsWith(ProjectUtil.STORE_FILE_PREFIX);
+                                || fileName.startsWith(ProjectUtil.DUCKDB_EMBEDDING_STORE_FILE_PREFIX);
                     })
                     .toList();
         }
@@ -177,7 +177,7 @@ public class BuildStateManager {
         try (Stream<Path> files = Files.list(datDir)) {
             return files.filter(path -> {
                         String fileName = path.getFileName().toString();
-                        return fileName.startsWith(ProjectUtil.STORE_FILE_PREFIX);
+                        return fileName.startsWith(ProjectUtil.DUCKDB_EMBEDDING_STORE_FILE_PREFIX);
                     })
                     .sorted((o1, o2) -> {
                         try {

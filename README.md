@@ -9,6 +9,7 @@
 
 [![Latest release](https://img.shields.io/github/v/release/junjiem/dat)](https://github.com/junjiem/dat/releases/latest)
 [![Stars](https://img.shields.io/github/stars/junjiem/dat?color=%231890FF&style=flat-square)](https://github.com/junjiem/dat)
+[![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/junjiem/dat/total)](https://github.com/junjiem/dat/releases/latest)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/junjiem/dat/blob/main/LICENSE)
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/projects/jdk/17/)
 [![Maven](https://img.shields.io/badge/Maven-3.6+-green.svg)](https://maven.apache.org/)
@@ -130,6 +131,8 @@ dat init
 # Database type: mysql
 ```
 
+> 💡 <strong style="color: orange;">提示：</strong> 如果你没有现成的数据库可以访问或只是想对本地CSV数据进行问数，初始化项目时数据库可以选择`duckdb`，默认会在项目的`.dat`目录下创建'duckdb'前缀的本地数据存储。
+
 ![DAT CLI INIT DEMO](./images/dat_cli_init_demo.png)
 
 #### 3️⃣ 配置数据源
@@ -163,9 +166,9 @@ embedding:
   provider: bge-small-zh-v15-q
 ```
 
->  **提示** ：
+>  💡 <strong style="color: orange;">提示：</strong>
 > 
-> 如果你没有现成的数据可以使用，你可以执行seed命令加载初始化项目中示例的种子数据入库。
+> 如果你没有现成的数据可以使用，你可以执行`seed`命令加载初始化项目中示例的种子数据入库。
 >
 > ```
 > # 加载种子数据

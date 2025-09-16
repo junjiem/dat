@@ -16,6 +16,7 @@
         <module>dat-adapter-mysql</module>
         <module>dat-adapter-postgresql</module>
         <module>dat-adapter-oracle</module>
+        <module>dat-adapter-duckdb</module>
     </modules>
 
 </project>

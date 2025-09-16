@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.apache.calcite.sql.parser.SqlParseException;
 
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -35,10 +36,13 @@ import static ai.dat.core.factories.DatProjectFactory.*;
  * @Date 2025/8/7
  */
 public class PreBuildValidator {
-    private final DatProject project;
 
-    public PreBuildValidator(DatProject project) {
+    private final DatProject project;
+    private final  Path projectPath;
+
+    public PreBuildValidator(DatProject project, Path projectPath) {
         this.project = project;
+        this.projectPath = projectPath;
     }
 
     public void validate() {
@@ -48,7 +52,7 @@ public class PreBuildValidator {
         Set<ConfigOption<?>> optionalOptions = factory.projectOptionalOptions();
         FactoryUtil.validateFactoryOptions(requiredOptions, optionalOptions, config);
 
-        DatabaseAdapter databaseAdapter = ProjectUtil.createDatabaseAdapter(project);
+        DatabaseAdapter databaseAdapter = ProjectUtil.createDatabaseAdapter(project, projectPath);
 
         validateModelSqls(project.getName(), databaseAdapter); // 校验模型SQL
         validateSemanticModelSqls(project.getName(), databaseAdapter); // 校验语义模型SQL

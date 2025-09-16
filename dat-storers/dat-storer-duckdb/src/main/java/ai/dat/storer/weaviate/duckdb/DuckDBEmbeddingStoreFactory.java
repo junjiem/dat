@@ -27,9 +27,12 @@ public class DuckDBEmbeddingStoreFactory implements EmbeddingStoreFactory {
             ConfigOptions.key("file-path")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("DuckDB embedding store file path. " +
-                            "The project mode does not need to be filled in by default and is stored " +
-                            "in the project root directory under the .dat directory.");
+                    .withDescription("""
+                            DuckDB embedding store file path.
+                            The project mode does not need to be filled in by default and is stored \
+                            in the project root directory under the .dat directory, \
+                            files with the prefix 'embeddings_'.
+                            """);
 
     @Override
     public String factoryIdentifier() {

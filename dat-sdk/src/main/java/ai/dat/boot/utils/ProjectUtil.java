@@ -1,5 +1,6 @@
 package ai.dat.boot.utils;
 
+import ai.dat.adapter.duckdb.DuckDBDatabaseAdapterFactory;
 import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.agent.AskdataAgent;
 import ai.dat.core.contentstore.ContentStore;
@@ -50,7 +51,9 @@ public class ProjectUtil {
     public final static String MODELS_DIR_NAME = "models";
     public final static String SEEDS_DIR_NAME = "seeds";
     public final static String DAT_DIR_NAME = ".dat";
-    public final static String STORE_FILE_PREFIX = "embeddings_";
+
+    public final static String DUCKDB_EMBEDDING_STORE_FILE_PREFIX = "embeddings_";
+    public final static String DUCKDB_DATABASE_FILE_NAME = "duckdb";
 
     private final static ObjectMapper JSON_MAPPER = new ObjectMapper();
 
@@ -106,8 +109,25 @@ public class ProjectUtil {
     }
 
     public static ContentStore createContentStore(@NonNull DatProject project, Path projectPath) {
-        EmbeddingStoreConfig embeddingStore = project.getEmbeddingStore();
+        FactoryDescriptor contentStoreFactoryDescriptor = FactoryDescriptor.from(
+                project.getContentStore().getProvider(), project.getContentStore().getConfiguration());
+        FactoryDescriptor embeddingFactoryDescriptor = FactoryDescriptor.from(
+                project.getEmbedding().getProvider(), project.getEmbedding().getConfiguration());
 
+        FactoryDescriptor embeddingStoreFactoryDescriptor =
+                createEmbeddingStoreFactoryDescriptor(project, projectPath);
+
+        Map<String, FactoryDescriptor> chatModelFactoryDescriptors = project.getLlms().stream()
+                .collect(Collectors.toMap(LlmConfig::getName,
+                        o -> FactoryDescriptor.from(o.getProvider(), o.getConfiguration())));
+
+        return FactoryUtil.createContentStore(project.getName(),
+                contentStoreFactoryDescriptor, embeddingFactoryDescriptor,
+                embeddingStoreFactoryDescriptor, chatModelFactoryDescriptors);
+    }
+
+    private static void adjustEmbeddingStoreConfig(@NonNull DatProject project, Path projectPath) {
+        EmbeddingStoreConfig embeddingStore = project.getEmbeddingStore();
         if (projectPath != null
                 && DuckDBEmbeddingStoreFactory.IDENTIFIER.equals(embeddingStore.getProvider())
                 && embeddingStore.getConfiguration().getOptional(DuckDBEmbeddingStoreFactory.FILE_PATH).isEmpty()) {
@@ -120,25 +140,19 @@ public class ProjectUtil {
                             "The creation of the .dat directory under the project root directory failed", e);
                 }
             }
-            String storeFileName = STORE_FILE_PREFIX + contentStoreFingerprint(project);
+            String storeFileName = DUCKDB_EMBEDDING_STORE_FILE_PREFIX + contentStoreFingerprint(project);
             Path filePath = projectPath.resolve(DAT_DIR_NAME + File.separator + storeFileName);
-            embeddingStore.setConfiguration(Map.of("file-path", filePath.toAbsolutePath().toString()));
+            embeddingStore.setConfiguration(
+                    Map.of(DuckDBEmbeddingStoreFactory.FILE_PATH.key(), filePath.toAbsolutePath().toString())
+            );
         }
+    }
 
-        FactoryDescriptor contentStoreFactoryDescriptor = FactoryDescriptor.from(
-                project.getContentStore().getProvider(), project.getContentStore().getConfiguration());
-        FactoryDescriptor embeddingFactoryDescriptor = FactoryDescriptor.from(
-                project.getEmbedding().getProvider(), project.getEmbedding().getConfiguration());
-        FactoryDescriptor embeddingStoreFactoryDescriptor = FactoryDescriptor.from(
-                embeddingStore.getProvider(), embeddingStore.getConfiguration());
-
-        Map<String, FactoryDescriptor> chatModelFactoryDescriptors = project.getLlms().stream()
-                .collect(Collectors.toMap(LlmConfig::getName,
-                        o -> FactoryDescriptor.from(o.getProvider(), o.getConfiguration())));
-
-        return FactoryUtil.createContentStore(project.getName(),
-                contentStoreFactoryDescriptor, embeddingFactoryDescriptor,
-                embeddingStoreFactoryDescriptor, chatModelFactoryDescriptors);
+    private static FactoryDescriptor createEmbeddingStoreFactoryDescriptor(
+            @NonNull DatProject project, Path projectPath) {
+        adjustEmbeddingStoreConfig(project, projectPath); // 调整Embedding存储配置
+        return FactoryDescriptor.from(project.getEmbeddingStore().getProvider(),
+                project.getEmbeddingStore().getConfiguration());
     }
 
     public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
@@ -180,8 +194,9 @@ public class ProjectUtil {
 
         FactoryDescriptor agentFactoryDescriptor = FactoryDescriptor.from(
                 agentConfig.getProvider(), agentConfig.getConfiguration());
-        FactoryDescriptor databaseAdapterFactoryDescriptor = FactoryDescriptor.from(
-                project.getDb().getProvider(), project.getDb().getConfiguration());
+
+        FactoryDescriptor databaseAdapterFactoryDescriptor =
+                createDatabaseAdapterFactoryDescriptor(project, projectPath);
 
         return FactoryUtil.createAskdataAgent(agentFactoryDescriptor,
                 agentSemanticModels, createContentStore(project, projectPath),
@@ -189,8 +204,38 @@ public class ProjectUtil {
     }
 
     public static DatabaseAdapter createDatabaseAdapter(@NonNull DatProject project) {
-        return FactoryUtil.createDatabaseAdapter(FactoryDescriptor.from(
-                project.getDb().getProvider(), project.getDb().getConfiguration()));
+        return createDatabaseAdapter(project, null);
+    }
+
+    public static DatabaseAdapter createDatabaseAdapter(@NonNull DatProject project, Path projectPath) {
+        return FactoryUtil.createDatabaseAdapter(createDatabaseAdapterFactoryDescriptor(project, projectPath));
+    }
+
+    private static void adjustDatabaseConfig(@NonNull DatProject project, Path projectPath) {
+        DatabaseConfig databaseConfig = project.getDb();
+        if (projectPath != null
+                && DuckDBDatabaseAdapterFactory.IDENTIFIER.equals(databaseConfig.getProvider())
+                && databaseConfig.getConfiguration().getOptional(DuckDBDatabaseAdapterFactory.FILE_PATH).isEmpty()) {
+            Path datDirPath = projectPath.resolve(DAT_DIR_NAME);
+            if (!Files.exists(datDirPath)) {
+                try {
+                    Files.createDirectories(datDirPath);
+                } catch (IOException e) {
+                    throw new RuntimeException(
+                            "The creation of the .dat directory under the project root directory failed", e);
+                }
+            }
+            Path filePath = projectPath.resolve(DAT_DIR_NAME + File.separator + DUCKDB_DATABASE_FILE_NAME);
+            databaseConfig.setConfiguration(
+                    Map.of(DuckDBDatabaseAdapterFactory.FILE_PATH.key(), filePath.toAbsolutePath().toString())
+            );
+        }
+    }
+
+    private static FactoryDescriptor createDatabaseAdapterFactoryDescriptor(
+            @NonNull DatProject project, Path projectPath) {
+        adjustDatabaseConfig(project, projectPath); // 调整数据库配置
+        return FactoryDescriptor.from(project.getDb().getProvider(), project.getDb().getConfiguration());
     }
 
     private static void validateAgents(List<AgentConfig> agents, List<SemanticModel> semanticModels) {

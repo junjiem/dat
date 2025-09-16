@@ -41,8 +41,7 @@
       "type": "object",
       "description": "关系型数据库的上下文",
       "required": [
-        "provider",
-        "configuration"
+        "provider"
       ],
       "properties": {
         "provider": {
