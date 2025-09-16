@@ -259,6 +259,8 @@ dat init
 dat init -w ./my-workspace
 ```
 
+![DAT CLI INIT DEMO](./images/dat_cli_init_demo.png)
+
 #### 🤖 `dat run` - 智能问数
 
 ```bash
