@@ -78,7 +78,7 @@ public class ProjectBuilder {
 
         if (changes.hasChanges()) {
             // 校验
-            new PreBuildValidator(project).validate();
+            new PreBuildValidator(project, projectPath).validate();
             // 更新状态
             ContentStoreManager storeManager = new ContentStoreManager(project, projectPath, fingerprint);
             storeManager.updateStore(fileStates, changes);

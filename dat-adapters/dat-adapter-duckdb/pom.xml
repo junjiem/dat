@@ -1,0 +1,30 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ai.dat</groupId>
+        <artifactId>dat-adapters</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>dat-adapter-duckdb</artifactId>
+    <name>DAT : Adapters : DuckDB</name>
+
+    <properties>
+        <duckdb.version>1.3.2.0</duckdb.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.duckdb</groupId>
+            <artifactId>duckdb_jdbc</artifactId>
+            <version>${duckdb.version}</version>
+        </dependency>
+    </dependencies>
+</project>

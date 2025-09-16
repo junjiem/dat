@@ -5,12 +5,22 @@ semantic_models:
     description: 各国的covid病例。
     model: |
       -- 这是一个 MySQL 方言示例查询SQL
-      select 
-        date_rep, 
-        cases, 
-        deaths, 
-        geo_id
+      select
+      CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
+      cases,
+      deaths,
+      geo_id
       from covid_cases
+      
+      /*
+      -- 这是一个 DuckDB 方言的示例查询SQL
+      select
+      CAST(strptime(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
+      cases,
+      deaths,
+      geo_id
+      from covid_cases
+      */
     defaults:
       agg_time_dimension: report_date
     entities:
