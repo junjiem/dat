@@ -59,43 +59,29 @@ public class MySqlDatabaseAdapter extends GenericSqlDatabaseAdapter {
                 yield AnsiSqlType.TINYINT;
                 // MySQL的TINYINT(1)通常用作布尔类型
             }
-            case "SMALLINT" ->
-                    AnsiSqlType.SMALLINT;
+            case "SMALLINT" -> AnsiSqlType.SMALLINT;
             case "MEDIUMINT" ->
                 // MySQL的MEDIUMINT映射为INTEGER
                     AnsiSqlType.INTEGER;
-            case "INT", "INTEGER" ->
-                    AnsiSqlType.INTEGER;
-            case "BIGINT" ->
-                    AnsiSqlType.BIGINT;
-            case "DECIMAL", "DEC", "NUMERIC" ->
-                    AnsiSqlType.DECIMAL;
-            case "FLOAT" ->
-                    AnsiSqlType.FLOAT;
-            case "DOUBLE", "DOUBLE PRECISION", "REAL" ->
-                    AnsiSqlType.DOUBLE;
-            case "BIT" ->
-                    AnsiSqlType.BOOLEAN;
-            case "BOOL", "BOOLEAN" ->
-                    AnsiSqlType.BOOLEAN;
-            case "CHAR" ->
-                    AnsiSqlType.CHAR;
-            case "VARCHAR" ->
-                    AnsiSqlType.VARCHAR;
+            case "INT", "INTEGER" -> AnsiSqlType.INTEGER;
+            case "BIGINT" -> AnsiSqlType.BIGINT;
+            case "DECIMAL", "DEC", "NUMERIC" -> AnsiSqlType.DECIMAL;
+            case "FLOAT" -> AnsiSqlType.FLOAT;
+            case "DOUBLE", "DOUBLE PRECISION", "REAL" -> AnsiSqlType.DOUBLE;
+            case "BIT" -> AnsiSqlType.BOOLEAN;
+            case "BOOL", "BOOLEAN" -> AnsiSqlType.BOOLEAN;
+            case "CHAR" -> AnsiSqlType.CHAR;
+            case "VARCHAR" -> AnsiSqlType.VARCHAR;
             case "TEXT", "TINYTEXT", "MEDIUMTEXT", "LONGTEXT" ->
                 // MySQL的TEXT变体都映射为TEXT
                     AnsiSqlType.TEXT;
-            case "BINARY" ->
-                    AnsiSqlType.BINARY;
-            case "VARBINARY" ->
-                    AnsiSqlType.VARBINARY;
+            case "BINARY" -> AnsiSqlType.BINARY;
+            case "VARBINARY" -> AnsiSqlType.VARBINARY;
             case "BLOB", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB" ->
                 // MySQL的BLOB变体都映射为BLOB
                     AnsiSqlType.BLOB;
-            case "DATE" ->
-                    AnsiSqlType.DATE;
-            case "TIME" ->
-                    AnsiSqlType.TIME;
+            case "DATE" -> AnsiSqlType.DATE;
+            case "TIME" -> AnsiSqlType.TIME;
             case "DATETIME", "TIMESTAMP" ->
                 // MySQL的DATETIME映射为TIMESTAMP
                     AnsiSqlType.TIMESTAMP;
@@ -113,5 +99,48 @@ public class MySqlDatabaseAdapter extends GenericSqlDatabaseAdapter {
                 // 对于其他类型，使用默认的JDBC类型映射
                     super.toAnsiSqlType(columnType, columnTypeName, precision, scale);
         };
+    }
+
+    @Override
+    protected String stringDataType() {
+        return "TEXT";
+    }
+
+    @Override
+    protected int toColumnType(String dataType) {
+        if (dataType == null) {
+            return Types.VARCHAR;
+        }
+        return switch (extractBaseType(dataType).toUpperCase()) {
+            case "TINYINT" -> Types.TINYINT;
+            case "SMALLINT", "YEAR" -> Types.SMALLINT;
+            case "MEDIUMINT", "INT", "INTEGER" -> Types.INTEGER;
+            case "BIGINT" -> Types.BIGINT;
+            case "DECIMAL", "DEC", "NUMERIC", "FIXED" -> Types.DECIMAL;
+            case "FLOAT" -> Types.FLOAT;
+            case "DOUBLE", "DOUBLE PRECISION", "REAL" -> Types.DOUBLE;
+            case "BIT", "BOOL", "BOOLEAN" -> Types.BOOLEAN;
+            case "CHAR" -> Types.CHAR;
+            case "VARCHAR" -> Types.VARCHAR;
+            case "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT", "JSON" -> Types.LONGVARCHAR;
+            case "BINARY" -> Types.BINARY;
+            case "VARBINARY" -> Types.VARBINARY;
+            case "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB" -> Types.BLOB;
+            case "DATE" -> Types.DATE;
+            case "TIME" -> Types.TIME;
+            case "DATETIME", "TIMESTAMP" -> Types.TIMESTAMP;
+            case "ENUM", "SET" -> Types.VARCHAR;
+            case "GEOMETRY", "POINT", "LINESTRING", "POLYGON", "MULTIPOINT",
+                 "MULTILINESTRING", "MULTIPOLYGON", "GEOMETRYCOLLECTION" -> Types.VARBINARY;
+            default -> Types.VARCHAR;
+        };
+    }
+
+    private String extractBaseType(String dataType) {
+        int parenIndex = dataType.indexOf('(');
+        if (parenIndex == -1) {
+            return dataType;
+        }
+        return dataType.substring(0, parenIndex).trim();
     }
 }

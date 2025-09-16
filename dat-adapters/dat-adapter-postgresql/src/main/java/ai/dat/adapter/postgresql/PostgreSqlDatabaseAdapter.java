@@ -298,4 +298,63 @@ public class PostgreSqlDatabaseAdapter extends GenericSqlDatabaseAdapter {
                     super.toAnsiSqlType(columnType, columnTypeName, precision, scale);
         };
     }
+
+    @Override
+    protected String stringDataType() {
+        return "TEXT";
+    }
+
+    @Override
+    protected int toColumnType(String dataType) {
+        if (dataType == null) {
+            return Types.VARCHAR;
+        }
+        return switch (extractBaseType(dataType).toLowerCase()) {
+            case "smallint", "int2" -> Types.SMALLINT;
+            case "integer", "int", "int4" -> Types.INTEGER;
+            case "bigint", "int8" -> Types.BIGINT;
+            case "serial", "serial4" -> Types.INTEGER;
+            case "bigserial", "serial8" -> Types.BIGINT;
+            case "real", "float4" -> Types.REAL;
+            case "double precision", "float8" -> Types.DOUBLE;
+            case "numeric", "decimal" -> Types.NUMERIC;
+            case "money" -> Types.NUMERIC;
+            case "boolean", "bool" -> Types.BOOLEAN;
+            case "char", "\"char\"" -> Types.CHAR;
+            case "varchar", "character varying" -> Types.VARCHAR;
+            case "character", "bpchar" -> Types.CHAR;
+            case "text" -> Types.LONGVARCHAR;
+            case "date" -> Types.DATE;
+            case "time", "time without time zone" -> Types.TIME;
+            case "timetz", "time with time zone" -> Types.TIME;
+            case "timestamp", "timestamp without time zone" -> Types.TIMESTAMP;
+            case "timestamptz", "timestamp with time zone" -> Types.TIMESTAMP;
+            case "interval" -> Types.VARCHAR;
+            case "uuid" -> Types.VARCHAR;
+            case "json", "jsonb" -> Types.LONGVARCHAR;
+            case "xml" -> Types.LONGVARCHAR;
+            case "bytea" -> Types.VARBINARY;
+            case "bit" -> Types.BIT;
+            case "varbit", "bit varying" -> Types.VARBINARY;
+            case "point", "line", "lseg", "box", "path", "polygon", "circle" -> Types.LONGVARCHAR;
+            case "inet", "cidr", "macaddr", "macaddr8" -> Types.VARCHAR;
+            case "tsvector", "tsquery" -> Types.LONGVARCHAR;
+            // 常见数组类型，统一映射为LONGVARCHAR（字符串表示）
+            case "_int2", "_int4", "_int8", "_float4", "_float8", "_text", "_varchar" -> Types.LONGVARCHAR;
+            default -> Types.VARCHAR;
+        };
+    }
+
+    private String extractBaseType(String dataType) {
+        int parenIndex = dataType.indexOf('(');
+        if (parenIndex == -1) {
+            return dataType;
+        }
+        return dataType.substring(0, parenIndex).trim();
+    }
+
+    @Override
+    protected String getDropTableSqlIfExists(String tableName) {
+        return String.format("DROP TABLE IF EXISTS %s CASCADE", quoteIdentifier(tableName));
+    }
 }

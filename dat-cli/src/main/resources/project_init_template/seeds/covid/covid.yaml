@@ -1,0 +1,12 @@
+version: 1
+
+seeds:
+  - name: covid_cases
+    description: Covid cases
+    columns:
+      - name: cases
+        description: Number of cases
+        data_type: BIGINT # This is the data type of MySQL. For other databases, please modify it, such as changing it to 'LONG' for Oracle.
+      - name: deaths
+        description: Number of deaths
+        data_type: BIGINT # This is the data type of MySQL. For other databases, please modify it, such as changing it to 'LONG' for Oracle.

@@ -376,10 +376,79 @@
           }
         }
       }
+    },
+    "seeds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][A-Za-z0-9_]*$",
+            "description": "唯一的种子名称（即种子的CSV文件名）"
+          },
+          "description": {
+            "type": "string",
+            "description": "种子的详细描述"
+          },
+          "config": {
+            "type": "object",
+            "properties": {
+              "delimiter": {
+                "type": "string",
+                "description": "分隔符",
+                "default": ","
+              }
+            },
+            "additionalProperties": false,
+            "description": "种子的配置"
+          },
+          "columns": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "种子的列信息",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "description"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_]+$",
+                  "description": "列名，唯一标识"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "列描述"
+                },
+                "data_type": {
+                  "type": "string",
+                  "description": "数据类型（这因数据库而异）"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
     }
   },
   "additionalProperties": false,
-  "required": [
-    "semantic_models"
+  "anyOf": [
+    {
+      "required": ["semantic_models"]
+    },
+    {
+      "required": ["seeds"]
+    }
   ]
 }

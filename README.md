@@ -163,6 +163,18 @@ embedding:
   provider: bge-small-zh-v15-q
 ```
 
+>  **提示** ：
+> 
+> 如果你没有现成的数据可以使用，你可以执行seed命令加载初始化项目中示例的种子数据入库。
+>
+> ```
+> # 加载种子数据
+> dat seed -p ./my-dat-project
+> ```
+> 
+> 然后跳过第4️⃣步，使用初始化项目中示例的语义模型，进行第5️⃣步 “开始智能问数”。
+
+
 #### 4️⃣ 创建语义模型
 
 在 `models/` 目录下创建 `sales.yaml`:
@@ -221,7 +233,6 @@ dat server openapi -p ./my-dat-project
 ```
 
 
-
 ---
 
 ## 🛠️ CLI 命令详解
@@ -232,10 +243,10 @@ dat server openapi -p ./my-dat-project
 
 ### 🎯 核心命令
 
-#### `dat init` - 项目初始化
+#### 🚀 `dat init` - 项目初始化
 
 ```bash
-dat init -h
+dat init --help
 ```
 ![DAT CLI INIT HELP](./images/dat_cli_init_help.png)
 
@@ -248,10 +259,10 @@ dat init
 dat init -w ./my-workspace
 ```
 
-#### `dat run` - 智能问数
+#### 🤖 `dat run` - 智能问数
 
 ```bash
-dat run -h  
+dat run --help
 ```
 ![DAT CLI RUN HELP](./images/dat_cli_run_help.png)
 
@@ -269,17 +280,17 @@ dat run -p ./my-project -a sales-agent
 
 ![DAT CLI RUN DEMO](./images/dat_cli_run_demo.png)
 
-#### `dat server` - 服务部署
+#### 🌐 `dat server` - 服务部署
 
 ```bash
-dat server -h
+dat server --help
 ```
 ![DAT CLI SERVER HELP](./images/dat_cli_server_help.png)
 
-##### 🌐 OpenAPI 服务
+##### 🔌 OpenAPI 服务
 
 ```bash
-dat server openapi -h
+dat server openapi --help
 ```
 ![DAT CLI SERVER OPENAPI HELP](./images/dat_cli_server_openapi_help.png)
 
@@ -309,10 +320,10 @@ curl -X POST http://localhost:8080/api/v1/ask/stream \
   --no-buffer
 ```
 
-##### 🌐 MCP 服务
+##### 🔗 MCP 服务
 
 ```bash
-dat server mcp -h
+dat server mcp --help
 ```
 ![DAT CLI SERVER MCP HELP](./images/dat_cli_server_mcp_help.png)
 
@@ -329,6 +340,25 @@ dat server mcp --port=9091
 ```
 
 ![DAT CLI SERVER MCP DEMO](./images/dat_cli_server_mcp_demo.png)
+
+
+#### 🌱 `dat seed` - 加载种子数据
+
+```bash
+dat seed --help
+```
+![DAT CLI SEED HELP](./images/dat_cli_seed_help.png)
+
+**使用示例**:
+```bash
+# 当前工作目录为DAT项目目录并加载种子CSV文件
+dat seed
+
+# 指定DAT项目目录并加载种子CSV文件
+dat seed -p ./my-project
+```
+
+![DAT CLI SEED DEMO](./images/dat_cli_seed_demo.png)
 
 
 ---
@@ -448,10 +478,11 @@ Closes #123"
 - 4、智能问数支持 HITL (Human-in-the-Loop) 交互；
 - 5、支持将智能问数项目对外提供OpenAPI的服务；
 - 6、支持将智能问数项目对外提供MCP的服务；
-- 7、基于LLM的数据探查辅助生成语义模型；（TODO）
-- 8、数据模型、语义模型、智能问数的单元测试；（TODO）
-- 9、SQL问答对、同义词、业务知识等向量化入库与检索；（TODO）
-- 10、指标的配置（构建语义模型后可以更进一步添加指标）；（TODO）
+- 7、支持seed命令可以将CSV文件初始化加载入数据库；
+- 8、基于LLM的数据探查辅助生成语义模型；（TODO）
+- 9、数据模型、语义模型、智能问数的单元测试；（TODO）
+- 10、SQL问答对、同义词、业务知识等向量化入库与检索；（TODO）
+- 11、指标的配置（构建语义模型后可以更进一步添加指标）；（TODO）
 
 
 ---

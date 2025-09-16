@@ -1,5 +1,6 @@
 package ai.dat.core.data;
 
+import ai.dat.core.data.seed.SeedSpec;
 import ai.dat.core.semantic.data.SemanticModel;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -16,5 +17,9 @@ public class DatSchema {
 
     @NonNull
     @JsonProperty("semantic_models")
-    private List<SemanticModel> semanticModels;
+    private List<SemanticModel> semanticModels = List.of();
+
+    @NonNull
+    @JsonProperty("seeds")
+    private List<SeedSpec> seeds = List.of();
 }

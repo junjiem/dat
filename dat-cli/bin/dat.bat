@@ -58,6 +58,7 @@ if not "%COMMAND%"=="" (
     if "%COMMAND%"=="list" set SUPPORTS_PROJECT_PATH=true
     if "%COMMAND%"=="run" set SUPPORTS_PROJECT_PATH=true
     if "%COMMAND%"=="server" set SUPPORTS_PROJECT_PATH=true
+    if "%COMMAND%"=="seed" set SUPPORTS_PROJECT_PATH=true
 )
 
 :: Check if command supports -w/--workspace-path parameter
