@@ -2,6 +2,7 @@ package ai.dat.core.adapter;
 
 import ai.dat.core.adapter.data.AnsiSqlType;
 import ai.dat.core.adapter.data.ColumnMetadata;
+import ai.dat.core.adapter.data.Table;
 import ai.dat.core.semantic.data.SemanticModel;
 
 import java.sql.ResultSetMetaData;
@@ -17,6 +18,8 @@ import java.util.Map;
  * @Date 2025/6/25
  */
 public interface DatabaseAdapter {
+    // -------------------------------------- semantic ------------------------------------------
+
     SemanticAdapter semanticAdapter();
 
     String generateSql(String semanticSql, List<SemanticModel> semanticModels);
@@ -61,4 +64,9 @@ public interface DatabaseAdapter {
     default AnsiSqlType toAnsiSqlType(int columnType, String columnTypeName, int precision, int scale) {
         return AnsiSqlType.fromColumnType(columnType);
     }
+
+    // -------------------------------------- seed ------------------------------------------
+
+    void initTable(Table table, List<List<String>> data) throws SQLException;
+
 }

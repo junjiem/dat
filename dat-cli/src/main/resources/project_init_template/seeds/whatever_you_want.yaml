@@ -1,0 +1,20 @@
+version: 1
+
+seeds:
+  - name: country_codes
+    description: Country code look up tables
+    #config:
+      #delimiter: ","  # The delimiter defaults to a comma when not specified.
+
+  - name: populations
+    description: Worldwide population data by country
+    config:
+      # The delimiter defaults to a comma when not specified.
+      delimiter: \| # Vertical bar delimiter '|'
+    columns:
+      - name: country_code
+        description: Country code
+        data_type: VARCHAR(3) # This is the data type of MySQL. For other databases, please modify it, such as changing it to 'VARCHAR2(3)' for Oracle.
+      - name: population
+        description: Population
+        data_type: BIGINT # This is the data type of MySQL. For other databases, please modify it, such as changing it to 'LONG' for Oracle.

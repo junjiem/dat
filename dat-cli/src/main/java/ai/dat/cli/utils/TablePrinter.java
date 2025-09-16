@@ -1,10 +1,13 @@
 package ai.dat.cli.utils;
 
+import ai.dat.adapter.mysql.MySqlDatabaseAdapter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mysql.cj.jdbc.MysqlDataSource;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Help.Ansi;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -203,4 +206,22 @@ public class TablePrinter {
         // 不截断字符串，显示完整内容
         return str + " ".repeat(Math.max(0, length - str.length()));
     }
-} 
+
+    public static void main(String[] args) throws SQLException {
+        MysqlDataSource dataSource = new MysqlDataSource();
+        dataSource.setURL("jdbc:mysql://172.21.3.129:3310/dat?allowPublicKeyRetrieval=true&useSSL=false");
+        dataSource.setUser("dat");
+        dataSource.setPassword("123456");
+
+        MySqlDatabaseAdapter databaseAdapter = new MySqlDatabaseAdapter(dataSource);
+
+        String sql = "SELECT cases + deaths, cases-deaths AS aaa, date_rep, `day`, `month`, `year`, cases, deaths, geo_id\n" +
+                "FROM dat.covid_cases";
+
+        List<Map<String, Object>> data = databaseAdapter.executeQuery(sql);
+
+        System.out.println(data);
+
+        TablePrinter.printTable(data);
+    }
+}

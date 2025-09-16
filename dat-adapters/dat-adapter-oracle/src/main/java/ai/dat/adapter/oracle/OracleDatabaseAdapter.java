@@ -151,4 +151,48 @@ public class OracleDatabaseAdapter extends GenericSqlDatabaseAdapter {
                     super.toAnsiSqlType(columnType, columnTypeName, precision, scale);
         };
     }
-} 
+
+    @Override
+    protected String stringDataType() {
+        return "CLOB";
+    }
+
+    @Override
+    protected int toColumnType(String dataType) {
+        if (dataType == null) {
+            return Types.VARCHAR;
+        }
+        return switch (extractBaseType(dataType).toUpperCase()) {
+            case "NUMBER" -> Types.NUMERIC;
+            case "FLOAT", "BINARY_FLOAT" -> Types.FLOAT;
+            case "BINARY_DOUBLE" -> Types.DOUBLE;
+            case "CHAR", "NCHAR" -> Types.CHAR;
+            case "VARCHAR2", "NVARCHAR2" -> Types.VARCHAR;
+            case "CLOB", "NCLOB" -> Types.CLOB;
+            case "BLOB" -> Types.BLOB;
+            case "RAW", "LONG RAW" -> Types.VARBINARY;
+            case "DATE" -> Types.TIMESTAMP; // Oracle的DATE包含时间
+            case "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITH LOCAL TIME ZONE" -> Types.TIMESTAMP;
+            case "INTERVAL YEAR TO MONTH", "INTERVAL DAY TO SECOND" -> Types.VARCHAR;
+            case "XMLTYPE" -> Types.CLOB;
+            case "ROWID", "UROWID" -> Types.VARCHAR;
+            case "BFILE" -> Types.VARCHAR;
+            case "LONG" -> Types.LONGVARCHAR;
+            default -> Types.VARCHAR;
+        };
+    }
+
+    private String extractBaseType(String dataType) {
+        int parenIndex = dataType.indexOf('(');
+        if (parenIndex == -1) {
+            return dataType;
+        }
+        return dataType.substring(0, parenIndex).trim();
+    }
+
+    @Override
+    protected String getDropTableSqlIfExists(String tableName) {
+        return String.format("BEGIN EXECUTE IMMEDIATE 'DROP TABLE %s'; EXCEPTION WHEN OTHERS THEN NULL; END;", 
+                           quoteIdentifier(tableName));
+    }
+}

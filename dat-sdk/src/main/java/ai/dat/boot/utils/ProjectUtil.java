@@ -5,6 +5,7 @@ import ai.dat.core.agent.AskdataAgent;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
+import ai.dat.core.data.DatSeed;
 import ai.dat.core.data.project.*;
 import ai.dat.core.exception.ValidationException;
 import ai.dat.core.factories.*;
@@ -44,8 +45,10 @@ public class ProjectUtil {
 
     public final static Set<String> YAML_EXTENSIONS = Set.of(".yaml", ".yml");
     public final static Set<String> SQL_EXTENSIONS = Set.of(".sql");
+    public final static Set<String> CSV_EXTENSIONS = Set.of(".csv");
 
     public final static String MODELS_DIR_NAME = "models";
+    public final static String SEEDS_DIR_NAME = "seeds";
     public final static String DAT_DIR_NAME = ".dat";
     public final static String STORE_FILE_PREFIX = "embeddings_";
 
@@ -204,13 +207,12 @@ public class ProjectUtil {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         if (!missingNames.isEmpty()) {
             StringBuffer sb = new StringBuffer();
-            missingNames.forEach((agentName, missings) -> {
-                sb.append(String.format("There are non-existent semantic models %s in the agent '%s'",
-                        missings.stream().map(n -> String.format("'%s'", n))
-                                .collect(Collectors.joining(", ")),
-                        agentName
-                )).append("\n");
-            });
+            missingNames.forEach((agentName, missings) ->
+                    sb.append(String.format("There are non-existent semantic models %s in the agent '%s'",
+                            missings.stream().map(n -> String.format("'%s'", n))
+                                    .collect(Collectors.joining(", ")),
+                            agentName
+                    )).append("\n"));
             throw new ValidationException(sb.toString());
         }
     }
@@ -244,36 +246,151 @@ public class ProjectUtil {
         return null;
     }
 
-    public static Map<Path, DatSchema> loadAllSchema(Path modelsPath) {
-        List<Path> yamlFiles = scanYamlFiles(modelsPath);
-        return yamlFiles.stream().collect(Collectors.toMap(p -> p,
-                p -> ProjectUtil.loadSchema(p, modelsPath)));
+    public static Map<Path, DatSchema> loadAllSchema(Path dirPath) {
+        Map<Path, DatSchema> schemas = scanYamlFiles(dirPath).stream()
+                .collect(Collectors.toMap(p -> p, p -> loadSchema(p, dirPath)));
+        validateYamlFiles(dirPath, schemas);
+        return schemas;
     }
 
-    private static DatSchema loadSchema(Path filePath, Path modelsPath) {
+    private static DatSchema loadSchema(Path filePath, Path dirPath) {
         try {
             String content = Files.readString(filePath);
             return DatSchemaUtil.datSchema(content);
         } catch (Exception e) {
-            throw new RuntimeException("The " + modelsPath.relativize(filePath)
-                    + " YAML file content does not meet the requirements", e);
+            throw new RuntimeException("The " + dirPath.relativize(filePath)
+                    + " YAML file content does not meet the requirements: \n" + e.getMessage(), e);
+        }
+    }
+
+    private static void validateYamlFiles(Path dirPath, Map<Path, DatSchema> schemas) {
+        // 校验语义模型名称是否重复
+        Map<String, List<Path>> nameToPaths = schemas.entrySet().stream()
+                .flatMap(entry -> entry.getValue().getSemanticModels().stream()
+                        .map(model -> Map.entry(model.getName(), entry.getKey())))
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())
+                ));
+        Map<String, List<Path>> duplicates = nameToPaths.entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!duplicates.isEmpty()) {
+            StringBuffer sb = new StringBuffer();
+            duplicates.forEach((semanticModelName, paths) -> {
+                sb.append("Discover duplicate semantic model name: ").append(semanticModelName).append("\n");
+                sb.append("The YAML file relative path: \n");
+                paths.stream()
+                        .map(p -> dirPath.relativize(p).toString())
+                        .forEach(p -> sb.append("  - ").append(p).append("\n"));
+                sb.append("\n");
+            });
+            throw new ValidationException(sb.toString());
+        }
+        // 校验种子名称是否重复
+        nameToPaths = schemas.entrySet().stream()
+                .flatMap(entry -> entry.getValue().getSeeds().stream()
+                        .map(seed -> Map.entry(seed.getName(), entry.getKey())))
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())
+                ));
+        duplicates = nameToPaths.entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!duplicates.isEmpty()) {
+            StringBuffer sb = new StringBuffer();
+            duplicates.forEach((seedName, paths) -> {
+                sb.append("Discover duplicate seed name: ").append(seedName).append("\n");
+                sb.append("The YAML file relative path: \n");
+                paths.stream()
+                        .map(p -> dirPath.relativize(p).toString())
+                        .forEach(p -> sb.append("  - ").append(p).append("\n"));
+                sb.append("\n");
+            });
+            throw new ValidationException(sb.toString());
         }
     }
 
     public static Map<Path, DatModel> loadAllModel(Path modelsPath) {
-        List<Path> sqlFiles = scanSqlFiles(modelsPath);
-        return sqlFiles.stream().collect(Collectors.toMap(p -> p,
-                p -> ProjectUtil.loadModel(p, modelsPath)));
+        Map<Path, DatModel> models = scanSqlFiles(modelsPath).stream()
+                .collect(Collectors.toMap(p -> p, p -> loadModel(p, modelsPath)));
+        validateModelFiles(modelsPath, models);
+        return models;
     }
 
     private static DatModel loadModel(Path filePath, Path modelsPath) {
         try {
             String content = Files.readString(filePath);
-            String modelName = fileNamePrefix(filePath.getFileName().toString());
-            return DatModel.from(modelName, content);
+            String name = fileNamePrefix(filePath.getFileName().toString());
+            return DatModel.from(name, content);
         } catch (Exception e) {
             throw new RuntimeException("The " + modelsPath.relativize(filePath)
-                    + " SQL file content does not meet the requirements", e);
+                    + " SQL file content does not meet the requirements: \n" + e.getMessage(), e);
+        }
+    }
+
+    private static void validateModelFiles(Path modelsPath, Map<Path, DatModel> models) {
+        Map<String, List<Path>> nameToPaths = models.entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getValue().getName(),
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+                ));
+        Map<String, List<Path>> duplicates = nameToPaths.entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!duplicates.isEmpty()) {
+            StringBuffer sb = new StringBuffer();
+            duplicates.forEach((modelName, paths) -> {
+                sb.append("Discover duplicate model name: ").append(modelName).append("\n");
+                sb.append("The SQL file relative path: \n");
+                paths.stream()
+                        .map(p -> modelsPath.relativize(p).toString())
+                        .forEach(p -> sb.append("  - ").append(p).append("\n"));
+                sb.append("\n");
+            });
+            throw new ValidationException(sb.toString());
+        }
+    }
+
+    public static Map<Path, DatSeed> loadAllSeed(Path seedsPath) {
+        Map<Path, DatSeed> seeds = scanCsvFiles(seedsPath).stream()
+                .collect(Collectors.toMap(p -> p, p -> loadSeed(p, seedsPath)));
+        validateSeedFiles(seedsPath, seeds);
+        return seeds;
+    }
+
+    private static DatSeed loadSeed(Path filePath, Path seedsPath) {
+        try {
+            String content = Files.readString(filePath);
+            String name = fileNamePrefix(filePath.getFileName().toString());
+            return DatSeed.from(name, content);
+        } catch (Exception e) {
+            throw new RuntimeException("The " + seedsPath.relativize(filePath)
+                    + " CSV file content does not meet the requirements: \n" + e.getMessage(), e);
+        }
+    }
+
+    private static void validateSeedFiles(Path seedsPath, Map<Path, DatSeed> seeds) {
+        Map<String, List<Path>> nameToPaths = seeds.entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getValue().getName(),
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+                ));
+        Map<String, List<Path>> duplicates = nameToPaths.entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!duplicates.isEmpty()) {
+            StringBuffer sb = new StringBuffer();
+            duplicates.forEach((seedName, paths) -> {
+                sb.append("Discover duplicate seed name: ").append(seedName).append("\n");
+                sb.append("The CSV file relative path: \n");
+                paths.stream()
+                        .map(p -> seedsPath.relativize(p).toString())
+                        .forEach(p -> sb.append("  - ").append(p).append("\n"));
+                sb.append("\n");
+            });
+            throw new ValidationException(sb.toString());
         }
     }
 
@@ -282,12 +399,12 @@ public class ProjectUtil {
         return lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
     }
 
-    private static List<Path> scanYamlFiles(Path modelsPath) {
+    private static List<Path> scanYamlFiles(Path dirPath) {
         List<Path> files = new ArrayList<>();
-        Preconditions.checkArgument(Files.exists(modelsPath),
-                "There is no 'models' directory in the project root directory");
+        Preconditions.checkArgument(Files.exists(dirPath),
+                "There is no '" + dirPath.getFileName() + "' directory in the project root directory");
         try {
-            Files.walkFileTree(modelsPath, new SimpleFileVisitor<>() {
+            Files.walkFileTree(dirPath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     String fileName = file.getFileName().toString();
@@ -330,5 +447,30 @@ public class ProjectUtil {
 
     private static boolean isSqlFile(String fileName) {
         return SQL_EXTENSIONS.stream().anyMatch(fileName::endsWith);
+    }
+
+    private static List<Path> scanCsvFiles(Path seedsPath) {
+        List<Path> files = new ArrayList<>();
+        Preconditions.checkArgument(Files.exists(seedsPath),
+                "There is no 'seeds' directory in the project root directory");
+        try {
+            Files.walkFileTree(seedsPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    String fileName = file.getFileName().toString();
+                    if (isCsvFile(fileName)) { // 检查是否为CSV文件
+                        files.add(file);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException("The scan for the CSV file in the 'seeds' directory failed", e);
+        }
+        return files;
+    }
+
+    private static boolean isCsvFile(String fileName) {
+        return CSV_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }
 }

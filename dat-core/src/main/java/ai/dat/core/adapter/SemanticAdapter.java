@@ -31,11 +31,11 @@ public interface SemanticAdapter {
     /**
      * 引用表名或列名
      *
-     * @param name 表名或列名
+     * @param identifier 表名或列名
      * @return 带引用符号的名称
      */
-    default String quoteIdentifier(String name) {
-        return getSqlDialect().quoteIdentifier(name);
+    default String quoteIdentifier(String identifier) {
+        return getSqlDialect().quoteIdentifier(identifier);
     }
 
     /**

@@ -32,7 +32,7 @@ agents:
 {{ "  - name: default" }}
 {{ "    description: default ask data agent" }}
 {{ "    provider: default" }}
-{{ "    #semantic_models: # Optional" }}
+{{ "    #semantic_models: # Optional. If a semantic models is specified here, the specified semantic models will be given as the context to the LLM." }}
 {{ "      #- covid_cases  # You need to fill in correct semantic model name" }}
 {{ "      #- country_covid_cases  # You need to fill in correct semantic model name" }}
 {% if agent_configuration -%}

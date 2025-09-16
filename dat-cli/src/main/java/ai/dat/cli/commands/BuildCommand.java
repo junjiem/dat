@@ -47,11 +47,13 @@ public class BuildCommand implements Callable<Integer> {
                 builder.forceRebuild();
                 System.out.println(AnsiUtil.string(
                         "@|fg(green) ✅ Force rebuild completed|@"));
+                log.info("Force rebuild completed");
             } else {
                 log.info("Incremental build...");
                 builder.build();
                 System.out.println(AnsiUtil.string(
                         "@|fg(green) ✅ Incremental build completed|@"));
+                log.info("Incremental build completed");
             }
             return 0;
         } catch (Exception e) {

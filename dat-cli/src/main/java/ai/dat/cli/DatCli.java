@@ -34,7 +34,8 @@ import java.util.concurrent.Callable;
                 RunCommand.class,
                 ServerCommand.class,
                 CleanCommand.class,
-                ListCommand.class
+                ListCommand.class,
+                SeedCommand.class
         }
 )
 public class DatCli implements Callable<Integer> {
@@ -80,4 +81,3 @@ public class DatCli implements Callable<Integer> {
         System.exit(exitCode);
     }
 }
-
