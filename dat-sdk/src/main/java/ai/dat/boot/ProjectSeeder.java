@@ -18,10 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -50,23 +47,47 @@ public class ProjectSeeder {
         this.project = project;
     }
 
-    public void seed() {
-        log.info("Loading seeds ...");
-        if (project == null) {
-            project = ProjectUtil.loadProject(projectPath);
-        }
+    public void seedAll() {
         Map<Path, DatSchema> schemas = ProjectUtil.loadAllSchema(seedsPath);
         Map<Path, DatSeed> seeds = ProjectUtil.loadAllSeed(seedsPath);
         validate(schemas, seeds);
+        List<DatSeed> list = seeds.values().stream().toList();
+        seed(schemas, list);
+    }
 
-        Map<String, SeedSpec> seedSpecs = schemas.values().stream()
-                .filter(schema -> !schema.getSeeds().isEmpty())
-                .flatMap(schema -> schema.getSeeds().stream())
-                .toList()
+    public void seedSelect(List<String> selects) {
+        Map<Path, DatSchema> schemas = ProjectUtil.loadAllSchema(seedsPath);
+        Map<Path, DatSeed> seeds = ProjectUtil.loadAllSeed(seedsPath);
+        validate(schemas, seeds);
+//        List<String> seedNames = seeds.values().stream().map(DatSeed::getName).toList();
+//        List<String> notExists = selects.stream().filter(name -> !seedNames.contains(name)).toList();
+//        Preconditions.checkArgument(notExists.isEmpty(), "Following seeds not exist: " + String.join(", ", notExists));
+        List<DatSeed> list = seeds.values().stream().filter(seed -> selects.contains(seed.getName())).toList();
+        seed(schemas, list);
+    }
+
+    public void seedExclude(List<String> excludes) {
+        Map<Path, DatSchema> schemas = ProjectUtil.loadAllSchema(seedsPath);
+        Map<Path, DatSeed> seeds = ProjectUtil.loadAllSeed(seedsPath);
+        validate(schemas, seeds);
+        List<DatSeed> list = seeds.values().stream().filter(seed -> !excludes.contains(seed.getName())).toList();
+        seed(schemas, list);
+    }
+
+    private void seed(Map<Path, DatSchema> schemas, List<DatSeed> seeds) {
+        if (project == null) {
+            project = ProjectUtil.loadProject(projectPath);
+        }
+
+        Map<String, SeedSpec> seedSpecs = schemas.entrySet().stream()
+                .filter(e -> !e.getValue().getSeeds().isEmpty())
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getSeeds()))
+                .values()
                 .stream()
+                .flatMap(Collection::stream).toList().stream()
                 .collect(Collectors.toMap(SeedSpec::getName, s -> s));
 
-        seeds.values().forEach(seed -> {
+        seeds.forEach(seed -> {
             String name = seed.getName();
             SeedSpec seedSpec = seedSpecs.get(name);
             if (seedSpec != null) {
@@ -78,7 +99,7 @@ public class ProjectSeeder {
 
         log.info("Total seeds: {}", seeds.size());
         System.out.println("🔢 Total seeds: " + seeds.size());
-        seeds.values().forEach(seed -> {
+        seeds.forEach(seed -> {
             String name = seed.getName();
             long startTime = System.currentTimeMillis();
             log.info("Seeding '{}'...", name);
@@ -107,12 +128,10 @@ public class ProjectSeeder {
             log.info("Successfully seeded '{}' in {}", name, formattedDuration);
             System.out.println("\t[ " + formattedDuration + " ]");
         });
-
-        log.info("All seeds processed successfully");
     }
 
     private void validate(Map<Path, DatSchema> schemas, Map<Path, DatSeed> seeds) {
-        List<String> names = seeds.values().stream().map(DatSeed::getName).toList();
+        List<String> seedNames = seeds.values().stream().map(DatSeed::getName).toList();
         Map<Path, List<String>> missingNames = schemas.entrySet().stream()
                 .filter(e -> !e.getValue().getSeeds().isEmpty())
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getSeeds()))
@@ -120,7 +139,7 @@ public class ProjectSeeder {
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         e -> e.getValue().stream()
                                 .map(SeedSpec::getName)
-                                .filter(name -> !names.contains(name))
+                                .filter(name -> !seedNames.contains(name))
                                 .toList()))
                 .entrySet().stream()
                 .filter(e -> !e.getValue().isEmpty())
