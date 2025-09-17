@@ -8,11 +8,13 @@ import ai.dat.core.utils.FactoryUtil;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.mcp.client.transport.McpTransport;
 import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
+import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 
 import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -45,11 +47,17 @@ public class McpTransportFactory {
 
     //------------------------------- http -------------------------------
 
+    private static final ConfigOption<String> URL =
+            ConfigOptions.key("url")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Streamable HTTP url. For example: http://localhost:3002/mcp");
+
     private static final ConfigOption<String> SSE_URL =
             ConfigOptions.key("sse-url")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("Http SSE url. For example: http://localhost:3001/sse");
+                    .withDescription("HTTP with SSE url. For example: http://localhost:3001/sse");
 
     private static final ConfigOption<Duration> TIMEOUT =
             ConfigOptions.key("timeout")
@@ -75,7 +83,7 @@ public class McpTransportFactory {
 
     private Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(
-                COMMAND, LOG_EVENTS, SSE_URL, TIMEOUT, LOG_REQUESTS, LOG_RESPONSES
+                COMMAND, LOG_EVENTS, URL, SSE_URL, TIMEOUT, LOG_REQUESTS, LOG_RESPONSES
         ));
     }
 
@@ -89,17 +97,32 @@ public class McpTransportFactory {
                     .command(command)
                     .logEvents(logEvents)
                     .build();
-        } else {
-            String sseUrl = config.get(SSE_URL);
+        } else if (McpTransportType.HTTP == transport) {
+            Optional<String> urlOptional = config.getOptional(URL);
+            Optional<String> sseUrlOptional = config.getOptional(SSE_URL);
             Duration timeout = config.get(TIMEOUT);
             Boolean logRequests = config.get(LOG_REQUESTS);
             Boolean logResponses = config.get(LOG_RESPONSES);
-            return new HttpMcpTransport.Builder()
-                    .sseUrl(sseUrl)
-                    .timeout(timeout)
-                    .logRequests(logRequests)
-                    .logResponses(logResponses)
-                    .build();
+            if (urlOptional.isPresent()) { // Streamable HTTP
+                return new StreamableHttpMcpTransport.Builder()
+                        .url(urlOptional.get())
+                        .timeout(timeout)
+                        .logRequests(logRequests)
+                        .logResponses(logResponses)
+                        .build();
+            } else if (sseUrlOptional.isPresent()) { // HTTP with SSE
+                return new HttpMcpTransport.Builder()
+                        .sseUrl(sseUrlOptional.get())
+                        .timeout(timeout)
+                        .logRequests(logRequests)
+                        .logResponses(logResponses)
+                        .build();
+            } else {
+                throw new IllegalArgumentException("'" + URL.key() + "' or '" + SSE_URL.key()
+                        + "' is required in `http` transport");
+            }
+        } else {
+            throw new UnsupportedOperationException("Not supported yet: " + transport);
         }
     }
 
@@ -110,8 +133,9 @@ public class McpTransportFactory {
             Preconditions.checkArgument(config.getOptional(COMMAND).isPresent(),
                     "'" + COMMAND.key() + "' is required in `stdio` transport");
         } else if (McpTransportType.HTTP == transport) {
-            Preconditions.checkArgument(config.getOptional(SSE_URL).isPresent(),
-                    "'" + SSE_URL.key() + "' is required in `http` transport");
+            Preconditions.checkArgument(
+                    config.getOptional(URL).isPresent() || config.getOptional(SSE_URL).isPresent(),
+                    "'" + URL.key() + "' or '" + SSE_URL.key() + "' is required in `http` transport");
         } else {
             throw new ValidationException("Not support transport: " + transport);
         }

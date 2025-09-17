@@ -106,7 +106,13 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                                 log-events: true  # only if you want to see the traffic in the log
                               server_name2:
                                 transport: http
-                                sse-url: "http://localhost:3001/sse"
+                                url: "http://localhost:3002/mcp" # Streamable HTTP
+                                log-requests: true  # if you want to see the traffic in the log
+                                log-responses: true
+                                timeout: 60000
+                              server_name3:
+                                transport: http
+                                sse-url: "http://localhost:3001/sse" # HTTP with SSE (Deprecated, not recommended)
                                 log-requests: true  # if you want to see the traffic in the log
                                 log-responses: true
                                 timeout: 60000
