@@ -103,16 +103,25 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                               server_name1:
                                 transport: stdio
                                 command: ["/usr/bin/npm", "exec", "@modelcontextprotocol/server-everything@0.6.2"]
+                                #environment:  # Optional
+                                #  key1: value1
+                                #  key2: value2
                                 log-events: true  # only if you want to see the traffic in the log
                               server_name2:
                                 transport: http
                                 url: "http://localhost:3002/mcp" # Streamable HTTP
+                                #custom-headers:  # Optional
+                                #  content-type: "application/json"
+                                #  accept: "application/json, text/event-stream"
                                 log-requests: true  # if you want to see the traffic in the log
                                 log-responses: true
                                 timeout: 60000
                               server_name3:
                                 transport: http
                                 sse-url: "http://localhost:3001/sse" # HTTP with SSE (Deprecated, not recommended)
+                                #custom-headers:  # Optional
+                                #  content-type: "application/json"
+                                #  accept: "application/json, text/event-stream"
                                 log-requests: true  # if you want to see the traffic in the log
                                 log-responses: true
                                 timeout: 60000

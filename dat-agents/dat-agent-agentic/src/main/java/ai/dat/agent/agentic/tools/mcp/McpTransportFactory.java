@@ -12,10 +12,7 @@ import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 
 import java.time.Duration;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @Author JunjieM
@@ -39,6 +36,13 @@ public class McpTransportFactory {
                     .withDescription("Stdio command list. " +
                             "For example: [\"/usr/bin/npm\", \"exec\", \"@modelcontextprotocol/server-everything@0.6.2\"]");
 
+    private static final ConfigOption<Map<String, String>> ENVIRONMENT =
+            ConfigOptions.key("environment")
+                    .mapType()
+                    .noDefaultValue()
+                    .withDescription("Stdio environment configuration. " +
+                            "For example: {\"key1\": \"value1\", \"key2\": \"value2\"}");
+
     private static final ConfigOption<Boolean> LOG_EVENTS =
             ConfigOptions.key("log-events")
                     .booleanType()
@@ -58,6 +62,14 @@ public class McpTransportFactory {
                     .stringType()
                     .noDefaultValue()
                     .withDescription("HTTP with SSE url. For example: http://localhost:3001/sse");
+
+    private static final ConfigOption<Map<String, String>> CUSTOM_HEADERS =
+            ConfigOptions.key("custom-headers")
+                    .mapType()
+                    .noDefaultValue()
+                    .withDescription("Custom HTTP headers. " +
+                            "For example: {\"content-type\": \"application/json\", " +
+                            "\"accept\": \"application/json, text/event-stream\"}");
 
     private static final ConfigOption<Duration> TIMEOUT =
             ConfigOptions.key("timeout")
@@ -83,7 +95,10 @@ public class McpTransportFactory {
 
     private Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(
-                COMMAND, LOG_EVENTS, URL, SSE_URL, TIMEOUT, LOG_REQUESTS, LOG_RESPONSES
+                // STDIO
+                COMMAND, ENVIRONMENT, LOG_EVENTS,
+                // HTTP
+                URL, SSE_URL, CUSTOM_HEADERS, TIMEOUT, LOG_REQUESTS, LOG_RESPONSES
         ));
     }
 
@@ -93,10 +108,11 @@ public class McpTransportFactory {
         if (McpTransportType.STDIO == transport) {
             List<String> command = config.get(COMMAND);
             Boolean logEvents = config.get(LOG_EVENTS);
-            return new StdioMcpTransport.Builder()
+            StdioMcpTransport.Builder builder = new StdioMcpTransport.Builder()
                     .command(command)
-                    .logEvents(logEvents)
-                    .build();
+                    .logEvents(logEvents);
+            config.getOptional(ENVIRONMENT).ifPresent(builder::environment);
+            return builder.build();
         } else if (McpTransportType.HTTP == transport) {
             Optional<String> urlOptional = config.getOptional(URL);
             Optional<String> sseUrlOptional = config.getOptional(SSE_URL);
@@ -104,19 +120,21 @@ public class McpTransportFactory {
             Boolean logRequests = config.get(LOG_REQUESTS);
             Boolean logResponses = config.get(LOG_RESPONSES);
             if (urlOptional.isPresent()) { // Streamable HTTP
-                return new StreamableHttpMcpTransport.Builder()
+                StreamableHttpMcpTransport.Builder builder = new StreamableHttpMcpTransport.Builder()
                         .url(urlOptional.get())
                         .timeout(timeout)
                         .logRequests(logRequests)
-                        .logResponses(logResponses)
-                        .build();
+                        .logResponses(logResponses);
+                config.getOptional(CUSTOM_HEADERS).ifPresent(builder::customHeaders);
+                return builder.build();
             } else if (sseUrlOptional.isPresent()) { // HTTP with SSE
-                return new HttpMcpTransport.Builder()
+                HttpMcpTransport.Builder builder = new HttpMcpTransport.Builder()
                         .sseUrl(sseUrlOptional.get())
                         .timeout(timeout)
                         .logRequests(logRequests)
-                        .logResponses(logResponses)
-                        .build();
+                        .logResponses(logResponses);
+                config.getOptional(CUSTOM_HEADERS).ifPresent(builder::customHeaders);
+                return builder.build();
             } else {
                 throw new IllegalArgumentException("'" + URL.key() + "' or '" + SSE_URL.key()
                         + "' is required in `http` transport");
