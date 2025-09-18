@@ -1,7 +1,7 @@
 package ai.dat.core.contentstore;
 
-import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.SemanticModelUtil;
@@ -81,6 +81,10 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<String> addMdls(List<SemanticModel> semanticModels) {
+        List<TextSegment> embedTextSegments = semanticModels.stream()
+                .map(SemanticModelUtil::toSemanticModelViewText)
+                .map(TextSegment::from)
+                .toList();
         List<TextSegment> textSegments = semanticModels.stream()
                 .map(model -> {
                     SemanticModelUtil.validateSemanticModel(model);
@@ -93,7 +97,7 @@ public class DefaultContentStore implements ContentStore {
                     }
                     return TextSegment.from(json, MDL_METADATA);
                 }).collect(Collectors.toList());
-        List<Embedding> embeddings = embeddingModel.embedAll(textSegments).content();
+        List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
         return mdlEmbeddingStore.addAll(embeddings, textSegments);
     }
 

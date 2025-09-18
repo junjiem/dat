@@ -25,8 +25,11 @@ public class DimensionView extends ElementView {
     @JsonProperty("type_params")
     private Dimension.TypeParams typeParams;
 
-    public static DimensionView from(@NonNull SemanticAdapter semanticAdapter,
-                                     @NonNull Dimension dimension) {
+    public static DimensionView from(@NonNull Dimension dimension) {
+        return from(dimension, null);
+    }
+
+    public static DimensionView from(@NonNull Dimension dimension, SemanticAdapter semanticAdapter) {
         DimensionView view = new DimensionView();
         view.setName(dimension.getName());
         view.setDescription(dimension.getDescription());
@@ -37,7 +40,7 @@ public class DimensionView extends ElementView {
         AnsiSqlType ansiSqlType = null;
         if (dimension.getAnsiSqlType() != null) {
             ansiSqlType = dimension.getAnsiSqlType();
-        } else if (dimension.getDataType() != null) {
+        } else if (dimension.getDataType() != null && semanticAdapter != null) {
             ansiSqlType = semanticAdapter.toAnsiSqlType(dimension.getDataType());
         }
         view.setDataType(ansiSqlType);

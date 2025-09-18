@@ -91,8 +91,8 @@ class Text2SqlContentInjector implements ContentInjector {
                 Preconditions.checkArgument(!semanticModels.isEmpty(), "Retrieve semantic models is empty");
             }
             List<String> semantics = semanticModels.stream()
-                    .map(semanticModel -> SemanticModelUtil.toLlmSemanticModelContent(
-                            databaseAdapter.semanticAdapter(), semanticModel))
+                    .map(semanticModel -> SemanticModelUtil.toSemanticModelViewText(
+                            semanticModel, databaseAdapter.semanticAdapter()))
                     .collect(Collectors.toList());
             List<TextSegment> sqlTextSegments = contents.stream()
                     .map(Content::textSegment).filter(contentStore::isSql).toList();

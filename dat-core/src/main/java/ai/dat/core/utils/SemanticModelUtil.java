@@ -59,15 +59,23 @@ public class SemanticModelUtil {
                         "(The end of an statement cannot contain ';')", name));
     }
 
-    public static SemanticModelView toSemanticModelView(@NonNull SemanticAdapter semanticAdapter,
-                                                        @NonNull SemanticModel semanticModel) {
-        return SemanticModelView.from(semanticAdapter, semanticModel);
+    public static SemanticModelView toSemanticModelView(@NonNull SemanticModel semanticModel) {
+        return SemanticModelView.from(semanticModel, null);
     }
 
-    public static String toLlmSemanticModelContent(@NonNull SemanticAdapter semanticAdapter,
-                                                   @NonNull SemanticModel semanticModel) {
+    public static SemanticModelView toSemanticModelView(@NonNull SemanticModel semanticModel,
+                                                        SemanticAdapter semanticAdapter) {
+        return SemanticModelView.from(semanticModel, semanticAdapter);
+    }
+
+    public static String toSemanticModelViewText(@NonNull SemanticModel semanticModel) {
+        return toSemanticModelViewText(semanticModel, null);
+    }
+
+    public static String toSemanticModelViewText(@NonNull SemanticModel semanticModel,
+                                                   SemanticAdapter semanticAdapter) {
         try {
-            return JSON_MAPPER.writeValueAsString(toSemanticModelView(semanticAdapter, semanticModel));
+            return JSON_MAPPER.writeValueAsString(toSemanticModelView(semanticModel, semanticAdapter));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize semantic model view to JSON: "
                     + e.getMessage(), e);

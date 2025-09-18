@@ -23,8 +23,11 @@ public class MeasureView extends ElementView {
     @JsonProperty("agg_time_dimension")
     private String aggTimeDimension;
 
-    public static MeasureView from(@NonNull SemanticAdapter semanticAdapter,
-                                   @NonNull Measure measure) {
+    public static MeasureView from(@NonNull Measure measure) {
+        return from(measure, null);
+    }
+
+    public static MeasureView from(@NonNull Measure measure, SemanticAdapter semanticAdapter) {
         MeasureView view = new MeasureView();
         view.setName(measure.getName());
         view.setDescription(measure.getDescription());
@@ -35,7 +38,7 @@ public class MeasureView extends ElementView {
         AnsiSqlType ansiSqlType = null;
         if (measure.getAnsiSqlType() != null) {
             ansiSqlType = measure.getAnsiSqlType();
-        } else if (measure.getDataType() != null) {
+        } else if (measure.getDataType() != null && semanticAdapter != null) {
             ansiSqlType = semanticAdapter.toAnsiSqlType(measure.getDataType());
         }
         view.setDataType(ansiSqlType);
