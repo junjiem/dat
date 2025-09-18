@@ -37,8 +37,11 @@ public class SemanticModelView {
     @NonNull
     private List<MeasureView> measures = List.of();
 
-    public static SemanticModelView from(@NonNull SemanticAdapter semanticAdapter,
-                                         @NonNull SemanticModel semanticModel) {
+    public static SemanticModelView from(@NonNull SemanticModel semanticModel) {
+        return from(semanticModel, null);
+    }
+
+    public static SemanticModelView from(@NonNull SemanticModel semanticModel, SemanticAdapter semanticAdapter) {
         SemanticModelView view = new SemanticModelView();
         view.setName(semanticModel.getName());
         view.setDescription(semanticModel.getDescription());
@@ -46,13 +49,13 @@ public class SemanticModelView {
         view.setTags(semanticModel.getTags());
         view.setDefaults(semanticModel.getDefaults());
         view.setEntities(semanticModel.getEntities().stream()
-                .map(o -> EntityView.from(semanticAdapter, o))
+                .map(o -> EntityView.from(o, semanticAdapter))
                 .collect(Collectors.toList()));
         view.setDimensions(semanticModel.getDimensions().stream()
-                .map(o -> DimensionView.from(semanticAdapter, o))
+                .map(o -> DimensionView.from(o, semanticAdapter))
                 .collect(Collectors.toList()));
         view.setMeasures(semanticModel.getMeasures().stream()
-                .map(o -> MeasureView.from(semanticAdapter, o))
+                .map(o -> MeasureView.from(o, semanticAdapter))
                 .collect(Collectors.toList()));
         return view;
     }

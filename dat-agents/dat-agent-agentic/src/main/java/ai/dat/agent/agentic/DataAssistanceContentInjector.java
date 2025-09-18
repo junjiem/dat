@@ -67,8 +67,8 @@ class DataAssistanceContentInjector implements ContentInjector {
                 Preconditions.checkArgument(!semanticModels.isEmpty(), "Retrieve semantic models is empty");
             }
             List<String> semantics = semanticModels.stream()
-                    .map(semanticModel -> SemanticModelUtil.toLlmSemanticModelContent(
-                            databaseAdapter.semanticAdapter(), semanticModel))
+                    .map(semanticModel -> SemanticModelUtil.toSemanticModelViewText(
+                            semanticModel, databaseAdapter.semanticAdapter()))
                     .collect(Collectors.toList());
 
             String query = ((dev.langchain4j.data.message.UserMessage) chatMessage).singleText();

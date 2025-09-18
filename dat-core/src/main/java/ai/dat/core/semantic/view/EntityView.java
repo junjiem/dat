@@ -16,8 +16,11 @@ public class EntityView extends ElementView {
     @NonNull
     private Entity.EntityType type;
 
-    public static EntityView from(@NonNull SemanticAdapter semanticAdapter,
-                                  @NonNull Entity entity) {
+    public static EntityView from(@NonNull Entity entity) {
+        return from(entity, null);
+    }
+
+    public static EntityView from(@NonNull Entity entity, SemanticAdapter semanticAdapter) {
         EntityView view = new EntityView();
         view.setName(entity.getName());
         view.setDescription(entity.getDescription());
@@ -26,7 +29,7 @@ public class EntityView extends ElementView {
         AnsiSqlType ansiSqlType = null;
         if (entity.getAnsiSqlType() != null) {
             ansiSqlType = entity.getAnsiSqlType();
-        } else if (entity.getDataType() != null) {
+        } else if (entity.getDataType() != null && semanticAdapter != null) {
             ansiSqlType = semanticAdapter.toAnsiSqlType(entity.getDataType());
         }
         view.setDataType(ansiSqlType);
