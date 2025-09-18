@@ -71,6 +71,7 @@ public class ContentStoreManager {
                         .relativePath(fs.getRelativePath())
                         .lastModified(fs.getLastModified())
                         .md5Hash(fs.getMd5Hash())
+                        .semanticModelNames(fs.getSemanticModelNames())
                         .vectorIds(vectorIds)
                         .dependencies(fs.getDependencies())
                         .build());
@@ -101,6 +102,7 @@ public class ContentStoreManager {
                         .relativePath(fs.getRelativePath())
                         .lastModified(fs.getLastModified())
                         .md5Hash(fs.getMd5Hash())
+                        .semanticModelNames(fs.getSemanticModelNames())
                         .vectorIds(vectorIds)
                         .dependencies(fs.getDependencies())
                         .build());

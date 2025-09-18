@@ -36,6 +36,11 @@ public class SchemaFileState {
     private String md5Hash;
 
     /**
+     * 语义模型名称列表
+     */
+    private List<String> semanticModelNames;
+
+    /**
      * 向量存储ID列表
      */
     private List<String> vectorIds;

@@ -35,10 +35,7 @@ public class ProjectRunner {
                 .collect(Collectors.toMap(AgentConfig::getName, o -> o));
         Preconditions.checkArgument(agentMap.containsKey(agentName),
                 "The project doesn't exist agent: " + agentName);
-        Path modelsPath = projectPath.resolve(ProjectUtil.MODELS_DIR_NAME);
-        Map<Path, DatSchema> schemas = ProjectUtil.loadAllSchema(modelsPath);
-        Map<Path, DatModel> models = ProjectUtil.loadAllModel(modelsPath);
-        ProjectBuilder builder = new ProjectBuilder(projectPath, project, schemas, models);
+        ProjectBuilder builder = new ProjectBuilder(projectPath, project);
         try {
             builder.build();
         } catch (IOException e) {

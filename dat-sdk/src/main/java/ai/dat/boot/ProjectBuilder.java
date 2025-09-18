@@ -3,18 +3,13 @@ package ai.dat.boot;
 import ai.dat.boot.data.FileChanges;
 import ai.dat.boot.data.SchemaFileState;
 import ai.dat.boot.utils.ProjectUtil;
-import ai.dat.core.data.DatModel;
-import ai.dat.core.data.DatSchema;
 import ai.dat.core.data.project.DatProject;
-import ai.dat.core.exception.ValidationException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @Author JunjieM
@@ -24,34 +19,20 @@ import java.util.stream.Collectors;
 public class ProjectBuilder {
 
     private final Path projectPath;
-    private final Path modelsPath;
 
     private DatProject project;
-    private Map<Path, DatSchema> schemas;
-    private Map<Path, DatModel> models;
 
     private final BuildStateManager stateManager;
 
     public ProjectBuilder(@NonNull Path projectPath) {
         this.projectPath = projectPath;
-        this.modelsPath = projectPath.resolve(ProjectUtil.MODELS_DIR_NAME);
         this.stateManager = new BuildStateManager(projectPath);
     }
 
     public ProjectBuilder(@NonNull Path projectPath,
-                          @NonNull Map<Path, DatSchema> schemas,
-                          @NonNull Map<Path, DatModel> models) {
-        this(projectPath, ProjectUtil.loadProject(projectPath), schemas, models);
-    }
-
-    public ProjectBuilder(@NonNull Path projectPath,
-                          @NonNull DatProject project,
-                          @NonNull Map<Path, DatSchema> schemas,
-                          @NonNull Map<Path, DatModel> models) {
+                          @NonNull DatProject project) {
         this(projectPath);
         this.project = project;
-        this.schemas = schemas;
-        this.models = models;
     }
 
     /**
@@ -62,18 +43,12 @@ public class ProjectBuilder {
         if (project == null) {
             project = ProjectUtil.loadProject(projectPath);
         }
-        if (schemas == null) {
-            schemas = ProjectUtil.loadAllSchema(modelsPath);
-        }
-        if (models == null) {
-            models = ProjectUtil.loadAllModel(modelsPath);
-        }
 
         String fingerprint = ProjectUtil.contentStoreFingerprint(project);
 
         List<SchemaFileState> fileStates = stateManager.loadBuildState(fingerprint);
 
-        FileChangeAnalyzer fileChangeAnalyzer = new FileChangeAnalyzer(project, projectPath, schemas, models);
+        FileChangeAnalyzer fileChangeAnalyzer = new FileChangeAnalyzer(project, projectPath);
         FileChanges changes = fileChangeAnalyzer.analyzeChanges(fileStates);
 
         if (changes.hasChanges()) {
@@ -94,7 +69,6 @@ public class ProjectBuilder {
         cleanState();
         build();
     }
-
 
 
     /**
