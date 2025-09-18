@@ -83,7 +83,7 @@ public class PreBuildValidator {
         if (!validations.isEmpty()) {
             StringBuffer sb = new StringBuffer();
             validations.forEach((relativePath, validationMessages) -> {
-                sb.append("There has exceptions in the model SQL validation of the semantic model, " +
+                sb.append("There has exceptions in the model SQL syntax validation of the semantic model, " +
                         "in the YAML file relative path: ").append(relativePath).append("\n");
                 validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
                         .append(": ").append(m.exception.getMessage()).append("\n"));
@@ -121,7 +121,7 @@ public class PreBuildValidator {
         if (!validations.isEmpty()) {
             StringBuffer sb = new StringBuffer();
             validations.forEach((relativePath, validationMessages) -> {
-                sb.append("There has exceptions in the semantic model SQL validation of the semantic model, " +
+                sb.append("There has exceptions in the semantic model SQL syntax validation of the semantic model, " +
                         "in the YAML file relative path: ").append(relativePath).append("\n");
                 validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
                         .append(": ").append(m.exception.getMessage()).append("\n"));
