@@ -83,7 +83,7 @@ public class DatSchemaUtil {
     public static List<SemanticModel> getSemanticModels(@NonNull DatSchema schema, @NonNull List<DatModel> models) {
         Map<String, DatModel> modelMap = models.stream().collect(Collectors.toMap(DatModel::getName, m -> m));
         return schema.getSemanticModels().stream()
-                .map(m -> convertModel(m, modelMap)).collect(Collectors.toList());
+                .map(m -> toSemanticModel(m, modelMap)).collect(Collectors.toList());
     }
 
     public static List<String> getModelName(@NonNull DatSchema schema) {
@@ -93,8 +93,8 @@ public class DatSchemaUtil {
                 .collect(Collectors.toList());
     }
 
-    private static SemanticModel convertModel(@NonNull SemanticModel semanticModel,
-                                              @NonNull Map<String, DatModel> models) {
+    private static SemanticModel toSemanticModel(@NonNull SemanticModel semanticModel,
+                                                 @NonNull Map<String, DatModel> models) {
         String name = semanticModel.getName();
         String model = semanticModel.getModel();
         String modelName = extractModelName(model);

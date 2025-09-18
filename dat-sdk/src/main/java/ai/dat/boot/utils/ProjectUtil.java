@@ -298,7 +298,7 @@ public class ProjectUtil {
         return schemas;
     }
 
-    private static DatSchema loadSchema(Path filePath, Path dirPath) {
+    public static DatSchema loadSchema(Path filePath, Path dirPath) {
         try {
             String content = Files.readString(filePath);
             return DatSchemaUtil.datSchema(content);
@@ -309,29 +309,8 @@ public class ProjectUtil {
     }
 
     private static void validateYamlFiles(Path dirPath, Map<Path, DatSchema> schemas) {
-        // 校验语义模型名称是否重复
-        Map<String, List<Path>> nameToPaths = schemas.entrySet().stream()
-                .flatMap(entry -> entry.getValue().getSemanticModels().stream()
-                        .map(model -> Map.entry(model.getName(), entry.getKey())))
-                .collect(Collectors.groupingBy(
-                        Map.Entry::getKey,
-                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())
-                ));
-        Map<String, List<Path>> duplicates = nameToPaths.entrySet().stream()
-                .filter(entry -> entry.getValue().size() > 1)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        if (!duplicates.isEmpty()) {
-            StringBuffer sb = new StringBuffer();
-            duplicates.forEach((semanticModelName, paths) -> {
-                sb.append("Discover duplicate semantic model name: ").append(semanticModelName).append("\n");
-                sb.append("The YAML file relative path: \n");
-                paths.stream()
-                        .map(p -> dirPath.relativize(p).toString())
-                        .forEach(p -> sb.append("  - ").append(p).append("\n"));
-                sb.append("\n");
-            });
-            throw new ValidationException(sb.toString());
-        }
+        Map<String, List<Path>> nameToPaths;
+        Map<String, List<Path>> duplicates;
         // 校验种子名称是否重复
         nameToPaths = schemas.entrySet().stream()
                 .flatMap(entry -> entry.getValue().getSeeds().stream()
@@ -355,6 +334,29 @@ public class ProjectUtil {
             });
             throw new ValidationException(sb.toString());
         }
+        // 校验语义模型名称是否重复
+        nameToPaths = schemas.entrySet().stream()
+                .flatMap(entry -> entry.getValue().getSemanticModels().stream()
+                        .map(model -> Map.entry(model.getName(), entry.getKey())))
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())
+                ));
+        duplicates = nameToPaths.entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!duplicates.isEmpty()) {
+            StringBuffer sb = new StringBuffer();
+            duplicates.forEach((semanticModelName, paths) -> {
+                sb.append("Discover duplicate semantic model name: ").append(semanticModelName).append("\n");
+                sb.append("The YAML file relative path: \n");
+                paths.stream()
+                        .map(p -> dirPath.relativize(p).toString())
+                        .forEach(p -> sb.append("  - ").append(p).append("\n"));
+                sb.append("\n");
+            });
+            throw new ValidationException(sb.toString());
+        }
     }
 
     public static Map<Path, DatModel> loadAllModel(Path modelsPath) {
@@ -364,10 +366,10 @@ public class ProjectUtil {
         return models;
     }
 
-    private static DatModel loadModel(Path filePath, Path modelsPath) {
+    public static DatModel loadModel(Path filePath, Path modelsPath) {
         try {
             String content = Files.readString(filePath);
-            String name = fileNamePrefix(filePath.getFileName().toString());
+            String name = FileUtil.fileNameWithoutSuffix(filePath.getFileName().toString());
             return DatModel.from(name, content);
         } catch (Exception e) {
             throw new RuntimeException("The " + modelsPath.relativize(filePath)
@@ -408,7 +410,7 @@ public class ProjectUtil {
     private static DatSeed loadSeed(Path filePath, Path seedsPath) {
         try {
             String content = Files.readString(filePath);
-            String name = fileNamePrefix(filePath.getFileName().toString());
+            String name = FileUtil.fileNameWithoutSuffix(filePath.getFileName().toString());
             return DatSeed.from(name, content);
         } catch (Exception e) {
             throw new RuntimeException("The " + seedsPath.relativize(filePath)
@@ -439,12 +441,7 @@ public class ProjectUtil {
         }
     }
 
-    private static String fileNamePrefix(String fileName) {
-        int lastDotIndex = fileName.lastIndexOf('.');
-        return lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
-    }
-
-    private static List<Path> scanYamlFiles(Path dirPath) {
+    public static List<Path> scanYamlFiles(Path dirPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(dirPath),
                 "There is no '" + dirPath.getFileName() + "' directory in the project root directory");
@@ -469,7 +466,7 @@ public class ProjectUtil {
         return YAML_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }
 
-    private static List<Path> scanSqlFiles(Path modelsPath) {
+    public static List<Path> scanSqlFiles(Path modelsPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(modelsPath),
                 "There is no 'models' directory in the project root directory");

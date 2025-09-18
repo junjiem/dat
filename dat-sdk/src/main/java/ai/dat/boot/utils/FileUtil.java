@@ -31,6 +31,11 @@ public class FileUtil {
         }
     }
 
+    public static String fileNameWithoutSuffix(String fileName) {
+        int lastDotIndex = fileName.lastIndexOf('.');
+        return lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
+    }
+
     public static boolean exists(@NonNull Path filePath) {
         return Files.exists(filePath) && Files.isRegularFile(filePath);
     }
