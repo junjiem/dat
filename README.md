@@ -100,7 +100,7 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 
 ```bash
 # 下载最新版本
-wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.2.1.tar.gz
+wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.2.2.tar.gz
 
 # 解压并配置环境变量
 tar -xzf dat-cli-x.x.x.tar.gz
@@ -497,7 +497,7 @@ Closes #123"
 ### 💬 交流渠道
 
 - **GitHub Discussions** - 技术讨论和问答
-- **微信群** - 添加微信 `JEROME1234` 加入社区群
+- **微信群** - 添加微信 `JEROME1234` 备注 `DAT` 加入社区群
 
 ### 🏆 贡献者致谢
 
