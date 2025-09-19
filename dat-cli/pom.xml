@@ -13,6 +13,7 @@
 
     <properties>
         <project.finalName>${project.artifactId}-${project.version}</project.finalName>
+        <main.class>ai.dat.cli.DatCli</main.class>
     </properties>
 
     <dependencies>
@@ -88,127 +89,355 @@
     </dependencies>
 
     <build>
-        <plugins>
-            <!-- Maven Compiler Plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-
-            <!-- Maven Exec Plugin -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.1.0</version>
-                <configuration>
-                    <mainClass>ai.dat.cli.DatCli</mainClass>
-                    <cleanupDaemonThreads>false</cleanupDaemonThreads>
-                </configuration>
-            </plugin>
-
-            <!-- Spring Boot Maven Plugin for proper Spring Boot packaging -->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>3.5.0</version>
-                <configuration>
-                    <mainClass>ai.dat.cli.DatCli</mainClass>
-                    <layers>
-                        <enabled>true</enabled>
-                    </layers>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Maven Shade Plugin for creating executable JAR (backup approach) -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.4.1</version>
-                <executions>
-                    <execution>
-                        <id>shade-jar</id>
-<!--                        <phase>package</phase>-->
-                        <phase>none</phase> <!-- 禁用，优先使用Spring Boot Plugin -->
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>ai.dat.cli.DatCli</mainClass>
-                                </transformer>
-                                <!-- merge META-INF/services files -->
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <!-- Spring Boot specific transformers -->
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/spring.handlers</resource>
-                                </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/spring.schemas</resource>
-                                </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/spring.tooling</resource>
-                                </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</resource>
-                                </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports</resource>
-                                </transformer>
-                            </transformers>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- 装配并打tar.gz包 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.7.1</version>
-                <executions>
-                    <execution>
-                        <id>assembly-tar-gz</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <attach>false</attach>
-                            <finalName>${project.finalName}</finalName>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+        <pluginManagement>
+            <plugins>
+                <!-- Maven Shade Plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.4.1</version>
+                    <configuration>
+                        <transformers>
+                            <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <mainClass>${main.class}</mainClass>
+                            </transformer>
+                            <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                <resource>META-INF/spring.handlers</resource>
+                            </transformer>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                <resource>META-INF/spring.schemas</resource>
+                            </transformer>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                <resource>META-INF/spring.tooling</resource>
+                            </transformer>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                <resource>
+                                    META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+                                </resource>
+                            </transformer>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                <resource>
+                                    META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports
+                                </resource>
+                            </transformer>
+                        </transformers>
+                        <filters>
+                            <filter>
+                                <artifact>*:*</artifact>
+                                <excludes>
+                                    <exclude>META-INF/*.SF</exclude>
+                                    <exclude>META-INF/*.DSA</exclude>
+                                    <exclude>META-INF/*.RSA</exclude>
+                                </excludes>
+                            </filter>
+                        </filters>
+                    </configuration>
+                </plugin>
+                <!-- Maven Assembly Plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>3.7.1</version>
+                    <configuration>
+                        <appendAssemblyId>false</appendAssemblyId>
+                        <attach>false</attach>
+                        <finalName>${project.finalName}</finalName>
+                        <outputDirectory>${project.build.directory}</outputDirectory>
+                        <descriptors>
+                            <descriptor>assembly.xml</descriptor>
+                        </descriptors>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
+
+    <profiles>
+        <!--        <profile>-->
+        <!--            <id>spring-boot</id>-->
+        <!--            <activation>-->
+        <!--                <activeByDefault>false</activeByDefault>-->
+        <!--            </activation>-->
+        <!--            <build>-->
+        <!--                <plugins>-->
+        <!--                    <plugin>-->
+        <!--                        <groupId>org.springframework.boot</groupId>-->
+        <!--                        <artifactId>spring-boot-maven-plugin</artifactId>-->
+        <!--                        <version>3.5.0</version>-->
+        <!--                        <configuration>-->
+        <!--                            <mainClass>${main.class}</mainClass>-->
+        <!--                            <layers>-->
+        <!--                                <enabled>true</enabled>-->
+        <!--                            </layers>-->
+        <!--                        </configuration>-->
+        <!--                        <executions>-->
+        <!--                            <execution>-->
+        <!--                                <id>spring-boot</id>-->
+        <!--                                <phase>package</phase>-->
+        <!--                                <goals>-->
+        <!--                                    <goal>repackage</goal>-->
+        <!--                                </goals>-->
+        <!--                            </execution>-->
+        <!--                        </executions>-->
+        <!--                    </plugin>-->
+        <!--                    <plugin>-->
+        <!--                        <groupId>org.apache.maven.plugins</groupId>-->
+        <!--                        <artifactId>maven-assembly-plugin</artifactId>-->
+        <!--                        <executions>-->
+        <!--                            <execution>-->
+        <!--                                <id>assembly</id>-->
+        <!--                                <phase>package</phase>-->
+        <!--                                <goals>-->
+        <!--                                    <goal>single</goal>-->
+        <!--                                </goals>-->
+        <!--                            </execution>-->
+        <!--                        </executions>-->
+        <!--                    </plugin>-->
+        <!--                </plugins>-->
+        <!--            </build>-->
+        <!--        </profile>-->
+
+        <profile>
+            <id>shade</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>shade</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assembly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>shade-win-x86_64</id>
+            <properties>
+                <project.finalName>${project.artifactId}-${project.version}-win-x86_64</project.finalName>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>shade</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <finalName>${project.finalName}</finalName>
+                                    <filters combine.children="append">
+                                        <filter>
+                                            <artifact>com.microsoft.onnxruntime:onnxruntime</artifact>
+                                            <excludes>
+                                                <exclude>ai/onnxruntime/native/linux-aarch64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/linux-x64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/osx-aarch64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/osx-x64/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
+                                            <excludes>
+                                                <exclude>libduckdb_java.so_linux_amd64</exclude>
+                                                <exclude>libduckdb_java.so_linux_arm64</exclude>
+                                                <exclude>libduckdb_java.so_osx_universal</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>ai.djl.huggingface:tokenizers</artifact>
+                                            <excludes>
+                                                <exclude>native/lib/linux-aarch64/cpu/**</exclude>
+                                                <exclude>native/lib/linux-x86_64/cpu/**</exclude>
+                                                <exclude>native/lib/osx-aarch64/cpu/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                    </filters>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assembly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>shade-linux-amd64</id>
+            <properties>
+                <project.finalName>${project.artifactId}-${project.version}-linux-amd64</project.finalName>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>shade</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <finalName>${project.finalName}</finalName>
+                                    <filters combine.children="append">
+                                        <filter>
+                                            <artifact>com.microsoft.onnxruntime:onnxruntime</artifact>
+                                            <excludes>
+                                                <exclude>ai/onnxruntime/native/linux-aarch64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/osx-aarch64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/osx-x64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/win-x64/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
+                                            <excludes>
+                                                <exclude>libduckdb_java.so_linux_arm64</exclude>
+                                                <exclude>libduckdb_java.so_osx_universal</exclude>
+                                                <exclude>libduckdb_java.so_windows_amd64</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>ai.djl.huggingface:tokenizers</artifact>
+                                            <excludes>
+                                                <exclude>native/lib/linux-aarch64/cpu/**</exclude>
+                                                <exclude>native/lib/osx-aarch64/cpu/**</exclude>
+                                                <exclude>native/lib/win-x86_64/cpu/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                    </filters>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assembly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>shade-osx-aarch64</id>
+            <properties>
+                <project.finalName>${project.artifactId}-${project.version}-osx-aarch64</project.finalName>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>shade</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
+                                    <finalName>${project.finalName}</finalName>
+                                    <filters combine.children="append">
+                                        <filter>
+                                            <artifact>com.microsoft.onnxruntime:onnxruntime</artifact>
+                                            <excludes>
+                                                <exclude>ai/onnxruntime/native/linux-aarch64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/linux-x64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/osx-x64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/win-x64/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
+                                            <excludes>
+                                                <exclude>libduckdb_java.so_linux_arm64</exclude>
+                                                <exclude>libduckdb_java.so_linux_amd64</exclude>
+                                                <exclude>libduckdb_java.so_windows_amd64</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>ai.djl.huggingface:tokenizers</artifact>
+                                            <excludes>
+                                                <exclude>native/lib/linux-aarch64/cpu/**</exclude>
+                                                <exclude>native/lib/linux-x86_64/cpu/**</exclude>
+                                                <exclude>native/lib/win-x86_64/cpu/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                    </filters>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assembly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
 
 </project>
