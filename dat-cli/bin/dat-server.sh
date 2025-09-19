@@ -112,18 +112,27 @@ parse_and_validate_service_type() {
 check_jar_and_java() {
     # Find JAR file
     JAR_FILE=$(ls "$CURR_DIR"/../dat-cli-*.jar 2>/dev/null | head -n 1)
-    
+
     if [[ ! -f "$JAR_FILE" ]]; then
         echo "❌ Error: DAT CLI jar file not found in $CURR_DIR/.."
         return 1
     fi
 
-    # Check Java version
-    if ! command -v java &> /dev/null; then
+    # Try to use bundled JRE first, fall back to system Java if not found
+    BUNDLED_JRE="$CURR_DIR/../jre"
+    if [[ -f "$BUNDLED_JRE/bin/java" ]]; then
+        # Use bundled JRE
+        JAVA_CMD="$BUNDLED_JRE/bin/java"
+        echo "Using bundled JRE from $BUNDLED_JRE"
+    elif command -v java &> /dev/null; then
+        # Use system Java
+        JAVA_CMD="java"
+        echo "Using system Java"
+    else
         echo "❌ Error: Java was not found. Please install Java 17 or a higher version first"
         return 1
     fi
-    
+
     return 0
 }
 
@@ -219,8 +228,11 @@ start_server() {
     local project_log_file="$(get_log_file "$service_type")"
     
     # Start the server in background with dynamic subcommand
-    nohup java -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Ddat.logs.root.path="$PROJECT_PATH" \
-        -jar "$JAR_FILE" server $service_type \
+    # Set Java options
+    JAVA_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Xms256m -Xmx2g -Ddat.logs.root.path=$PROJECT_PATH"
+
+    # Standard mode - use JAR file
+    nohup $JAVA_CMD $JAVA_OPTS -jar "$JAR_FILE" server $service_type \
         "${remaining_args[@]}" \
         > "$project_log_file" 2>&1 &
     
@@ -378,17 +390,20 @@ show_service_status() {
 # Function to show Java help
 show_java_help() {
     local service_type="$1"
-    
+
     if ! check_jar_and_java; then
         return 1
     fi
-    
+
+    # Set Java options
+    JAVA_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
+
     if [[ -n "$service_type" ]]; then
         echo "🔍 Getting help for DAT $service_type server..."
-        java -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -jar "$JAR_FILE" server "$service_type" --help
+        $JAVA_CMD $JAVA_OPTS -jar "$JAR_FILE" server "$service_type" --help
     else
         echo "🔍 Getting general help from DAT server..."
-        java -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -jar "$JAR_FILE" server --help
+        $JAVA_CMD $JAVA_OPTS -jar "$JAR_FILE" server --help
     fi
 }
 

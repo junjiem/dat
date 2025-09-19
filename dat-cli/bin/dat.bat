@@ -6,19 +6,22 @@ set CURR_DIR=%~dp0
 :: Current working directory where user executes the script
 set USER_PWD=%cd%
 
-:: Set the JDK path you want to use
-:: set JAVA_HOME=D:\development\Java\jdk-17.0.14
-
-:: Update the PATH variable (only valid for the current script)
-:: set PATH=%JAVA_HOME%\bin;%PATH%
-
-:: Display the current java version and confirm whether the Settings have been successful
-java -version
-
-java -version >nul 2>&1
-if errorlevel 1 (
-    echo ❌ Error: Java was not found. Please install Java 17 or a higher version first
-    exit /b 1
+:: Try to use bundled JRE first, fall back to system Java if not found
+set BUNDLED_JRE=%CURR_DIR%..\jre
+if exist "%BUNDLED_JRE%\bin\java.exe" (
+    :: Use bundled JRE
+    set JAVA_CMD="%BUNDLED_JRE%\bin\java.exe"
+    echo Using bundled JRE from %BUNDLED_JRE%
+) else (
+    :: Check if system Java is available
+    java -version >nul 2>&1
+    if errorlevel 1 (
+        echo ❌ Error: Java was not found. Please install Java 17 or a higher version first
+        exit /b 1
+    )
+    :: Use system Java
+    set JAVA_CMD=java
+    echo Using system Java
 )
 
 :: Find JAR file
@@ -29,10 +32,10 @@ for %%f in (%CURR_DIR%\..\dat-cli-*.jar) do (
 )
 echo ❌ Error: DAT CLI jar file not found in %CURR_DIR%\..
 exit /b 1
-
 :jar_found
-:: Common part of Java execution command
-set JAVA_CMD=java -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8
+
+:: Common Java options
+set JAVA_OPTS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Xms256m -Xmx2g
 
 :: Get first parameter as command
 set COMMAND=%1
@@ -123,7 +126,7 @@ if "%SUPPORTS_PROJECT_PATH%"=="true" (
 )
 
 :: Execute Java program with logs root path for logging
-%JAVA_CMD% -Ddat.logs.root.path="%LOGS_ROOT_PATH%" -jar "%JAR_FILE%" %ARGS%
+%JAVA_CMD% %JAVA_OPTS% -Ddat.logs.root.path="%LOGS_ROOT_PATH%" -jar "%JAR_FILE%" %ARGS%
 
 :end
 endlocal
