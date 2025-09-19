@@ -43,7 +43,7 @@ public class McpToolsService {
         return JSON_MAPPER.writeValueAsString(agentList);
     }
 
-    @Tool(name = "dat_dak_data", description = "Ask data using natural language " +
+    @Tool(name = "dat_ask_data", description = "Ask data using natural language " +
             "(It is best to call the \"dat_agents\" tool before calling to check which available agents are available).")
     public String ask(
             @ToolParam(description = "Conversation ID, to continue the conversation based on previous chat records, " +
