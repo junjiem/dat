@@ -14,6 +14,7 @@
     <properties>
         <project.finalName>${project.artifactId}-${project.version}</project.finalName>
         <main.class>ai.dat.cli.DatCli</main.class>
+        <finalName.ending></finalName.ending>
     </properties>
 
     <dependencies>
@@ -97,6 +98,7 @@
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>3.4.1</version>
                     <configuration>
+                        <finalName>${project.finalName}</finalName>
                         <transformers>
                             <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
@@ -146,9 +148,6 @@
                         <attach>false</attach>
                         <finalName>${project.finalName}</finalName>
                         <outputDirectory>${project.build.directory}</outputDirectory>
-                        <descriptors>
-                            <descriptor>assembly.xml</descriptor>
-                        </descriptors>
                     </configuration>
                 </plugin>
             </plugins>
@@ -156,55 +155,15 @@
     </build>
 
     <profiles>
-        <!--        <profile>-->
-        <!--            <id>spring-boot</id>-->
-        <!--            <activation>-->
-        <!--                <activeByDefault>false</activeByDefault>-->
-        <!--            </activation>-->
-        <!--            <build>-->
-        <!--                <plugins>-->
-        <!--                    <plugin>-->
-        <!--                        <groupId>org.springframework.boot</groupId>-->
-        <!--                        <artifactId>spring-boot-maven-plugin</artifactId>-->
-        <!--                        <version>3.5.0</version>-->
-        <!--                        <configuration>-->
-        <!--                            <mainClass>${main.class}</mainClass>-->
-        <!--                            <layers>-->
-        <!--                                <enabled>true</enabled>-->
-        <!--                            </layers>-->
-        <!--                        </configuration>-->
-        <!--                        <executions>-->
-        <!--                            <execution>-->
-        <!--                                <id>spring-boot</id>-->
-        <!--                                <phase>package</phase>-->
-        <!--                                <goals>-->
-        <!--                                    <goal>repackage</goal>-->
-        <!--                                </goals>-->
-        <!--                            </execution>-->
-        <!--                        </executions>-->
-        <!--                    </plugin>-->
-        <!--                    <plugin>-->
-        <!--                        <groupId>org.apache.maven.plugins</groupId>-->
-        <!--                        <artifactId>maven-assembly-plugin</artifactId>-->
-        <!--                        <executions>-->
-        <!--                            <execution>-->
-        <!--                                <id>assembly</id>-->
-        <!--                                <phase>package</phase>-->
-        <!--                                <goals>-->
-        <!--                                    <goal>single</goal>-->
-        <!--                                </goals>-->
-        <!--                            </execution>-->
-        <!--                        </executions>-->
-        <!--                    </plugin>-->
-        <!--                </plugins>-->
-        <!--            </build>-->
-        <!--        </profile>-->
 
         <profile>
-            <id>shade</id>
+            <id>pkg:unbundled</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+            <properties>
+                <project.finalName>${project.artifactId}-${project.version}${finalName.ending}</project.finalName>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -232,15 +191,108 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
 
         <profile>
-            <id>shade-win-x86_64</id>
+            <id>pkg:bundled</id>
             <properties>
-                <project.finalName>${project.artifactId}-${project.version}-win-x86_64</project.finalName>
+                <project.finalName>${project.artifactId}-${project.version}${finalName.ending}</project.finalName>
+                <project.package.finalName>${project.finalName}-bundled</project.package.finalName>
+                <jlink.jre.outputDirectory>${project.build.directory}/jlink-jre</jlink.jre.outputDirectory>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- Maven Shade Plugin -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>shade</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Maven Antrun Plugin to execute jlink -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>create-jlink-runtime</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <echo message="OS: ${os.name} ${os.version} (${os.arch})"/>
+                                        <echo message="Creating custom JRE with jlink..."/>
+                                        <delete dir="${jlink.jre.outputDirectory}"/>
+                                        <exec executable="${java.home}/bin/jlink" failonerror="true">
+                                            <arg value="--add-modules"/>
+                                            <arg value="java.base,java.compiler,java.desktop,java.instrument,java.logging,java.management,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.security.jgss,java.security.sasl,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto,jdk.crypto.ec,jdk.httpserver,jdk.jfr,jdk.unsupported,jdk.xml.dom,jdk.zipfs"/>
+                                            <arg value="--output"/>
+                                            <arg value="${jlink.jre.outputDirectory}"/>
+                                            <arg value="--compress"/>
+                                            <arg value="2"/>
+                                            <arg value="--strip-debug"/>
+                                            <arg value="--no-header-files"/>
+                                            <arg value="--no-man-pages"/>
+                                        </exec>
+                                        <echo message="Custom JRE created at ${jlink.jre.outputDirectory}"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Maven Assembly Plugin -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assembly-jlink</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <finalName>${project.package.finalName}</finalName>
+                                    <descriptors>
+                                        <descriptor>assembly-jlink.xml</descriptor>
+                                    </descriptors>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Windows amd64 -->
+        <profile>
+            <id>os:windows-amd64</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
+            <properties>
+                <finalName.ending>-windows-amd64</finalName.ending>
             </properties>
             <build>
                 <plugins>
@@ -255,7 +307,6 @@
                                     <goal>shade</goal>
                                 </goals>
                                 <configuration>
-                                    <finalName>${project.finalName}</finalName>
                                     <filters combine.children="append">
                                         <filter>
                                             <artifact>com.microsoft.onnxruntime:onnxruntime</artifact>
@@ -287,27 +338,21 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>assembly</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
 
+        <!-- Linux amd64 -->
         <profile>
-            <id>shade-linux-amd64</id>
+            <id>os:linux-amd64</id>
+            <activation>
+                <os>
+                    <family>linux</family>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
             <properties>
-                <project.finalName>${project.artifactId}-${project.version}-linux-amd64</project.finalName>
+                <finalName.ending>-linux-amd64</finalName.ending>
             </properties>
             <build>
                 <plugins>
@@ -322,7 +367,6 @@
                                     <goal>shade</goal>
                                 </goals>
                                 <configuration>
-                                    <finalName>${project.finalName}</finalName>
                                     <filters combine.children="append">
                                         <filter>
                                             <artifact>com.microsoft.onnxruntime:onnxruntime</artifact>
@@ -354,27 +398,21 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>assembly</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
 
+        <!-- Linux arm64 -->
         <profile>
-            <id>shade-osx-aarch64</id>
+            <id>os:linux-arm64</id>
+            <activation>
+                <os>
+                    <family>linux</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
             <properties>
-                <project.finalName>${project.artifactId}-${project.version}-osx-aarch64</project.finalName>
+                <finalName.ending>-linux-arm64</finalName.ending>
             </properties>
             <build>
                 <plugins>
@@ -389,7 +427,66 @@
                                     <goal>shade</goal>
                                 </goals>
                                 <configuration>
-                                    <finalName>${project.finalName}</finalName>
+                                    <filters combine.children="append">
+                                        <filter>
+                                            <artifact>com.microsoft.onnxruntime:onnxruntime</artifact>
+                                            <excludes>
+                                                <exclude>ai/onnxruntime/native/linux-x64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/osx-aarch64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/osx-x64/**</exclude>
+                                                <exclude>ai/onnxruntime/native/win-x64/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
+                                            <excludes>
+                                                <exclude>libduckdb_java.so_linux_amd64</exclude>
+                                                <exclude>libduckdb_java.so_osx_universal</exclude>
+                                                <exclude>libduckdb_java.so_windows_amd64</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>ai.djl.huggingface:tokenizers</artifact>
+                                            <excludes>
+                                                <exclude>native/lib/linux-x86_64/cpu/**</exclude>
+                                                <exclude>native/lib/osx-aarch64/cpu/**</exclude>
+                                                <exclude>native/lib/win-x86_64/cpu/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                    </filters>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- MaxOS arm64 -->
+        <profile>
+            <id>os:macos-arm64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <finalName.ending>-macos-arm64</finalName.ending>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>shade</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                                <configuration>
                                     <filters combine.children="append">
                                         <filter>
                                             <artifact>com.microsoft.onnxruntime:onnxruntime</artifact>
@@ -418,19 +515,6 @@
                                         </filter>
                                     </filters>
                                 </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>assembly</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
                             </execution>
                         </executions>
                     </plugin>

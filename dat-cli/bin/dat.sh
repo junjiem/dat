@@ -8,7 +8,17 @@ CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Current working directory where user executes the script
 USER_PWD="$(pwd)"
 
-if ! command -v java &> /dev/null; then
+# Try to use bundled JRE first, fall back to system Java if not found
+BUNDLED_JRE="$CURR_DIR/../jre"
+if [[ -f "$BUNDLED_JRE/bin/java" ]]; then
+    # Use bundled JRE
+    JAVA_CMD="$BUNDLED_JRE/bin/java"
+    echo "Using bundled JRE from $BUNDLED_JRE"
+elif command -v java &> /dev/null; then
+    # Use system Java
+    JAVA_CMD="java"
+    echo "Using system Java"
+else
     echo "❌ Error: Java was not found. Please install Java 17 or a higher version first"
     exit 1
 fi
@@ -22,8 +32,8 @@ if [[ ! -f "$JAR_FILE" ]]; then
     exit 1
 fi
 
-# Common part of Java execution command
-JAVA_CMD="java -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
+# Common Java options
+JAVA_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Xms256m -Xmx2g"
 
 # Function: Check if command supports -p/--project-path parameter
 check_supports_project_path() {
@@ -117,4 +127,4 @@ else
 fi
 
 # Execute Java program with logs root path for logging
-eval "$JAVA_CMD -Ddat.logs.root.path=\"$LOGS_ROOT_PATH\" -jar \"$JAR_FILE\" ${ARGS[*]@Q}"
+eval "$JAVA_CMD $JAVA_OPTS -Ddat.logs.root.path=\"$LOGS_ROOT_PATH\" -jar \"$JAR_FILE\" ${ARGS[*]@Q}"
