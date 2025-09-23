@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static dev.langchain4j.model.chat.Capability.RESPONSE_FORMAT_JSON_SCHEMA;
+
 /**
  * @Author JunjieM
  * @Date 2025/7/1
@@ -150,14 +152,14 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                     .withDescription("""
                             Custom parameters.
                             Alternatively, custom parameters can also be specified as a structure of nested maps.
-                            
+                                                        
                             For example1: aliyun qwen3 custom parameters
                             ```
                             custom-parameters:
                               extra_body:
                                 enable_thinking: false
                             ```
-                            
+                                                        
                             For example2: vllm qwen3 custom parameters
                             ```
                             custom-parameters:
@@ -211,7 +213,13 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
         config.getOptional(RESPONSE_FORMAT).ifPresent(builder::responseFormat);
         config.getOptional(LOG_REQUESTS).ifPresent(builder::logRequests);
         config.getOptional(LOG_RESPONSES).ifPresent(builder::logResponses);
-        config.getOptional(STRICT_JSON_SCHEMA).ifPresent(builder::strictJsonSchema);
+        config.getOptional(STRICT_JSON_SCHEMA).ifPresent(strictJsonSchema -> {
+            builder.strictJsonSchema(strictJsonSchema);
+            if (strictJsonSchema) {
+                builder.supportedCapabilities(RESPONSE_FORMAT_JSON_SCHEMA);
+            }
+        });
+
         config.getOptional(STRICT_TOOLS).ifPresent(builder::strictTools);
         config.getOptional(STORE).ifPresent(builder::store);
         config.getOptional(RETURN_THINKING).ifPresent(builder::returnThinking);
