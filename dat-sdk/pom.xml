@@ -75,6 +75,11 @@
             <artifactId>dat-llm-anthropic</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-llm-ollama</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>ai.dat</groupId>
