@@ -71,6 +71,7 @@ public class ProjectUtil {
                 .projectFingerprintConfigs(project.getConfiguration());
         EmbeddingConfig embedding = project.getEmbedding();
         EmbeddingStoreConfig embeddingStore = project.getEmbeddingStore();
+        ContentStoreConfig contentStore = project.getContentStore();
         EmbeddingModelFactory embeddingModelFactory = EmbeddingModelFactoryManager
                 .getFactory(embedding.getProvider());
         Map<String, String> embeddingModelFingerprintConfigs = embeddingModelFactory
@@ -79,6 +80,10 @@ public class ProjectUtil {
                 .getFactory(embeddingStore.getProvider());
         Map<String, String> embeddingStoreFingerprintConfigs = embeddingStoreFactory
                 .fingerprintConfigs(embeddingStore.getConfiguration());
+        ContentStoreFactory contentStoreFactory = ContentStoreFactoryManager
+                .getFactory(contentStore.getProvider());
+        Map<String, String> contentStoreFingerprintConfigs = contentStoreFactory
+                .fingerprintConfigs(contentStore.getConfiguration());
         try {
             String configStr = String.format("project:name=%s;" +
                             "project:configuration=%s;" +
@@ -93,6 +98,14 @@ public class ProjectUtil {
                     embeddingStore.getProvider(),
                     JSON_MAPPER.writeValueAsString(embeddingStoreFingerprintConfigs)
             );
+            // For backward compatibility
+            if (!contentStoreFingerprintConfigs.isEmpty()) {
+                configStr += String.format("contentStore:provider=%s;" +
+                                "contentStore:configuration=%s;",
+                        contentStore.getProvider(),
+                        JSON_MAPPER.writeValueAsString(contentStoreFingerprintConfigs)
+                );
+            }
             return DigestUtils.md5Hex(configStr);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Calculate the content store fingerprint failed", e);

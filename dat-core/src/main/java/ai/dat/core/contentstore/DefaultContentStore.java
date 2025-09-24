@@ -1,6 +1,7 @@
 package ai.dat.core.contentstore;
 
 import ai.dat.core.contentstore.data.QuestionSqlPair;
+import ai.dat.core.contentstore.data.SemanticModelRetrievalStrategy;
 import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
@@ -17,6 +18,10 @@ import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.rag.query.Query;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.V;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -25,6 +30,7 @@ import lombok.NonNull;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -45,7 +51,7 @@ public class DefaultContentStore implements ContentStore {
 
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
-    private final ChatModel chatModel;
+    private final ChatModel defaultChatModel;
 
     private final EmbeddingModel embeddingModel;
 
@@ -57,15 +63,27 @@ public class DefaultContentStore implements ContentStore {
     private final Integer maxResults;
     private final Double minScore;
 
+    private final SemanticModelRetrievalStrategy mdlRetrievalStrategy;
+
+    private final MdlHyQEAssistant mdlHyQEAssistant;
+    private final String mdlHyQEInstruction;
+    private final Integer mdlHyQEQuestions;
+    private final Integer mdlHyQEMaxResults;
+    private final Double mdlHyQEMinScore;
+
     @Builder
-    public DefaultContentStore(@NonNull ChatModel chatModel,
+    public DefaultContentStore(@NonNull ChatModel defaultChatModel,
                                @NonNull EmbeddingModel embeddingModel,
                                @NonNull EmbeddingStore<TextSegment> mdlEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> sqlEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> synEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> docEmbeddingStore,
-                               Integer maxResults, Double minScore) {
-        this.chatModel = chatModel;
+                               Integer maxResults, Double minScore,
+                               SemanticModelRetrievalStrategy mdlRetrievalStrategy,
+                               ChatModel mdlHyQEChatModel,
+                               String mdlHyQEInstruction, Integer mdlHyQEQuestions,
+                               Integer mdlHyQEMaxResults, Double mdlHyQEMinScore) {
+        this.defaultChatModel = defaultChatModel;
         this.embeddingModel = embeddingModel;
         this.mdlEmbeddingStore = mdlEmbeddingStore;
         this.sqlEmbeddingStore = sqlEmbeddingStore;
@@ -77,32 +95,97 @@ public class DefaultContentStore implements ContentStore {
         this.minScore = Optional.ofNullable(minScore).orElse(0.6);
         Preconditions.checkArgument(this.minScore >= 0.0 && this.minScore <= 1.0,
                 "minScore must be between 0.0 and 1.0");
+        this.mdlRetrievalStrategy = Optional.ofNullable(mdlRetrievalStrategy)
+                .orElse(SemanticModelRetrievalStrategy.FE);
+        this.mdlHyQEAssistant = AiServices.builder(MdlHyQEAssistant.class)
+                .chatModel(Objects.requireNonNullElse(mdlHyQEChatModel, defaultChatModel))
+                .build();
+        this.mdlHyQEInstruction = Optional.ofNullable(mdlHyQEInstruction).orElse("");
+        this.mdlHyQEQuestions = Optional.ofNullable(mdlHyQEQuestions).orElse(5);
+        Preconditions.checkArgument(this.mdlHyQEQuestions <= 20 && this.mdlHyQEQuestions >= 3,
+                "mdlHyQEQuestions must be between 3 and 20");
+        this.mdlHyQEMaxResults = Optional.ofNullable(mdlHyQEMaxResults).orElse(maxResults);
+        Preconditions.checkArgument(this.mdlHyQEMaxResults <= 50 && this.mdlHyQEMaxResults >= 1,
+                "mdlHyQEMaxResults must be between 1 and 50");
+        this.mdlHyQEMinScore = Optional.ofNullable(mdlHyQEMinScore).orElse(minScore);
+        Preconditions.checkArgument(this.mdlHyQEMinScore >= 0.0 && this.mdlHyQEMinScore <= 1.0,
+                "mdlHyQEMinScore must be between 0.0 and 1.0");
     }
 
     @Override
     public List<String> addMdls(List<SemanticModel> semanticModels) {
+        if (SemanticModelRetrievalStrategy.HYQE == mdlRetrievalStrategy) {
+            return addMdlsForHyQE(semanticModels);
+        }
+        return addMdlsForFE(semanticModels);
+    }
+
+    private List<String> addMdlsForHyQE(List<SemanticModel> semanticModels) {
+        return semanticModels.stream()
+                .map(semanticModel -> {
+                    SemanticModelUtil.validateSemanticModel(semanticModel);
+                    String semanticModelViewText = SemanticModelUtil.toSemanticModelViewText(semanticModel);
+                    List<String> questions = mdlHyQEAssistant.genHypotheticalQuestions(
+                            mdlHyQEInstruction, mdlHyQEQuestions, semanticModelViewText);
+                    if (questions == null || questions.isEmpty()) {
+                        return null;
+                    }
+                    String json;
+                    try {
+                        json = JSON_MAPPER.writeValueAsString(semanticModel);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException("Failed to serialize semantic model to JSON: "
+                                + e.getMessage(), e);
+                    }
+                    List<TextSegment> embedTextSegments = questions.stream().map(TextSegment::from).toList();
+                    List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
+                    List<TextSegment> textSegments = questions.stream()
+                            .map(question -> TextSegment.from(json, MDL_METADATA))
+                            .collect(Collectors.toList());
+                    return mdlEmbeddingStore.addAll(embeddings, textSegments);
+                })
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    private interface MdlHyQEAssistant {
+        @SystemMessage(fromResource = "prompts/default/generation_hypothetical_questions_system_prompt.txt")
+        @UserMessage(fromResource = "prompts/default/generation_hypothetical_questions_user_prompt.txt")
+        List<String> genHypotheticalQuestions(@V("instruction") String instruction,
+                                              @V("question_num") Integer questionNum,
+                                              @V("semantic_model") String semanticModel);
+    }
+
+    private List<String> addMdlsForFE(List<SemanticModel> semanticModels) {
         List<TextSegment> embedTextSegments = semanticModels.stream()
                 .map(SemanticModelUtil::toSemanticModelViewText)
                 .map(TextSegment::from)
                 .toList();
+        List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
         List<TextSegment> textSegments = semanticModels.stream()
-                .map(model -> {
-                    SemanticModelUtil.validateSemanticModel(model);
+                .map(semanticModel -> {
+                    SemanticModelUtil.validateSemanticModel(semanticModel);
                     String json;
                     try {
-                        json = JSON_MAPPER.writeValueAsString(model);
+                        json = JSON_MAPPER.writeValueAsString(semanticModel);
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException("Failed to serialize semantic model to JSON: "
                                 + e.getMessage(), e);
                     }
                     return TextSegment.from(json, MDL_METADATA);
                 }).collect(Collectors.toList());
-        List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
         return mdlEmbeddingStore.addAll(embeddings, textSegments);
     }
 
     @Override
     public ContentRetriever getMdlContentRetriever() {
+        Integer maxResults = this.maxResults;
+        Double minScore = this.minScore;
+        if (SemanticModelRetrievalStrategy.HYQE == mdlRetrievalStrategy) {
+            maxResults = this.mdlHyQEMaxResults;
+            minScore = this.mdlHyQEMinScore;
+        }
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingModel(embeddingModel)
                 .embeddingStore(mdlEmbeddingStore)
