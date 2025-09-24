@@ -24,10 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -67,7 +64,6 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
     private final Integer maxHistories;
     private final String instruction;
 
-    private final Assistant assistant;
     private final Assistant streamingAssistant;
 
     private final Assistant intentClassificationAssistant;
@@ -82,10 +78,10 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                 List<SemanticModel> semanticModels,
                                 String language,
                                 Boolean intentClassification,
-                                @NonNull ChatModel intentClassificationModel,
+                                ChatModel intentClassificationModel,
                                 Boolean sqlGenerationReasoning,
-                                @NonNull StreamingChatModel sqlGenerationReasoningModel,
-                                @NonNull ChatModel sqlGenerationModel,
+                                StreamingChatModel sqlGenerationReasoningModel,
+                                ChatModel sqlGenerationModel,
                                 String textToSqlRules,
                                 Integer maxHistories,
                                 String instruction) {
@@ -101,20 +97,17 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                 "maxHistories must be greater than 0");
         this.instruction = Optional.ofNullable(instruction).orElse("");
 
-        this.assistant = AiServices.builder(Assistant.class)
-                .chatModel(defaultModel)
-                .build();
         this.streamingAssistant = AiServices.builder(Assistant.class)
                 .streamingChatModel(defaultStreamingModel)
                 .build();
         this.intentClassificationAssistant = AiServices.builder(Assistant.class)
-                .chatModel(intentClassificationModel)
+                .chatModel(Objects.requireNonNullElse(intentClassificationModel, defaultModel))
                 .build();
         this.sqlGenerationReasoningAssistant = AiServices.builder(Assistant.class)
-                .streamingChatModel(sqlGenerationReasoningModel)
+                .streamingChatModel(Objects.requireNonNullElse(sqlGenerationReasoningModel, defaultStreamingModel))
                 .build();
         this.sqlGenerationAssistant = AiServices.builder(Assistant.class)
-                .chatModel(sqlGenerationModel)
+                .chatModel(Objects.requireNonNullElse(sqlGenerationModel, defaultModel))
                 .build();
     }
 
