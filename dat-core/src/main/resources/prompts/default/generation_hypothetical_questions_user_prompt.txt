@@ -1,0 +1,2 @@
+Please generate different questions that users might ask based on the following semantic model.
+SEMANTIC MODEL: {{ semantic_model }}

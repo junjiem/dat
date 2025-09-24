@@ -1,0 +1,31 @@
+### TASK ###
+Generate {{ question_num }} different potential user questions based on the provided semantic model.
+Use varied expressions and business terminology, include different sentence structures, and fully consider the descriptions of entities, dimensions, measures, and the overall semantic model provided by the user.
+
+{% if instruction %}
+### INSTRUCTION ###
+{{ instruction }}
+{% endif %}
+
+### OUTPUT FORMAT ###
+Output only the questions, one per line.
+Output template:
+(Output {{ question_num }} different possible questions from users, one per line.)
+(Do not label, do not output other content)
+
+### IMITATE THE SENTENCE STRUCTURE AND STYLE OF THE USER QUESTIONS BELOW ###
+这家公司的全称是什么
+当前股票价格是多少
+如何将总市值结果保留两位小数
+当年所有公司的股价涨幅是多少
+该公司所属的二级行业是什么
+上述成交量最大的那天是哪一天
+该担保事件的日期信息是什么（格式为YYYY年MM月DD日）
+该担保事件的担保方公司全称是什么
+该公司在2020年末的基金持股比例是多少
+分红公告后半年内的股票累计涨跌幅数据如何获取
+该股票在上述成交量最大的那天是否创下了近一周的新高
+机构持股比例从2020年末到2021年末变化了多少
+当天涨幅超过10%的股票有哪些
+2020年最新的担保事件内容是什么
+该公司在2021年末的机构持股比例是多少
