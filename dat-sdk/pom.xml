@@ -64,6 +64,11 @@
             <artifactId>dat-embedder-openai</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-embedder-ollama</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>ai.dat</groupId>
