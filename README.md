@@ -79,7 +79,7 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 ```
 
 - 1、DAT CLI 用于本地开发、单元测试、调试使用，它可以在本地通过IDE（vscode、idea或eclipse中）开发dat智能问数项目，`将提示（上下文）工程转变成数据工程`。
-- 2、DAT 它不是一个 platform ，而是一个 `framework` ；二次开发者可以基于 `dat-sdk` 开发自己的Web UI，可以是web ide、拖拉拽的workflow、列表等交互方式。
+- 2、DAT 它不是一个 platform ，而是一个 `framework`；二次开发者可以基于 `dat-sdk` 开发自己的Web UI，可以是web ide、拖拉拽的workflow、列表等交互方式；或将其对外提供 `OpenAPI` 或 `MCP` 的服务。
 - 3、这种模式`让数据工程师或数据分析师可以借鉴软件工程师开发应用一般来开发智能问数应用`。
 
 ---
@@ -89,7 +89,7 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 ### 📋 环境要求
 
 - **Java 17+** - 推荐使用OpenJDK
-- **数据库** - MySQL/PostgreSQL/Oracle任选其一
+- **数据库** - MySQL/PostgreSQL/Oracle/DuckDB任选其一
 - **LLM API** - OpenAI或Anthropic Claude API密钥
 
 ### ⚡ 5分钟快速体验
@@ -100,12 +100,11 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 
 ```bash
 # 下载最新版本
-wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.2.2.tar.gz
+wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.3.0.tar.gz
 
 # 解压并配置环境变量
 tar -xzf dat-cli-x.x.x.tar.gz
 mv dat-cli-x.x.x dat-cli
-ln -s $(pwd)/dat-cli/bin/dat.sh $(pwd)/dat-cli/bin/dat
 export PATH=$PATH:$(pwd)/dat-cli/bin
 ```
 
@@ -380,18 +379,21 @@ dat-parent/
 ├── 🔌 dat-adapters/       # 数据库适配器
 │   ├── dat-adapter-mysql/
 │   ├── dat-adapter-postgresql/
-│   └── dat-adapter-oracle/
+│   ├── dat-adapter-oracle/
+│   └── dat-adapter-duckdb/      # 【本地内嵌数据库】
 ├── 🤖 dat-llms/          # LLM集成模块
+│   ├── dat-llm-anthropic/
 │   ├── dat-llm-openai/
-│   └── dat-llm-anthropic/
+│   └── dat-llm-ollama/
 ├── 📊 dat-embedders/     # 嵌入模型集成
-│   ├── dat-embedder-bge-small-zh/
-│   ├── dat-embedder-bge-small-zh-q/
-│   ├── dat-embedder-bge-small-zh-v15/
-│   ├── dat-embedder-bge-small-zh-v15-q/
-│   └── dat-embedder-openai/
+│   ├── dat-embedder-bge-small-zh/        # 【本地内嵌Embedding模型】
+│   ├── dat-embedder-bge-small-zh-q/      # 【本地内嵌Embedding模型】
+│   ├── dat-embedder-bge-small-zh-v15/    # 【本地内嵌Embedding模型】
+│   ├── dat-embedder-bge-small-zh-v15-q/  # 【本地内嵌Embedding模型】
+│   ├── dat-embedder-openai/
+│   └── dat-embedder-ollama/
 ├── 💾 dat-storers/       # 向量存储后端
-│   ├── dat-storer-duckdb/
+│   ├── dat-storer-duckdb/    # 【本地内嵌向量存储】
 │   └── dat-storer-weaviate/
 ├── 🎭 dat-agents/        # 智能代理实现
 │   └── dat-agent-agentic/
