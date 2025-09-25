@@ -70,13 +70,13 @@ public class OpenAiEmbeddingModelFactory implements EmbeddingModelFactory {
             ConfigOptions.key("log-requests")
                     .booleanType()
                     .defaultValue(false)
-                    .withDescription("Whether to print the LLM requests log");
+                    .withDescription("Whether to print the embedding model requests log");
 
     public static final ConfigOption<Boolean> LOG_RESPONSES =
             ConfigOptions.key("log-responses")
                     .booleanType()
                     .defaultValue(false)
-                    .withDescription("Whether to print the LLM responses log");
+                    .withDescription("Whether to print the embedding model responses log");
 
     @Override
     public String factoryIdentifier() {
@@ -126,7 +126,8 @@ public class OpenAiEmbeddingModelFactory implements EmbeddingModelFactory {
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(DIMENSIONS, TIMEOUT, MAX_RETRIES, MAX_SEGMENTS_PER_BATCH));
+        return new LinkedHashSet<>(List.of(DIMENSIONS, TIMEOUT, MAX_RETRIES,
+                MAX_SEGMENTS_PER_BATCH, LOG_REQUESTS, LOG_RESPONSES));
     }
 
     @Override
