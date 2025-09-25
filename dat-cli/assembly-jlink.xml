@@ -9,11 +9,22 @@
     </formats>
     <!-- tar.gz压缩包下是否生成和项目名相同的根目录 -->
     <includeBaseDirectory>false</includeBaseDirectory>
+    <files>
+        <file>
+            <source>${project.basedir}/bin/dat.sh</source>
+            <outputDirectory>/${project.package.finalName}/bin</outputDirectory>
+            <destName>dat</destName>
+            <fileMode>0755</fileMode>
+        </file>
+    </files>
     <fileSets>
         <fileSet>
             <directory>${project.basedir}/bin</directory>
             <outputDirectory>/${project.package.finalName}/bin</outputDirectory>
             <fileMode>0755</fileMode>
+            <excludes>
+                <exclude>dat.sh</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}</directory>
