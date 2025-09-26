@@ -1,12 +1,13 @@
 package ai.dat.boot;
 
 import ai.dat.boot.data.FileChanges;
-import ai.dat.boot.data.ModelFileState;
+import ai.dat.boot.data.RelevantFileState;
 import ai.dat.boot.data.SchemaFileState;
 import ai.dat.boot.utils.FileUtil;
 import ai.dat.boot.utils.ProjectUtil;
 import ai.dat.core.data.DatModel;
 import ai.dat.core.data.DatSchema;
+import ai.dat.core.data.example.Example;
 import ai.dat.core.data.project.DatProject;
 import ai.dat.core.exception.ValidationException;
 import ai.dat.core.semantic.data.SemanticModel;
@@ -31,7 +32,7 @@ import java.util.stream.Stream;
  * @Date 2025/7/17
  */
 @Slf4j
-public class FileChangeAnalyzer {
+class FileChangeAnalyzer {
 
     private final Path modelsPath;
 
@@ -67,25 +68,15 @@ public class FileChangeAnalyzer {
             String relativePath = modelsPath.relativize(filePath).toString();
             SchemaFileState fileState = fileStateMap.get(relativePath);
             if (fileState == null) {
-                // 新文件
+                // 新YAML文件
                 long lastModified = FileUtil.lastModified(filePath);
                 String md5Hash = FileUtil.md5(filePath);
                 DatSchema schema = ProjectUtil.loadSchema(filePath, modelsPath);
-                List<ModelFileState> dependencies = resolveDependencies(relativePath, schema);
-                ChangeSemanticModelsCacheUtil.add(project.getName(), relativePath,
-                        DatSchemaUtil.getSemanticModels(schema, getDatModels(dependencies)));
-                List<String> semanticModelNames = schema.getSemanticModels().stream()
-                        .map(SemanticModel::getName)
-                        .collect(Collectors.toList());
-                newFiles.add(SchemaFileState.builder()
-                        .relativePath(relativePath)
-                        .lastModified(lastModified)
-                        .md5Hash(md5Hash)
-                        .semanticModelNames(semanticModelNames)
-                        .dependencies(dependencies)
-                        .build());
+                List<RelevantFileState> modelFileStates = resolveModelFileStates(relativePath, schema);
+                newFiles.add(createSchemaFileState(
+                        relativePath, lastModified, md5Hash, schema, modelFileStates));
             } else {
-                // 已存在的文件，检查是否发生变化
+                // 已存在的YAML文件，检查是否发生变化
                 boolean hasChanged = false;
                 String md5Hash = null;
                 long lastModified = FileUtil.lastModified(filePath);
@@ -93,31 +84,21 @@ public class FileChangeAnalyzer {
                     md5Hash = FileUtil.md5(filePath);
                     hasChanged = !md5Hash.equals(fileState.getMd5Hash());
                 }
-                List<ModelFileState> dependencies = Collections.emptyList();
+                List<RelevantFileState> modelFileStates = Collections.emptyList();
                 DatSchema schema = null;
-                if (hasChanged || !fileState.getDependencies().isEmpty()) {
+                if (hasChanged || !fileState.getModelFileStates().isEmpty()) {
                     schema = ProjectUtil.loadSchema(filePath, modelsPath);
                 }
-                if (!fileState.getDependencies().isEmpty()) {
-                    dependencies = resolveDependencies(relativePath, schema);
-                    hasChanged = hasDependencyChanged(dependencies, fileState.getDependencies());
+                if (!fileState.getModelFileStates().isEmpty()) {
+                    modelFileStates = resolveModelFileStates(relativePath, schema);
+                    hasChanged = hasModelFileChanged(modelFileStates, fileState.getModelFileStates());
                 }
                 if (hasChanged) {
-                    // 文件已修改
-                    ChangeSemanticModelsCacheUtil.add(project.getName(), relativePath,
-                            DatSchemaUtil.getSemanticModels(schema, getDatModels(dependencies)));
-                    List<String> semanticModelNames = schema.getSemanticModels().stream()
-                            .map(SemanticModel::getName)
-                            .collect(Collectors.toList());
-                    modifiedFiles.add(SchemaFileState.builder()
-                            .relativePath(relativePath)
-                            .lastModified(lastModified)
-                            .md5Hash(md5Hash)
-                            .semanticModelNames(semanticModelNames)
-                            .dependencies(dependencies)
-                            .build());
+                    // YAML文件已修改
+                    modifiedFiles.add(createSchemaFileState(
+                            relativePath, lastModified, md5Hash, schema, modelFileStates));
                 } else {
-                    // 文件未变化，保留之前的元数据
+                    // YAML文件未变化，保留之前的元数据
                     unchangedFiles.add(fileState);
                 }
             }
@@ -126,7 +107,7 @@ public class FileChangeAnalyzer {
         // 检查语义模型名称是否有重复
         validateSemanticModelNames(newFiles, modifiedFiles, unchangedFiles);
 
-        // 查找已删除的文件 - 直接内联处理逻辑
+        // 查找已删除的YAML文件 - 直接内联处理逻辑
         List<String> relativePaths = yamlFilePaths.stream()
                 .map(p -> modelsPath.relativize(p).toString()).toList();
         List<SchemaFileState> deletedFiles = fileStates.stream()
@@ -134,6 +115,31 @@ public class FileChangeAnalyzer {
                 .collect(Collectors.toList());
 
         return new FileChanges(newFiles, modifiedFiles, unchangedFiles, deletedFiles);
+    }
+
+    private SchemaFileState createSchemaFileState(String relativePath, long lastModified, String md5Hash,
+                                                  DatSchema schema, List<RelevantFileState> modelFileStates) {
+        ChangeSemanticModelsCacheUtil.add(project.getName(), relativePath,
+                DatSchemaUtil.getSemanticModels(schema, getDatModels(modelFileStates)));
+        Example example = schema.getExample();
+        if (example != null) {
+            ChangeQuestionSqlPairsCacheUtil.add(project.getName(), relativePath,
+                    example.getQuestionSqlPairs());
+            ChangeWordSynonymPairsCacheUtil.add(project.getName(), relativePath,
+                    example.getWordSynonymPairs());
+            ChangeKnowledgeCacheUtil.add(project.getName(), relativePath,
+                    example.getKnowledge());
+        }
+        List<String> semanticModelNames = schema.getSemanticModels().stream()
+                .map(SemanticModel::getName)
+                .collect(Collectors.toList());
+        return SchemaFileState.builder()
+                .relativePath(relativePath)
+                .lastModified(lastModified)
+                .md5Hash(md5Hash)
+                .semanticModelNames(semanticModelNames)
+                .modelFileStates(modelFileStates)
+                .build();
     }
 
     private void validateSemanticModelNames(List<SchemaFileState> newFiles,
@@ -163,7 +169,7 @@ public class FileChangeAnalyzer {
         }
     }
 
-    private List<ModelFileState> resolveDependencies(String relativePath, DatSchema schema) {
+    private List<RelevantFileState> resolveModelFileStates(String relativePath, DatSchema schema) {
         return DatSchemaUtil.getModelName(schema).stream()
                 .map(modelName -> {
                     try {
@@ -174,17 +180,17 @@ public class FileChangeAnalyzer {
                 }).collect(Collectors.toList());
     }
 
-    private List<DatModel> getDatModels(List<ModelFileState> dependencies) {
-        if (dependencies == null || dependencies.isEmpty()) {
+    private List<DatModel> getDatModels(List<RelevantFileState> modelFileStates) {
+        if (modelFileStates == null || modelFileStates.isEmpty()) {
             return Collections.emptyList();
         }
-        return dependencies.stream()
+        return modelFileStates.stream()
                 .filter(f -> sqlFileRelativePaths.contains(f.getRelativePath()))
                 .map(f -> ProjectUtil.loadModel(modelsPath.resolve(f.getRelativePath()), modelsPath))
                 .collect(Collectors.toList());
     }
 
-    private ModelFileState getModelFileMetadata(String relativePath, String modelName) throws IOException {
+    private RelevantFileState getModelFileMetadata(String relativePath, String modelName) throws IOException {
         List<Path> modelFiles = sqlFilePaths.stream()
                 .filter(p -> FileUtil.fileNameWithoutSuffix(p.getFileName().toString()).equals(modelName))
                 .toList();
@@ -204,11 +210,11 @@ public class FileChangeAnalyzer {
         String modelRelativePath = modelsPath.relativize(modelFilePath).toString();
         long lastModified = FileUtil.lastModified(modelFilePath);
         String md5Hash = FileUtil.md5(modelFilePath);
-        return new ModelFileState(modelRelativePath, lastModified, md5Hash);
+        return new RelevantFileState(modelRelativePath, lastModified, md5Hash);
     }
 
-    private boolean hasDependencyChanged(List<ModelFileState> currentDeps,
-                                         List<ModelFileState> previousDeps) {
+    private boolean hasModelFileChanged(List<RelevantFileState> currentDeps,
+                                        List<RelevantFileState> previousDeps) {
         if (previousDeps == null || previousDeps.isEmpty()) {
             return !currentDeps.isEmpty(); // 之前没有依赖，现在有依赖
         }
@@ -219,15 +225,15 @@ public class FileChangeAnalyzer {
         if (currentDeps.size() != previousDeps.size()) {
             return true;
         }
-        Map<String, ModelFileState> currentMap = currentDeps.stream()
-                .collect(Collectors.toMap(ModelFileState::getRelativePath, d -> d));
-        Map<String, ModelFileState> previousMap = previousDeps.stream()
-                .collect(Collectors.toMap(ModelFileState::getRelativePath, d -> d));
+        Map<String, RelevantFileState> currentMap = currentDeps.stream()
+                .collect(Collectors.toMap(RelevantFileState::getRelativePath, d -> d));
+        Map<String, RelevantFileState> previousMap = previousDeps.stream()
+                .collect(Collectors.toMap(RelevantFileState::getRelativePath, d -> d));
         // 检查每个依赖文件是否变化
-        for (Map.Entry<String, ModelFileState> entry : currentMap.entrySet()) {
+        for (Map.Entry<String, RelevantFileState> entry : currentMap.entrySet()) {
             String relativePath = entry.getKey();
-            ModelFileState current = entry.getValue();
-            ModelFileState previous = previousMap.get(relativePath);
+            RelevantFileState current = entry.getValue();
+            RelevantFileState previous = previousMap.get(relativePath);
             if (previous == null) {
                 return true;
             }

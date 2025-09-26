@@ -1,0 +1,15 @@
+examples:
+  synonyms_pairs:
+    - word: COVID-19
+      synonyms:
+        - 新型冠状病毒肺炎
+        - 2019冠状病毒病
+        - 新冠
+        - 新冠肺炎
+        - 冠状病毒/新冠
+    - word: UnitedStates
+      synonyms:
+        - USA
+        - 美国
+        - 美利坚合众国
+        - The United States of America

@@ -35,10 +35,10 @@ import static ai.dat.core.factories.DatProjectFactory.*;
  * @Author JunjieM
  * @Date 2025/8/7
  */
-public class PreBuildValidator {
+class PreBuildValidator {
 
     private final DatProject project;
-    private final  Path projectPath;
+    private final Path projectPath;
 
     public PreBuildValidator(DatProject project, Path projectPath) {
         this.project = project;

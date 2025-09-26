@@ -62,7 +62,7 @@ public interface ContentStore {
 
     void removeAllSqls();
 
-    // ---------------名词和同义词对-------------------
+    // ---------------词和同义词对-------------------
 
     default String addSyn(WordSynonymPair synonymPair) {
         return addSyns(List.of(synonymPair)).get(0);
