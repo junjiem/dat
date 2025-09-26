@@ -1,5 +1,6 @@
 package ai.dat.core.data;
 
+import ai.dat.core.data.example.Example;
 import ai.dat.core.data.seed.SeedSpec;
 import ai.dat.core.semantic.data.SemanticModel;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,4 +23,7 @@ public class DatSchema {
     @NonNull
     @JsonProperty("seeds")
     private List<SeedSpec> seeds = List.of();
+
+    @JsonProperty("examples")
+    private Example example;
 }

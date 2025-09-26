@@ -1,0 +1,12 @@
+examples:
+  sql_pairs:
+    - question: 各个国家的平均病例数
+      sql: |
+        SELECT country_covid_cases.country, AVG(country_covid_cases.cases_total) AS average_cases 
+        FROM country_covid_cases 
+        GROUP BY country_covid_cases.country
+    - question: 各个国家的平均病例数
+      sql: |
+        SELECT country_covid_cases.country, AVG(country_covid_cases.cases_total) AS average_cases 
+        FROM country_covid_cases 
+        GROUP BY country_covid_cases.country

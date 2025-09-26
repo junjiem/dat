@@ -19,6 +19,7 @@ class ChangeSemanticModelsCacheUtil {
     private ChangeSemanticModelsCacheUtil() {
     }
 
+    // Map<projectId, Map<yamlFileRelativePath, List<SemanticModel>>>
     private final static Map<String, Map<String, List<SemanticModel>>> CACHE = new HashMap<>();
 
     public static void add(@NonNull String projectId,

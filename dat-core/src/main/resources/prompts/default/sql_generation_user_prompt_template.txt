@@ -12,9 +12,9 @@ SQL: {{ item.sql }}
 {% endif %}
 
 {% if synonyms %}
-### NOUN AND SYNONYMS ###
+### WORD AND SYNONYMS ###
 {% for item in synonyms %}
-Noun: {{ item.noun }} Synonyms: {{ item.synonyms|join(', ') }}
+Word: {{ item.noun }} Synonyms: {{ item.synonyms|join(', ') }}
 {% endfor %}
 {% endif %}
 

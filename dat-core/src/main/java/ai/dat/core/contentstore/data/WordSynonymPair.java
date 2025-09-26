@@ -20,47 +20,28 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class WordSynonymPair {
     @NonNull
-    private final String noun;
+    private final String word;
 
     @NonNull
     private final List<String> synonyms;
 
-    private String description;
-
     @JsonCreator
-    private WordSynonymPair(@JsonProperty("noun") @NonNull String noun,
+    private WordSynonymPair(@JsonProperty("word") @NonNull String word,
                             @JsonProperty("synonyms") @NonNull List<String> synonyms) {
-        this.noun = noun;
+        this.word = word;
         this.synonyms = synonyms;
     }
 
-    @JsonCreator
-    private WordSynonymPair(@JsonProperty("noun") @NonNull String noun,
-                            @JsonProperty("synonyms") @NonNull List<String> synonyms,
-                            @JsonProperty("description") String description) {
-        this.noun = noun;
-        this.synonyms = synonyms;
-        this.description = description;
+    public static WordSynonymPair from(@NonNull String word, @NonNull String synonym) {
+        return new WordSynonymPair(word, Collections.singletonList(synonym));
     }
 
-    public static WordSynonymPair from(@NonNull String noun, @NonNull String synonym, String description) {
-        return new WordSynonymPair(noun, Collections.singletonList(synonym), description);
+    public static WordSynonymPair from(@NonNull String word, @NonNull List<String> synonyms) {
+        return new WordSynonymPair(word, synonyms);
     }
 
-    public static WordSynonymPair from(@NonNull String noun, @NonNull List<String> synonyms, String description) {
-        return new WordSynonymPair(noun, synonyms, description);
-    }
-
-    public static WordSynonymPair from(@NonNull String noun, @NonNull String synonym) {
-        return new WordSynonymPair(noun, Collections.singletonList(synonym));
-    }
-
-    public static WordSynonymPair from(@NonNull String noun, @NonNull List<String> synonyms) {
-        return new WordSynonymPair(noun, synonyms);
-    }
-
-    public static WordSynonymPair from(@NonNull String noun, @NonNull String... synonyms) {
-        return new WordSynonymPair(noun, Arrays.asList(synonyms));
+    public static WordSynonymPair from(@NonNull String word, @NonNull String... synonyms) {
+        return new WordSynonymPair(word, Arrays.asList(synonyms));
     }
 
     public void add(@NonNull String synonym) {

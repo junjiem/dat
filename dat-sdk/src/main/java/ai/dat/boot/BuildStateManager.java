@@ -23,7 +23,7 @@ import java.util.stream.Stream;
  * @Date 2025/7/17
  */
 @Slf4j
-public class BuildStateManager {
+class BuildStateManager {
 
     private static final String STATE_FILE_PREFIX = "build_state_";
     private static final String STATE_FILE_SUFFIX = ".json";
