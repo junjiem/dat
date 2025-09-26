@@ -237,6 +237,11 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<String> addSqls(List<QuestionSqlPair> sqlPairs) {
+        List<TextSegment> embedTextSegments = sqlPairs.stream()
+                .map(QuestionSqlPair::getQuestion)
+                .map(TextSegment::from)
+                .toList();
+        List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
         List<TextSegment> textSegments = sqlPairs.stream()
                 .map(pair -> {
                     String json;
@@ -248,7 +253,6 @@ public class DefaultContentStore implements ContentStore {
                     }
                     return TextSegment.from(json, SQL_METADATA);
                 }).collect(Collectors.toList());
-        List<Embedding> embeddings = embeddingModel.embedAll(textSegments).content();
         return sqlEmbeddingStore.addAll(embeddings, textSegments);
     }
 
