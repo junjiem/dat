@@ -4,13 +4,12 @@ import ai.dat.core.configuration.Configuration;
 import ai.dat.core.configuration.ReadableConfig;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Setter
 @Getter
@@ -28,7 +27,6 @@ public class DatProject {
     @NonNull
     private ReadableConfig configuration = new Configuration();
 
-    @JsonProperty("configuration")
     public void setConfiguration(Map<String, Object> configs) {
         this.configuration = Configuration.fromMap(configs);
     }
@@ -46,6 +44,16 @@ public class DatProject {
     @NonNull
     private List<LlmConfig> llms;
 
+    public void setLlms(List<LlmConfig> llms) {
+        Set<String> names = new HashSet<>();
+        for (LlmConfig llm : llms) {
+            String name = llm.getName();
+            Preconditions.checkArgument(names.add(name),
+                    String.format("There is duplicate llm name '%s' in the llms", name));
+        }
+        this.llms = llms;
+    }
+
     @NonNull
     @JsonProperty("content_store")
     private ContentStoreConfig contentStore = new ContentStoreConfig();
@@ -53,4 +61,13 @@ public class DatProject {
     @NonNull
     private List<AgentConfig> agents = Collections.emptyList();
 
+    public void setAgents(List<AgentConfig> agents) {
+        Set<String> names = new HashSet<>();
+        for (AgentConfig agent : agents) {
+            String name = agent.getName();
+            Preconditions.checkArgument(names.add(name),
+                    String.format("There is duplicate agent name '%s' in the agents", name));
+        }
+        this.agents = agents;
+    }
 }

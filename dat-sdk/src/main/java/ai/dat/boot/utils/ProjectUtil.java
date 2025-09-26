@@ -279,7 +279,8 @@ public class ProjectUtil {
         try {
             return DatProjectUtil.datProject(getProjectConfig(projectPath));
         } catch (IOException e) {
-            throw new RuntimeException("The project YAML file content does not meet the requirements", e);
+            throw new RuntimeException("The project YAML file content does not meet the requirements: "
+                    + e.getMessage(), e);
         }
     }
 
