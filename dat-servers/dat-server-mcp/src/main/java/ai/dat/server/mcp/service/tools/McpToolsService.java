@@ -1,5 +1,6 @@
 package ai.dat.server.mcp.service.tools;
 
+import ai.dat.boot.utils.QuestionSqlPairCacheUtil;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
@@ -13,7 +14,9 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -25,7 +28,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class McpToolsService {
 
-    private static final Map<String, List<QuestionSqlPair>> historiesPool = new HashMap<>();
     private static final String NOT_GENERATE = "<not generate>";
 
     private final static ObjectMapper JSON_MAPPER = new ObjectMapper();
@@ -56,7 +58,7 @@ public class McpToolsService {
 
         agentName = (agentName == null || agentName.isBlank() ? "default" : agentName);
 
-        List<QuestionSqlPair> histories = historiesPool.getOrDefault(conversationId, Collections.emptyList());
+        List<QuestionSqlPair> histories = QuestionSqlPairCacheUtil.get(conversationId);
 
         StreamAction action = runnerService.ask(conversationId, agentName, question, histories);
 
@@ -88,9 +90,7 @@ public class McpToolsService {
         if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
             sql = "/* Incorrect SQL */ " + sql;
         }
-        List<QuestionSqlPair> copyHistories = new ArrayList<>(histories);
-        copyHistories.add(QuestionSqlPair.from(question, sql));
-        historiesPool.put(conversationId, copyHistories);
+        QuestionSqlPairCacheUtil.add(conversationId, QuestionSqlPair.from(question, sql));
 
         return result.toString();
     }
