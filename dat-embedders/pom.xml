@@ -19,6 +19,7 @@
         <module>dat-embedder-bge-small-zh-v15-q</module>
         <module>dat-embedder-openai</module>
         <module>dat-embedder-ollama</module>
+        <module>dat-embedder-jina</module>
     </modules>
 
 </project>

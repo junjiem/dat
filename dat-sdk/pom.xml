@@ -54,11 +54,11 @@
             <version>${project.version}</version>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>ai.dat</groupId>-->
-<!--            <artifactId>dat-embedder-bge-small-zh-v15</artifactId>-->
-<!--            <version>${project.version}</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>ai.dat</groupId>-->
+        <!--            <artifactId>dat-embedder-bge-small-zh-v15</artifactId>-->
+        <!--            <version>${project.version}</version>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>ai.dat</groupId>
             <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
@@ -72,6 +72,11 @@
         <dependency>
             <groupId>ai.dat</groupId>
             <artifactId>dat-embedder-ollama</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-embedder-jina</artifactId>
             <version>${project.version}</version>
         </dependency>
 
