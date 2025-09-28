@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Logs root path from system property, default to current directory -->
+    <property name="LOGS_ROOT_PATH" value="${dat.logs.root.path:-./}" />
+
+    <property name="LOG_FILE_NAME" value="dat" />
+
+    <property name="QA_SQL_FILE_NAME" value="question_sql_pair_history" />
+    
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS_ROOT_PATH}/logs/${LOG_FILE_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${LOGS_ROOT_PATH}/logs/${LOG_FILE_NAME}.%i.log</fileNamePattern>
+            <maxIndex>5</maxIndex>
+            <minIndex>1</minIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>100MB</maxFileSize>
+        </triggeringPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+        <prudent>false</prudent>
+    </appender>
+
+    <appender name="QA_SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS_ROOT_PATH}/.dat/${QA_SQL_FILE_NAME}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${LOGS_ROOT_PATH}/.dat/${QA_SQL_FILE_NAME}.%i</fileNamePattern>
+            <maxIndex>5</maxIndex>
+            <minIndex>1</minIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>50MB</maxFileSize>
+        </triggeringPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+        <prudent>false</prudent>
+    </appender>
+
+    <logger name="ai.dat.boot.utils.QuestionSqlPairCacheUtil" level="DEBUG" additivity="false">
+        <appender-ref ref="QA_SQL_FILE"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
+    </root>
+    
+</configuration>
