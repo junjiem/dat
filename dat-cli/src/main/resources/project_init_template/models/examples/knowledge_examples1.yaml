@@ -1,5 +1,5 @@
 examples:
-  knowledge:
+  knowledge: # 业务知识
     - |
       COVID-19（新型冠状病毒肺炎）是由SARS-CoV-2病毒引起的呼吸道传染病。
       主要传播途径为飞沫和密切接触，在相对封闭的环境中可经气溶胶传播。

@@ -1,7 +1,7 @@
 examples:
-  sql_pairs:
-    - question: 各个国家的平均病例数
-      sql: |
+  sql_pairs: # 问答SQL对
+    - question: 各个国家的平均病例数 # 问题
+      sql: | # 语义SQL
         SELECT country_covid_cases.country, AVG(country_covid_cases.cases_total) AS average_cases 
         FROM country_covid_cases 
         GROUP BY country_covid_cases.country
