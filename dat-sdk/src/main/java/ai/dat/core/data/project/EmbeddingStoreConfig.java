@@ -2,7 +2,7 @@ package ai.dat.core.data.project;
 
 import ai.dat.core.configuration.Configuration;
 import ai.dat.core.configuration.ReadableConfig;
-import ai.dat.storer.weaviate.duckdb.DuckDBEmbeddingStoreFactory;
+import ai.dat.storer.duckdb.DuckDBEmbeddingStoreFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;

@@ -11,7 +11,7 @@ import ai.dat.core.utils.JinjaTemplateUtil;
 import ai.dat.core.utils.YamlTemplateUtil;
 import ai.dat.embedder.inprocess.BgeSmallZhV15QuantizedEmbeddingModelFactory;
 import ai.dat.llm.openai.OpneAiChatModelFactory;
-import ai.dat.storer.weaviate.duckdb.DuckDBEmbeddingStoreFactory;
+import ai.dat.storer.duckdb.DuckDBEmbeddingStoreFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.networknt.schema.ValidationMessage;
 import lombok.Getter;
