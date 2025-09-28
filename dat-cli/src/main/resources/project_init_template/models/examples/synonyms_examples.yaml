@@ -1,7 +1,7 @@
 examples:
-  synonyms_pairs:
-    - word: COVID-19
-      synonyms:
+  synonyms_pairs: # 同义词对
+    - word: COVID-19 # 词
+      synonyms: # 同义词
         - 新型冠状病毒肺炎
         - 2019冠状病毒病
         - 新冠

@@ -1,5 +1,5 @@
 examples:
-  knowledge:
+  knowledge: # 业务知识
     - |
       COVID 预防是关键：
       接种疫苗：有效降低重症和死亡风险。
