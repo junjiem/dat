@@ -276,22 +276,19 @@ public class ProjectUtil {
     }
 
     public static DatProject loadProject(Path projectPath) {
-        try {
-            return DatProjectUtil.datProject(getProjectConfig(projectPath));
-        } catch (IOException e) {
-            throw new RuntimeException("The project YAML file content does not meet the requirements: "
-                    + e.getMessage(), e);
-        }
-    }
-
-    private static String getProjectConfig(Path projectPath) throws IOException {
         Path filePath = findProjectConfigFile(projectPath);
         if (filePath == null) {
             throw new RuntimeException("The project configuration file not found "
                     + PROJECT_CONFIG_FILE_NAME_YAML + " or " + PROJECT_CONFIG_FILE_NAME_YML
                     + ", please ensure that the project configuration file exists in the project root directory.");
         }
-        return Files.readString(filePath);
+        try {
+            String yamlContent = Files.readString(filePath);
+            return DatProjectUtil.datProject(yamlContent);
+        } catch (Exception e) {
+            throw new RuntimeException("The " + projectPath.relativize(filePath)
+                    + " YAML file content does not meet the requirements: \n" + e.getMessage(), e);
+        }
     }
 
     private static Path findProjectConfigFile(Path projectPath) {
