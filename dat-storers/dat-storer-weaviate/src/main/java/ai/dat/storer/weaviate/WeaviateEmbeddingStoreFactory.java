@@ -23,7 +23,7 @@ public class WeaviateEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     public static final String IDENTIFIER = "weaviate";
 
-    public static final String DEFAULT_CLASS_NAME = "dat_embeddings";
+    public static final String DEFAULT_CLASS_NAME_PREFIX = "dat_embeddings";
 
     public static final ConfigOption<String> SCHEME =
             ConfigOptions.key("scheme")
@@ -49,11 +49,11 @@ public class WeaviateEmbeddingStoreFactory implements EmbeddingStoreFactory {
                     .noDefaultValue()
                     .withDescription("Weaviate API KEY");
 
-    public static final ConfigOption<String> CLASS_NAME =
-            ConfigOptions.key("class-name")
+    public static final ConfigOption<String> CLASS_NAME_PREFIX =
+            ConfigOptions.key("class-name-prefix")
                     .stringType()
-                    .defaultValue(DEFAULT_CLASS_NAME)
-                    .withDescription("Weaviate class name");
+                    .defaultValue(DEFAULT_CLASS_NAME_PREFIX)
+                    .withDescription("Weaviate class name prefix");
 
     @Override
     public String factoryIdentifier() {
@@ -67,12 +67,12 @@ public class WeaviateEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(SCHEME, HOST, PORT, API_KEY, CLASS_NAME));
+        return new LinkedHashSet<>(List.of(SCHEME, HOST, PORT, API_KEY, CLASS_NAME_PREFIX));
     }
 
     @Override
     public Set<ConfigOption<?>> fingerprintOptions() {
-        return Set.of(HOST, PORT, API_KEY, CLASS_NAME);
+        return Set.of(HOST, PORT, API_KEY, CLASS_NAME_PREFIX);
     }
 
     @Override
@@ -84,15 +84,15 @@ public class WeaviateEmbeddingStoreFactory implements EmbeddingStoreFactory {
         String scheme = config.get(SCHEME);
         String host = config.get(HOST);
         Integer port = config.get(PORT);
-        String className = config.get(CLASS_NAME);
+        String classNamePrefix = config.get(CLASS_NAME_PREFIX);
 
-        String fullClassName = className + "_" + storeId + "_" + contentType.getValue();
+        String className = classNamePrefix + "_" + storeId + "_" + contentType.getValue();
 
         WeaviateEmbeddingStore.WeaviateEmbeddingStoreBuilder builder = WeaviateEmbeddingStore.builder()
                 .scheme(scheme)
                 .host(host)
                 .port(port)
-                .objectClass(fullClassName);
+                .objectClass(className);
         config.getOptional(API_KEY).ifPresent(builder::apiKey);
         return builder.build();
     }
