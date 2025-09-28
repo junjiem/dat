@@ -2,6 +2,7 @@ package ai.dat.cli.commands;
 
 import ai.dat.boot.ProjectRunner;
 import ai.dat.boot.utils.ProjectUtil;
+import ai.dat.boot.utils.QuestionSqlPairCacheUtil;
 import ai.dat.cli.processor.InputProcessor;
 import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.utils.AnsiUtil;
@@ -22,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 /**
@@ -44,6 +46,8 @@ public class RunCommand implements Callable<Integer> {
     private final static String NOT_GENERATE = "<not generate>";
     private final static String RUN_COMMAND_HISTORY = "run_command_history";
 
+    private final static String CONVERSATION_ID = UUID.randomUUID().toString();
+
     // the keys whose values should be highlighted
     private static final String[] EXCEPTION_KEYS =
             new String[]{
@@ -52,8 +56,6 @@ public class RunCommand implements Callable<Integer> {
                     "error",
                     "exception",
             };
-
-    private final List<QuestionSqlPair> histories = new ArrayList<>();
 
     @Option(names = {"-p", "--project-path"},
             description = "Project path (default: current directory)",
@@ -71,6 +73,7 @@ public class RunCommand implements Callable<Integer> {
         log.info("Run project: {}, Agent: {}", path, agentName);
         System.out.println("📁 Project path: " + path);
         System.out.println("🤖 Agent: " + agentName);
+        System.out.println("🆔 Conversation ID: " + CONVERSATION_ID);
         Path historyFilePath = path.resolve(ProjectUtil.DAT_DIR_NAME + "/" + RUN_COMMAND_HISTORY);
         try (InputProcessor processor = new InputProcessor(historyFilePath)) {
             ProjectRunner runner = new ProjectRunner(path, agentName);
@@ -112,6 +115,7 @@ public class RunCommand implements Callable<Integer> {
                 }
                 System.out.println("Question: [" + question + "]");
                 System.out.println("🤖 Dealing with ask...");
+                List<QuestionSqlPair> histories = QuestionSqlPairCacheUtil.get(CONVERSATION_ID);
                 StreamAction action = runner.ask(question, histories);
                 print(processor, runner, question, action);
                 round += 1;
@@ -157,7 +161,7 @@ public class RunCommand implements Callable<Integer> {
         if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
             sql = "/* Incorrect SQL */ " + sql;
         }
-        histories.add(QuestionSqlPair.from(question, sql));
+        QuestionSqlPairCacheUtil.add(CONVERSATION_ID, QuestionSqlPair.from(question, sql));
     }
 
     private void print(InputProcessor processor, ProjectRunner runner, StreamEvent event) {

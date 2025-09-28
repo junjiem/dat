@@ -1,5 +1,6 @@
 package ai.dat.server.openapi.controller;
 
+import ai.dat.boot.utils.QuestionSqlPairCacheUtil;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
@@ -25,7 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -76,7 +80,6 @@ public class AskController {
     // 用于定时发送ping事件的线程池
     private final ScheduledExecutorService pingScheduler = Executors.newScheduledThreadPool(1);
 
-    private static final Map<String, List<QuestionSqlPair>> historiesPool = new HashMap<>();
     private static final String NOT_GENERATE = "<not generate>";
 
     @Operation(summary = "Ask data (Streaming)",
@@ -178,7 +181,7 @@ public class AskController {
         String conversationId = request.getConversationId() == null || request.getConversationId().isBlank() ?
                 UUID.randomUUID().toString() : request.getConversationId();
 
-        List<QuestionSqlPair> histories = historiesPool.getOrDefault(conversationId, Collections.emptyList());
+        List<QuestionSqlPair> histories = QuestionSqlPairCacheUtil.get(conversationId);
 
         SseEmitter emitter = new SseEmitter();
 
@@ -333,9 +336,7 @@ public class AskController {
                 if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
                     sql = "/* Incorrect SQL */ " + sql;
                 }
-                List<QuestionSqlPair> copyHistories = new ArrayList<>(histories);
-                copyHistories.add(QuestionSqlPair.from(request.getQuestion(), sql));
-                historiesPool.put(conversationId, copyHistories);
+                QuestionSqlPairCacheUtil.add(conversationId, QuestionSqlPair.from(request.getQuestion(), sql));
             }
         }).start();
 
