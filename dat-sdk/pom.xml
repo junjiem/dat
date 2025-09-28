@@ -48,6 +48,11 @@
             <artifactId>dat-storer-weaviate</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-storer-pgvector</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
 <!--        <dependency>-->
 <!--            <groupId>ai.dat</groupId>-->
