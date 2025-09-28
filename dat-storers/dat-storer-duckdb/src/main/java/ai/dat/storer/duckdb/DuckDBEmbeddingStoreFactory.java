@@ -1,4 +1,4 @@
-package ai.dat.storer.weaviate.duckdb;
+package ai.dat.storer.duckdb;
 
 import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigOptions;

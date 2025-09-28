@@ -16,7 +16,7 @@ import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.DatSchemaUtil;
 import ai.dat.core.utils.FactoryUtil;
 import ai.dat.core.utils.SemanticModelUtil;
-import ai.dat.storer.weaviate.duckdb.DuckDBEmbeddingStoreFactory;
+import ai.dat.storer.duckdb.DuckDBEmbeddingStoreFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
