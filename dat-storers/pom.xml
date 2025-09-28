@@ -15,6 +15,7 @@
     <modules>
         <module>dat-storer-duckdb</module>
         <module>dat-storer-weaviate</module>
+        <module>dat-storer-pgvector</module>
     </modules>
 
 </project>
