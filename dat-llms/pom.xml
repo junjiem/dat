@@ -16,6 +16,7 @@
         <module>dat-llm-openai</module>
         <module>dat-llm-anthropic</module>
         <module>dat-llm-ollama</module>
+        <module>dat-llm-gemini</module>
     </modules>
 
 </project>
