@@ -15,8 +15,8 @@ import ai.dat.core.semantic.data.Element;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.FactoryUtil;
 import ai.dat.core.utils.SemanticModelUtil;
-import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.calcite.sql.parser.SqlParseException;
 
 import java.nio.file.Path;
@@ -35,6 +35,7 @@ import static ai.dat.core.factories.DatProjectFactory.*;
  * @Author JunjieM
  * @Date 2025/8/7
  */
+@Slf4j
 class PreBuildValidator {
 
     private final DatProject project;
@@ -75,7 +76,7 @@ class PreBuildValidator {
                         .collect(Collectors.toMap(Map.Entry::getKey,
                                 e -> e.getValue().stream()
                                         .map(model -> validateModelSql(databaseAdapter, model))
-                                        .filter(o -> o.exception != null)
+                                        .filter(Objects::nonNull)
                                         .collect(Collectors.toList())
                         ))
                         .entrySet().stream().filter(e -> !e.getValue().isEmpty())
@@ -96,14 +97,13 @@ class PreBuildValidator {
     private static ValidationMessage validateModelSql(@NonNull DatabaseAdapter databaseAdapter,
                                                       @NonNull SemanticModel semanticModel) {
         String sql = "SELECT 1 FROM (" + semanticModel.getModel() + ") AS __dat_model WHERE 1=0";
-        SQLException sqlException;
         try {
             databaseAdapter.executeQuery(sql);
-            sqlException = null;
-        } catch (SQLException exception) {
-            sqlException = exception;
+        } catch (SQLException e) {
+            log.warn("SQL: " + sql + "\nException: " + e.getMessage());
+            return new ValidationMessage(semanticModel.getName(), e);
         }
-        return new ValidationMessage(semanticModel.getName(), sqlException);
+        return null;
     }
 
     private static void validateSemanticModelSqls(@NonNull String projectId,
@@ -113,7 +113,7 @@ class PreBuildValidator {
                         .collect(Collectors.toMap(Map.Entry::getKey,
                                 e -> e.getValue().stream()
                                         .map(model -> validateSemanticModelSql(databaseAdapter, model))
-                                        .filter(o -> o.exception != null)
+                                        .filter(Objects::nonNull)
                                         .collect(Collectors.toList())
                         ))
                         .entrySet().stream().filter(e -> !e.getValue().isEmpty())
@@ -138,17 +138,17 @@ class PreBuildValidator {
         try {
             semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
         } catch (SqlParseException e) {
+            log.warn("Semantic model sql parse exception", e);
             return new ValidationMessage(semanticModel.getName(), e);
         }
         String sql = "SELECT 1 FROM (" + semanticModelSql + ") AS __dat_semantic_model WHERE 1=0";
-        SQLException exception;
         try {
             databaseAdapter.executeQuery(sql);
-            exception = null;
         } catch (SQLException e) {
-            exception = e;
+            log.warn("SQL: " + sql + "\nException: " + e.getMessage());
+            return new ValidationMessage(semanticModel.getName(), e);
         }
-        return new ValidationMessage(semanticModel.getName(), exception);
+        return null;
     }
 
     private static void validateDimensionsEnumValues(@NonNull String projectId,
@@ -159,7 +159,6 @@ class PreBuildValidator {
                                 e -> e.getValue().stream()
                                         .map(model -> validateDimensionEnumValues(databaseAdapter, model))
                                         .filter(Objects::nonNull)
-                                        .filter(o -> o.exception != null)
                                         .collect(Collectors.toList())
                         ))
                         .entrySet().stream().filter(e -> !e.getValue().isEmpty())
@@ -190,6 +189,7 @@ class PreBuildValidator {
         try {
             semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
         } catch (SqlParseException e) {
+            log.warn("Semantic model sql parse exception", e);
             return new ValidationMessage(semanticModel.getName(), e);
         }
         List<String> messages = dimensions.stream()
@@ -254,7 +254,6 @@ class PreBuildValidator {
                                 e -> e.getValue().stream()
                                         .map(model -> validateDataTypes(databaseAdapter, model))
                                         .filter(Objects::nonNull)
-                                        .filter(o -> o.exception != null)
                                         .collect(Collectors.toList())
                         ))
                         .entrySet().stream().filter(e -> !e.getValue().isEmpty())
@@ -291,10 +290,10 @@ class PreBuildValidator {
         try {
             semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
         } catch (SqlParseException e) {
+            log.warn("Semantic model sql parse exception", e);
             return new ValidationMessage(semanticModel.getName(), e);
         }
         String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model WHERE 1=0";
-        String message = null;
         try {
             Map<String, String> columnTypes = databaseAdapter.getColumnMetadata(sql).stream()
                     .collect(Collectors.toMap(ColumnMetadata::getColumnLabel, ColumnMetadata::getColumnTypeName));
@@ -302,17 +301,17 @@ class PreBuildValidator {
                     .filter(e -> !e.getValue().equalsIgnoreCase(columnTypes.get(e.getKey())))
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> columnTypes.get(e.getKey())));
             if (!incorrectDataTypes.isEmpty()) {
-                message = incorrectDataTypes.entrySet().stream()
+                String message = incorrectDataTypes.entrySet().stream()
                         .map(e -> "data type of '" + e.getKey() + "' should be '" + e.getValue() + "'")
                         .collect(Collectors.joining(", and "));
+                log.warn(message);
+                return new ValidationMessage(semanticModel.getName(), new ValidationException(message));
             }
         } catch (SQLException e) {
-            message = e.getMessage();
+            log.warn("SQL: " + sql + "\nException: " + e.getMessage());
+            return new ValidationMessage(semanticModel.getName(), e);
         }
-        if (message == null) {
-            return null;
-        }
-        return new ValidationMessage(semanticModel.getName(), new ValidationException(message));
+        return null;
     }
 
     private static void autoCompleteDataTypes(@NonNull String projectId,
@@ -323,7 +322,6 @@ class PreBuildValidator {
                                 e -> e.getValue().stream()
                                         .map(model -> autoCompleteDataTypes(databaseAdapter, model))
                                         .filter(Objects::nonNull)
-                                        .filter(o -> o.exception != null)
                                         .collect(Collectors.toList())
                         ))
                         .entrySet().stream().filter(e -> !e.getValue().isEmpty())
@@ -360,26 +358,21 @@ class PreBuildValidator {
         try {
             semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
         } catch (SqlParseException e) {
+            log.warn("Semantic model sql parse exception", e);
             return new ValidationMessage(semanticModel.getName(), e);
         }
         String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model WHERE 1=0";
-        String message = null;
         try {
             Map<String, AnsiSqlType> ansiSqlTypes = databaseAdapter.getColumnMetadata(sql).stream()
                     .collect(Collectors.toMap(ColumnMetadata::getColumnLabel, ColumnMetadata::getAnsiSqlType));
             elements.forEach(e -> e.setAnsiSqlType(ansiSqlTypes.get(e.getName())));
         } catch (SQLException e) {
-            message = e.getMessage();
+            log.warn("SQL: " + sql + "\nException: " + e.getMessage());
+            return new ValidationMessage(semanticModel.getName(), e);
         }
-        if (message == null) {
-            return null;
-        }
-        return new ValidationMessage(semanticModel.getName(), new ValidationException(message));
+        return null;
     }
 
-    @AllArgsConstructor
-    private static class ValidationMessage {
-        private String semanticModelName;
-        private Exception exception;
+    private record ValidationMessage(@NonNull String semanticModelName, @NonNull Exception exception) {
     }
 }
