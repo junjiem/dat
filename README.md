@@ -54,8 +54,8 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 
 ### 🔍 向量化检索增强
 - **内容存储** - SQL问答对、同义词、业务知识向量化
-- **语义检索** - 基于嵌入模型的智能匹配
-- **多存储后端** - DuckDB、Weaviate等存储选择
+- **语义检索** - 基于Embedding模型的智能匹配
+- **多存储后端** - DuckDB、Weaviate、PGVector等存储选择
 
 
 ---
@@ -89,8 +89,8 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 ### 📋 环境要求
 
 - **Java 17+** - 推荐使用OpenJDK
-- **数据库** - MySQL/PostgreSQL/Oracle/DuckDB任选其一
-- **LLM API** - OpenAI或Anthropic Claude API密钥
+- **数据库** - MySQL / PostgreSQL / Oracle / DuckDB 任选其一
+- **LLM API** - OpenAI / Anthropic / Ollama / Gemini 等
 
 ### ⚡ 5分钟快速体验
 
@@ -100,7 +100,7 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 
 ```bash
 # 下载最新版本
-wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.3.0.tar.gz
+wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.4.0.tar.gz
 
 # 解压并配置环境变量
 tar -xzf dat-cli-x.x.x.tar.gz
@@ -384,17 +384,20 @@ dat-parent/
 ├── 🤖 dat-llms/          # LLM集成模块
 │   ├── dat-llm-anthropic/
 │   ├── dat-llm-openai/
-│   └── dat-llm-ollama/
+│   ├── dat-llm-openai/
+│   └── dat-llm-gemini/
 ├── 📊 dat-embedders/     # 嵌入模型集成
 │   ├── dat-embedder-bge-small-zh/        # 【本地内嵌Embedding模型】
 │   ├── dat-embedder-bge-small-zh-q/      # 【本地内嵌Embedding模型】
 │   ├── dat-embedder-bge-small-zh-v15/    # 【本地内嵌Embedding模型】
 │   ├── dat-embedder-bge-small-zh-v15-q/  # 【本地内嵌Embedding模型】
 │   ├── dat-embedder-openai/
-│   └── dat-embedder-ollama/
+│   ├── dat-embedder-ollama/
+│   └── dat-embedder-jina/
 ├── 💾 dat-storers/       # 向量存储后端
 │   ├── dat-storer-duckdb/    # 【本地内嵌向量存储】
-│   └── dat-storer-weaviate/
+│   ├── dat-storer-weaviate/
+│   └── dat-storer-pgvector/
 ├── 🎭 dat-agents/        # 智能代理实现
 │   └── dat-agent-agentic/
 ├── 📡 dat-servers/       # 服务端组件
