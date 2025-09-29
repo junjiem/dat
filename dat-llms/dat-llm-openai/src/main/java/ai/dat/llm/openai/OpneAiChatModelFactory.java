@@ -33,43 +33,46 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
             ConfigOptions.key("base-url")
                     .stringType()
                     .defaultValue(OpenAiUtils.DEFAULT_OPENAI_URL)
-                    .withDescription("OpenAI API base URL");
+                    .withDescription("The base URL of OpenAI API server.");
 
     public static final ConfigOption<String> API_KEY =
             ConfigOptions.key("api-key")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("OpenAI API KEY");
+                    .withDescription("The API KEY of OpenAI API server.");
 
     public static final ConfigOption<String> MODEL_NAME =
             ConfigOptions.key("model-name")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("OpenAI LLM model name");
+                    .withDescription("The name of the model to use from OpenAI API server.");
 
     public static final ConfigOption<Double> TEMPERATURE =
             ConfigOptions.key("temperature")
                     .doubleType()
                     .noDefaultValue()
-                    .withDescription("OpenAI LLM model temperature");
+                    .withDescription("Controls the randomness of the generated responses. " +
+                            "Higher values (e.g., 1.0) result in more diverse output, " +
+                            "while lower values (e.g., 0.2) produce more deterministic responses.");
 
     public static final ConfigOption<Double> TOP_P =
             ConfigOptions.key("top-p")
                     .doubleType()
                     .noDefaultValue()
-                    .withDescription("OpenAI LLM model Top-P");
+                    .withDescription("Controls the diversity of the generated responses by setting a threshold " +
+                            "for the cumulative probability of top tokens.");
 
     public static final ConfigOption<Duration> TIMEOUT =
             ConfigOptions.key("timeout")
                     .durationType()
                     .noDefaultValue()
-                    .withDescription("OpenAI LLM model timeout");
+                    .withDescription("The maximum time allowed for the API call to complete.");
 
     public static final ConfigOption<Integer> MAX_RETRIES =
             ConfigOptions.key("max-retries")
                     .intType()
                     .defaultValue(2)
-                    .withDescription("OpenAI LLM model maximum retries");
+                    .withDescription("The maximum number of retries in case of API call failure.");
 
     public static final ConfigOption<Integer> MAX_TOKENS =
             ConfigOptions.key("max-tokens")

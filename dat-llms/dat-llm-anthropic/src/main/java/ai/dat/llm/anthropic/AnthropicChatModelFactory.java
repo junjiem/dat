@@ -28,20 +28,21 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
     public static final ConfigOption<String> BASE_URL =
             ConfigOptions.key("base-url")
                     .stringType()
-                    .defaultValue("https://api.anthropic.com/v1/")
-                    .withDescription("Anthropic base URL");
+                    .noDefaultValue()
+                    .withDescription("The base URL of Anthropic server.");
 
     public static final ConfigOption<String> API_KEY =
             ConfigOptions.key("api-key")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("Anthropic API KEY");
+                    .withDescription("The API KEY of Anthropic server.");
 
     public static final ConfigOption<String> MODEL_NAME =
             ConfigOptions.key("model-name")
                     .stringType()
                     .defaultValue(AnthropicChatModelName.CLAUDE_SONNET_4_20250514.toString())
-                    .withDescription("Anthropic LLM model name. \nFor example: " +
+                    .withDescription("The name of the model to use from Anthropic server. " +
+                            "\nFor example: " +
                             Arrays.stream(AnthropicChatModelName.values())
                                     .map(AnthropicChatModelName::toString)
                                     .collect(Collectors.joining(", ")) +
@@ -52,31 +53,35 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
             ConfigOptions.key("temperature")
                     .doubleType()
                     .noDefaultValue()
-                    .withDescription("Anthropic LLM model temperature");
-
-    public static final ConfigOption<Double> TOP_P =
-            ConfigOptions.key("top-p")
-                    .doubleType()
-                    .noDefaultValue()
-                    .withDescription("Anthropic LLM model Top-P");
+                    .withDescription("Controls the randomness of the generated responses. " +
+                            "Higher values (e.g., 1.0) result in more diverse output, " +
+                            "while lower values (e.g., 0.2) produce more deterministic responses.");
 
     public static final ConfigOption<Integer> TOP_K =
             ConfigOptions.key("top-k")
                     .intType()
                     .noDefaultValue()
-                    .withDescription("Anthropic LLM model Top-K");
+                    .withDescription("Specifies the number of highest probability tokens to consider " +
+                            "for each step during generation.");
+
+    public static final ConfigOption<Double> TOP_P =
+            ConfigOptions.key("top-p")
+                    .doubleType()
+                    .noDefaultValue()
+                    .withDescription("Controls the diversity of the generated responses by setting a threshold " +
+                            "for the cumulative probability of top tokens.");
 
     public static final ConfigOption<Duration> TIMEOUT =
             ConfigOptions.key("timeout")
                     .durationType()
                     .noDefaultValue()
-                    .withDescription("Anthropic LLM model timeout");
+                    .withDescription("The maximum time allowed for the API call to complete.");
 
     public static final ConfigOption<Integer> MAX_RETRIES =
             ConfigOptions.key("max-retries")
                     .intType()
                     .defaultValue(2)
-                    .withDescription("Anthropic LLM model maximum retries");
+                    .withDescription("The maximum number of retries in case of API call failure.");
 
     public static final ConfigOption<Integer> MAX_TOKENS =
             ConfigOptions.key("max-tokens")
