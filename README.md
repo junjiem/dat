@@ -129,6 +129,7 @@ dat init
 # Description: 我的第一个智能问数项目
 # Database type: mysql
 ```
+> 💡 <strong style="color: orange;">提示：</strong> 更多项目配置，请参考项目下的 `dat_project.yaml.template` 。
 
 > 💡 <strong style="color: orange;">提示：</strong> 如果你没有现成的数据库可以访问或只是想对本地CSV数据进行问数，初始化项目时数据库可以选择`duckdb`，默认会在项目的`.dat`目录下创建'duckdb'前缀的本地数据存储。
 
