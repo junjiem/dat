@@ -21,10 +21,11 @@ import picocli.CommandLine.Option;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Run project commands
@@ -132,10 +133,12 @@ public class RunCommand implements Callable<Integer> {
 
     public void print(InputProcessor processor, ProjectRunner runner, String question, StreamAction action) {
         String sql = NOT_GENERATE;
-        String lastEvent = "";
-        boolean lastIncremental = false;
+        String previousEvent = "";
+        boolean previousIncremental = false;
         boolean isAccurateSql = false;
+        processor.startSpinner(); // 开始等待指示器
         for (StreamEvent event : action) {
+            processor.stopSpinner(); // 停止等待指示器
             if (event == null) break;
             String eventName = event.name();
             if (event.getSemanticSql().isPresent()) {
@@ -144,10 +147,10 @@ public class RunCommand implements Callable<Integer> {
             if (event.getQueryData().isPresent()) {
                 isAccurateSql = true;
             }
-            if (!lastEvent.equals(eventName)) {
-                if (lastIncremental) System.out.println();
-                lastEvent = eventName;
-                lastIncremental = event.getIncrementalContent().isPresent();
+            if (!previousEvent.equals(eventName)) {
+                if (previousIncremental) System.out.println();
+                previousEvent = eventName;
+                previousIncremental = event.getIncrementalContent().isPresent();
                 String color = isException(eventName) ? "red" : "blue";
                 if (event.getHitlAiRequest().isPresent()) color = "magenta";
                 if (event.getHitlToolApproval().isPresent()) color = "yellow";
@@ -156,8 +159,16 @@ public class RunCommand implements Callable<Integer> {
                                 + eventName + "|@ ---------------------"));
             }
             print(processor, runner, event);
+            // 非流式增量内容
+            if (event.getIncrementalContent().isEmpty()) {
+                processor.startSpinner(); // 开始等待指示器
+            }
         }
-        if (lastIncremental) System.out.println();
+        // 非流式增量内容
+        if (!previousIncremental) {
+            processor.stopSpinner(); // 停止等待指示器
+        }
+        if (previousIncremental) System.out.println();
         if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
             sql = "/* Incorrect SQL */ " + sql;
         }
