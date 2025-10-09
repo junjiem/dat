@@ -1,6 +1,7 @@
 package ai.dat.cli.processor;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.impl.history.DefaultHistory;
@@ -13,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * JLine 3 交互式输入处理器
@@ -23,6 +25,11 @@ import java.util.concurrent.TimeoutException;
  */
 @Slf4j
 public class InputProcessor implements AutoCloseable {
+
+    private static final String[] SPINNER_FRAMES = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
+    private final AtomicBoolean spinnerRunning = new AtomicBoolean(false);
+    private Thread spinnerThread;
+
     private final Terminal terminal;
     private final LineReader lineReader;
 
@@ -81,6 +88,73 @@ public class InputProcessor implements AutoCloseable {
         }
     }
 
+    /**
+     * 开始等待指示器
+     */
+    public void startSpinner() {
+        startSpinner(null);
+    }
+
+    /**
+     * 开始等待指示器
+     *
+     * @param message
+     */
+    public void startSpinner(String message) {
+        if (spinnerRunning.get()) {
+            return;
+        }
+
+        String label = StringUtils.isNotBlank(message) ? message + " " : "";
+
+        spinnerRunning.set(true);
+        spinnerThread = new Thread(() -> {
+            int i = 0;
+            try {
+                // 隐藏光标
+                terminal.writer().print("\033[?25l");
+                terminal.flush();
+
+                while (spinnerRunning.get()) {
+                    String frame = SPINNER_FRAMES[i % SPINNER_FRAMES.length];
+                    String coloredFrame = "\u001B[36m" + frame + "\u001B[0m"; // 青色
+                    String output = "\r" + label + coloredFrame;
+
+                    terminal.writer().print(output);
+                    terminal.flush();
+
+                    i++;
+                    Thread.sleep(80);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        spinnerThread.setDaemon(true);
+        spinnerThread.start();
+    }
+
+    /**
+     * 停止等待指示器
+     */
+    public void stopSpinner() {
+        if (!spinnerRunning.getAndSet(false)) {
+            return;
+        }
+
+        try {
+            if (spinnerThread != null) {
+                spinnerThread.join(1000);
+            }
+            // 清除行并恢复光标
+            terminal.writer().print("\r\033[K\033[?25h");
+            terminal.flush();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            spinnerThread = null;
+        }
+    }
 
     /**
      * 读取用户输入
