@@ -9,7 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author JunjieM
@@ -37,8 +39,10 @@ public class ProjectBuilder {
 
     /**
      * 构建项目
+     *
+     * @throws IOException
      */
-    public void build() throws IOException {
+    public void build(Map<String, Object> variables) throws IOException {
         log.info("Start incremental build project ...");
         if (project == null) {
             project = ProjectUtil.loadProject(projectPath);
@@ -53,7 +57,7 @@ public class ProjectBuilder {
 
         if (changes.hasChanges()) {
             // 校验
-            new PreBuildValidator(project, projectPath).validate();
+            new PreBuildValidator(project, projectPath, variables).validate();
             // 更新状态
             ContentStoreManager storeManager = new ContentStoreManager(project, projectPath, fingerprint);
             storeManager.updateStore(fileStates, changes);
@@ -62,14 +66,35 @@ public class ProjectBuilder {
     }
 
     /**
-     * 强制重建项目
+     * 构建项目
+     *
+     * @throws IOException
      */
-    public void forceRebuild() throws IOException {
-        log.info("Start force rebuild project ...");
-        cleanState();
-        build();
+    @Deprecated
+    public void build() throws IOException {
+        build(null);
     }
 
+    /**
+     * 强制重建项目
+     *
+     * @throws IOException
+     */
+    public void forceRebuild(@NonNull Map<String, Object> variables) throws IOException {
+        log.info("Start force rebuild project ...");
+        cleanState();
+        build(variables);
+    }
+
+    /**
+     * 强制重建项目
+     *
+     * @throws IOException
+     */
+    @Deprecated
+    public void forceRebuild() throws IOException {
+        forceRebuild(Collections.emptyMap());
+    }
 
     /**
      * 清理当前状态文件

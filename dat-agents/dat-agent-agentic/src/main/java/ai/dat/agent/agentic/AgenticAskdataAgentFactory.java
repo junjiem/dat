@@ -15,6 +15,7 @@ import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.FactoryUtil;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.mcp.client.transport.McpTransport;
+import lombok.NonNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -192,11 +193,12 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
     }
 
     @Override
-    public AskdataAgent create(ReadableConfig config,
+    public AskdataAgent create(@NonNull ReadableConfig config,
                                List<SemanticModel> semanticModels,
-                               ContentStore contentStore,
-                               List<ChatModelInstance> chatModelInstances,
-                               DatabaseAdapter databaseAdapter) {
+                               @NonNull ContentStore contentStore,
+                               @NonNull List<ChatModelInstance> chatModelInstances,
+                               @NonNull DatabaseAdapter databaseAdapter,
+                               Map<String, Object> variables) {
         Preconditions.checkArgument(!chatModelInstances.isEmpty(),
                 "chatModelInstances cannot be empty");
         FactoryUtil.validateFactoryOptions(this, config);
@@ -237,6 +239,9 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
 
         if (semanticModels != null && !semanticModels.isEmpty()) {
             builder.semanticModels(semanticModels);
+        }
+        if (variables != null && !variables.isEmpty()) {
+            builder.variables(variables);
         }
 
         config.getOptional(EMAIL_SENDER)

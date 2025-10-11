@@ -7,6 +7,9 @@ select CAST(STR_TO_DATE(cases.date_rep, '%d/%m/%Y') AS DATE) as report_date, -- 
 from covid_cases as cases
          join country_codes
               on cases.geo_id = country_codes.alpha_2code
+{% if start_date -%}
+where CAST(STR_TO_DATE(cases.date_rep, '%d/%m/%Y') AS DATE) > '{{ start_date }}'
+{% endif %}
 ;
 
 /*
@@ -19,5 +22,8 @@ select CAST(strptime(cases.date_rep, '%d/%m/%Y') AS DATE)    as report_date, -- 
 from covid_cases as cases
          join country_codes
               on cases.geo_id = country_codes.alpha_2code
+{% if start_date -%}
+where CAST(strptime(cases.date_rep, '%d/%m/%Y') AS DATE) > '{{ start_date }}'
+{% endif %}
 ;
 */

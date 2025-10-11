@@ -6,6 +6,9 @@ server:
 dat:
   server:
     project-path: "."
+    #variables:
+    #  key1: "value1"
+    #  key2: "value2"
 
 logging:
   level:

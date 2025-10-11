@@ -96,6 +96,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                                @NonNull StreamingChatModel defaultStreamingModel,
                                @NonNull ChatModel text2sqlModel,
                                List<SemanticModel> semanticModels,
+                               Map<String, Object> variables,
                                EmailSender emailSender,
                                Map<String, McpTransport> mcpTransports,
                                Integer maxToolsInvocations,
@@ -107,7 +108,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                                Boolean humanInTheLoopAskUser,
                                Boolean humanInTheLoopToolApproval,
                                Boolean humanInTheLoopToolNotApprovalAndFeedback) {
-        super(contentStore, databaseAdapter);
+        super(contentStore, databaseAdapter, variables);
         SemanticModelUtil.validateSemanticModels(semanticModels);
         this.defaultModel = defaultModel;
         this.defaultStreamingModel = defaultStreamingModel;

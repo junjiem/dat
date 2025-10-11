@@ -14,17 +14,17 @@ import ai.dat.core.semantic.data.Dimension;
 import ai.dat.core.semantic.data.Element;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.FactoryUtil;
+import ai.dat.core.utils.JinjaTemplateUtil;
 import ai.dat.core.utils.SemanticModelUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.calcite.sql.parser.SqlParseException;
 
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,12 +38,17 @@ import static ai.dat.core.factories.DatProjectFactory.*;
 @Slf4j
 class PreBuildValidator {
 
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
     private final DatProject project;
     private final Path projectPath;
+    private final Map<String, Object> variables;
 
-    public PreBuildValidator(DatProject project, Path projectPath) {
+    public PreBuildValidator(@NonNull DatProject project, @NonNull Path projectPath,
+                             Map<String, Object> variables) {
         this.project = project;
         this.projectPath = projectPath;
+        this.variables = Optional.ofNullable(variables).orElse(Collections.emptyMap());
     }
 
     public void validate() {
@@ -53,26 +58,42 @@ class PreBuildValidator {
         Set<ConfigOption<?>> optionalOptions = factory.projectOptionalOptions();
         FactoryUtil.validateFactoryOptions(requiredOptions, optionalOptions, config);
 
+        Map<String, List<SemanticModel>> semanticModels = ChangeSemanticModelsCacheUtil.get(project.getName())
+                .entrySet().stream().collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().stream()
+                                .map(m -> {
+                                    try {
+                                        SemanticModel semanticModel = JSON_MAPPER.readValue(
+                                                JSON_MAPPER.writeValueAsString(m), SemanticModel.class);
+                                        semanticModel.setModel(JinjaTemplateUtil.render(semanticModel.getModel(), variables));
+                                        return semanticModel;
+                                    } catch (JsonProcessingException ex) {
+                                        throw new RuntimeException(ex);
+                                    }
+                                })
+                                .collect(Collectors.toList()))
+                );
         DatabaseAdapter databaseAdapter = ProjectUtil.createDatabaseAdapter(project, projectPath);
 
-        validateModelSqls(project.getName(), databaseAdapter); // 校验模型SQL
-        validateSemanticModelSqls(project.getName(), databaseAdapter); // 校验语义模型SQL
+        validateModelSqls(semanticModels, databaseAdapter); // 校验模型SQL
+        validateSemanticModelSqls(semanticModels, databaseAdapter); // 校验语义模型SQL
 
         if (config.get(BUILDING_VERIFY_MDL_DIMENSIONS_ENUM_VALUES)) {
-            validateDimensionsEnumValues(project.getName(), databaseAdapter);
+            validateDimensionsEnumValues(semanticModels, databaseAdapter);
         }
         if (config.get(BUILDING_VERIFY_MDL_DATA_TYPES)) {
-            validateDataTypes(project.getName(), databaseAdapter);
+            validateDataTypes(semanticModels, databaseAdapter);
         }
         if (config.get(BUILDING_AUTO_COMPLETE_MDL_DATA_TYPES)) {
-            autoCompleteDataTypes(project.getName(), databaseAdapter);
+            autoCompleteDataTypes(semanticModels, databaseAdapter);
         }
     }
 
-    private static void validateModelSqls(@NonNull String projectId,
-                                          @NonNull DatabaseAdapter databaseAdapter) {
+    private void validateModelSqls(@NonNull Map<String, List<SemanticModel>> semanticModels,
+                                   @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
-                ChangeSemanticModelsCacheUtil.get(projectId).entrySet().stream()
+                semanticModels.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey,
                                 e -> e.getValue().stream()
                                         .map(model -> validateModelSql(databaseAdapter, model))
@@ -94,8 +115,8 @@ class PreBuildValidator {
         }
     }
 
-    private static ValidationMessage validateModelSql(@NonNull DatabaseAdapter databaseAdapter,
-                                                      @NonNull SemanticModel semanticModel) {
+    private ValidationMessage validateModelSql(@NonNull DatabaseAdapter databaseAdapter,
+                                               @NonNull SemanticModel semanticModel) {
         String sql = "SELECT 1 FROM (" + semanticModel.getModel() + ") AS __dat_model WHERE 1=0";
         try {
             databaseAdapter.executeQuery(sql);
@@ -106,10 +127,10 @@ class PreBuildValidator {
         return null;
     }
 
-    private static void validateSemanticModelSqls(@NonNull String projectId,
-                                                  @NonNull DatabaseAdapter databaseAdapter) {
+    private void validateSemanticModelSqls(@NonNull Map<String, List<SemanticModel>> semanticModels,
+                                           @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
-                ChangeSemanticModelsCacheUtil.get(projectId).entrySet().stream()
+                semanticModels.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey,
                                 e -> e.getValue().stream()
                                         .map(model -> validateSemanticModelSql(databaseAdapter, model))
@@ -131,14 +152,14 @@ class PreBuildValidator {
         }
     }
 
-    private static ValidationMessage validateSemanticModelSql(@NonNull DatabaseAdapter databaseAdapter,
-                                                              @NonNull SemanticModel semanticModel) {
+    private ValidationMessage validateSemanticModelSql(@NonNull DatabaseAdapter databaseAdapter,
+                                                       @NonNull SemanticModel semanticModel) {
         SemanticAdapter semanticAdapter = databaseAdapter.semanticAdapter();
         String semanticModelSql;
         try {
             semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
         } catch (SqlParseException e) {
-            log.warn("Semantic model sql parse exception", e);
+            log.warn("Semantic model sql parse exception, Model SQL: " + semanticModel.getModel(), e);
             return new ValidationMessage(semanticModel.getName(), e);
         }
         String sql = "SELECT 1 FROM (" + semanticModelSql + ") AS __dat_semantic_model WHERE 1=0";
@@ -151,10 +172,10 @@ class PreBuildValidator {
         return null;
     }
 
-    private static void validateDimensionsEnumValues(@NonNull String projectId,
-                                                     @NonNull DatabaseAdapter databaseAdapter) {
+    private void validateDimensionsEnumValues(@NonNull Map<String, List<SemanticModel>> semanticModels,
+                                              @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
-                ChangeSemanticModelsCacheUtil.get(projectId).entrySet().stream()
+                semanticModels.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey,
                                 e -> e.getValue().stream()
                                         .map(model -> validateDimensionEnumValues(databaseAdapter, model))
@@ -176,8 +197,8 @@ class PreBuildValidator {
         }
     }
 
-    private static ValidationMessage validateDimensionEnumValues(@NonNull DatabaseAdapter databaseAdapter,
-                                                                 @NonNull SemanticModel semanticModel) {
+    private ValidationMessage validateDimensionEnumValues(@NonNull DatabaseAdapter databaseAdapter,
+                                                          @NonNull SemanticModel semanticModel) {
         List<Dimension> dimensions = semanticModel.getDimensions().stream()
                 .filter(d -> d.getEnumValues() != null && !d.getEnumValues().isEmpty())
                 .toList();
@@ -189,7 +210,7 @@ class PreBuildValidator {
         try {
             semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
         } catch (SqlParseException e) {
-            log.warn("Semantic model sql parse exception", e);
+            log.warn("Semantic model sql parse exception, Model SQL: " + semanticModel.getModel(), e);
             return new ValidationMessage(semanticModel.getName(), e);
         }
         List<String> messages = dimensions.stream()
@@ -231,9 +252,9 @@ class PreBuildValidator {
                 new ValidationException(String.join("\n", messages)));
     }
 
-    private static long dimensionDistinctCount(Dimension dimension,
-                                               DatabaseAdapter databaseAdapter,
-                                               String semanticModelSql) throws SQLException {
+    private long dimensionDistinctCount(Dimension dimension,
+                                        DatabaseAdapter databaseAdapter,
+                                        String semanticModelSql) throws SQLException {
         String sql = "SELECT COUNT(DISTINCT " + dimension.getName() + ") AS distinct_count"
                 + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
         Object value = databaseAdapter.executeQuery(sql).get(0)
@@ -246,10 +267,10 @@ class PreBuildValidator {
         }
     }
 
-    private static void validateDataTypes(@NonNull String projectId,
-                                          @NonNull DatabaseAdapter databaseAdapter) {
+    private void validateDataTypes(@NonNull Map<String, List<SemanticModel>> semanticModels,
+                                   @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
-                ChangeSemanticModelsCacheUtil.get(projectId).entrySet().stream()
+                semanticModels.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey,
                                 e -> e.getValue().stream()
                                         .map(model -> validateDataTypes(databaseAdapter, model))
@@ -271,8 +292,8 @@ class PreBuildValidator {
         }
     }
 
-    private static ValidationMessage validateDataTypes(@NonNull DatabaseAdapter databaseAdapter,
-                                                       @NonNull SemanticModel semanticModel) {
+    private ValidationMessage validateDataTypes(@NonNull DatabaseAdapter databaseAdapter,
+                                                @NonNull SemanticModel semanticModel) {
         Map<String, String> dataTypes = Stream.of(
                         semanticModel.getEntities().stream(),
                         semanticModel.getDimensions().stream(),
@@ -290,7 +311,7 @@ class PreBuildValidator {
         try {
             semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
         } catch (SqlParseException e) {
-            log.warn("Semantic model sql parse exception", e);
+            log.warn("Semantic model sql parse exception, Model SQL: " + semanticModel.getModel(), e);
             return new ValidationMessage(semanticModel.getName(), e);
         }
         String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model WHERE 1=0";
@@ -314,10 +335,10 @@ class PreBuildValidator {
         return null;
     }
 
-    private static void autoCompleteDataTypes(@NonNull String projectId,
-                                              @NonNull DatabaseAdapter databaseAdapter) {
+    private void autoCompleteDataTypes(@NonNull Map<String, List<SemanticModel>> semanticModels,
+                                       @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
-                ChangeSemanticModelsCacheUtil.get(projectId).entrySet().stream()
+                semanticModels.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey,
                                 e -> e.getValue().stream()
                                         .map(model -> autoCompleteDataTypes(databaseAdapter, model))
@@ -339,8 +360,8 @@ class PreBuildValidator {
         }
     }
 
-    private static ValidationMessage autoCompleteDataTypes(@NonNull DatabaseAdapter databaseAdapter,
-                                                           @NonNull SemanticModel semanticModel) {
+    private ValidationMessage autoCompleteDataTypes(@NonNull DatabaseAdapter databaseAdapter,
+                                                    @NonNull SemanticModel semanticModel) {
         List<Element> elements = Stream.of(
                         semanticModel.getEntities().stream(),
                         semanticModel.getDimensions().stream(),
@@ -358,7 +379,7 @@ class PreBuildValidator {
         try {
             semanticModelSql = SemanticModelUtil.semanticModelSql(semanticAdapter, semanticModel);
         } catch (SqlParseException e) {
-            log.warn("Semantic model sql parse exception", e);
+            log.warn("Semantic model sql parse exception, Model SQL: " + semanticModel.getModel(), e);
             return new ValidationMessage(semanticModel.getName(), e);
         }
         String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model WHERE 1=0";

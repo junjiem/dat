@@ -5,8 +5,6 @@ import ai.dat.core.agent.AskdataAgent;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
-import ai.dat.core.data.DatModel;
-import ai.dat.core.data.DatSchema;
 import ai.dat.core.data.project.AgentConfig;
 import ai.dat.core.data.project.DatProject;
 import ai.dat.core.semantic.data.SemanticModel;
@@ -29,7 +27,8 @@ public class ProjectRunner {
 
     private final AskdataAgent agent;
 
-    public ProjectRunner(@NonNull Path projectPath, @NonNull String agentName) {
+    public ProjectRunner(@NonNull Path projectPath, @NonNull String agentName,
+                         Map<String, Object> variables) {
         DatProject project = ProjectUtil.loadProject(projectPath);
         Map<String, AgentConfig> agentMap = project.getAgents().stream()
                 .collect(Collectors.toMap(AgentConfig::getName, o -> o));
@@ -37,13 +36,18 @@ public class ProjectRunner {
                 "The project doesn't exist agent: " + agentName);
         ProjectBuilder builder = new ProjectBuilder(projectPath, project);
         try {
-            builder.build();
+            builder.build(variables);
         } catch (IOException e) {
             throw new RuntimeException("The project build failed", e);
         }
         ContentStore contentStore = ProjectUtil.createContentStore(project, projectPath);
-        List<SemanticModel> allSemanticModels = contentStore.allMdls();
-        this.agent = ProjectUtil.createAskdataAgent(project, agentName, allSemanticModels, projectPath);
+        List<SemanticModel> semanticModels = contentStore.allMdls();
+        this.agent = ProjectUtil.createAskdataAgent(project, agentName, semanticModels, projectPath, variables);
+    }
+
+    @Deprecated
+    public ProjectRunner(@NonNull Path projectPath, @NonNull String agentName) {
+        this(projectPath, agentName, null);
     }
 
     public StreamAction ask(@NonNull String question) {

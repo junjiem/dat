@@ -22,6 +22,7 @@ import picocli.CommandLine.Option;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -68,16 +69,22 @@ public class RunCommand implements Callable<Integer> {
             defaultValue = "default")
     private String agentName;
 
+    @Option(names = {"-var", "--variable"},
+            arity = "1..*",
+            description = "Dynamic variable, key-value pairs in format key=value")
+    private Map<String, Object> variables;
+
     @Override
     public Integer call() {
         Path path = Paths.get(projectPath).toAbsolutePath();
         log.info("Run project: {}, Agent: {}", path, agentName);
         System.out.println("📁 Project path: " + path);
         System.out.println("🤖 Agent: " + agentName);
+        System.out.println("🛠️ Dynamic variables: " + variables);
         System.out.println("🆔 Conversation ID: " + CONVERSATION_ID);
         Path historyFilePath = path.resolve(ProjectUtil.DAT_DIR_NAME + "/" + RUN_COMMAND_HISTORY);
         try (InputProcessor processor = new InputProcessor(historyFilePath)) {
-            ProjectRunner runner = new ProjectRunner(path, agentName);
+            ProjectRunner runner = new ProjectRunner(path, agentName, variables);
             printHelp(); // 打印帮助信息
             int round = 1;
             while (true) {

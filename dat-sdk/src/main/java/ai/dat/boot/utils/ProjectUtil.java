@@ -31,10 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -112,16 +109,12 @@ public class ProjectUtil {
         }
     }
 
-    public static ContentStore createContentStore(@NonNull DatProject project) {
-        return createContentStore(project, null);
-    }
-
     public static ContentStore createContentStore(@NonNull Path projectPath) {
         DatProject project = loadProject(projectPath);
         return createContentStore(project, projectPath);
     }
 
-    public static ContentStore createContentStore(@NonNull DatProject project, Path projectPath) {
+    public static ContentStore createContentStore(@NonNull DatProject project, @NonNull Path projectPath) {
         FactoryDescriptor contentStoreFactoryDescriptor = FactoryDescriptor.from(
                 project.getContentStore().getProvider(), project.getContentStore().getConfiguration());
         FactoryDescriptor embeddingFactoryDescriptor = FactoryDescriptor.from(
@@ -139,10 +132,9 @@ public class ProjectUtil {
                 embeddingStoreFactoryDescriptor, chatModelFactoryDescriptors);
     }
 
-    private static void adjustEmbeddingStoreConfig(@NonNull DatProject project, Path projectPath) {
+    private static void adjustEmbeddingStoreConfig(@NonNull DatProject project, @NonNull Path projectPath) {
         EmbeddingStoreConfig embeddingStore = project.getEmbeddingStore();
-        if (projectPath != null
-                && DuckDBEmbeddingStoreFactory.IDENTIFIER.equals(embeddingStore.getProvider())
+        if (DuckDBEmbeddingStoreFactory.IDENTIFIER.equals(embeddingStore.getProvider())
                 && embeddingStore.getConfiguration().getOptional(DuckDBEmbeddingStoreFactory.FILE_PATH).isEmpty()) {
             Path datDirPath = projectPath.resolve(DAT_DIR_NAME);
             if (!Files.exists(datDirPath)) {
@@ -161,30 +153,26 @@ public class ProjectUtil {
         }
     }
 
-    private static FactoryDescriptor createEmbeddingStoreFactoryDescriptor(
-            @NonNull DatProject project, Path projectPath) {
+    private static FactoryDescriptor createEmbeddingStoreFactoryDescriptor(@NonNull DatProject project,
+                                                                           @NonNull Path projectPath) {
         adjustEmbeddingStoreConfig(project, projectPath); // 调整Embedding存储配置
         return FactoryDescriptor.from(project.getEmbeddingStore().getProvider(),
                 project.getEmbeddingStore().getConfiguration());
     }
 
-    public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
-                                                  @NonNull String agentName,
-                                                  @NonNull List<SemanticModel> semanticModels) {
-        return createAskdataAgent(project, agentName, semanticModels, null);
-    }
-
     public static AskdataAgent createAskdataAgent(@NonNull Path projectPath,
                                                   @NonNull String agentName,
-                                                  @NonNull List<SemanticModel> semanticModels) {
+                                                  @NonNull List<SemanticModel> semanticModels,
+                                                  Map<String, Object> variables) {
         DatProject project = loadProject(projectPath);
-        return createAskdataAgent(project, agentName, semanticModels, projectPath);
+        return createAskdataAgent(project, agentName, semanticModels, projectPath, variables);
     }
 
     public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
                                                   @NonNull String agentName,
                                                   @NonNull List<SemanticModel> semanticModels,
-                                                  Path projectPath) {
+                                                  @NonNull Path projectPath,
+                                                  Map<String, Object> variables) {
         Preconditions.checkArgument(!agentName.isBlank(),
                 "agentName cannot be empty");
         Map<String, AgentConfig> agentMap = project.getAgents().stream()
@@ -213,21 +201,32 @@ public class ProjectUtil {
 
         return FactoryUtil.createAskdataAgent(agentFactoryDescriptor,
                 agentSemanticModels, createContentStore(project, projectPath),
-                chatModelFactoryDescriptors, databaseAdapterFactoryDescriptor);
+                chatModelFactoryDescriptors, databaseAdapterFactoryDescriptor,
+                variables);
     }
 
-    public static DatabaseAdapter createDatabaseAdapter(@NonNull DatProject project) {
-        return createDatabaseAdapter(project, null);
+    @Deprecated
+    public static AskdataAgent createAskdataAgent(@NonNull Path projectPath,
+                                                  @NonNull String agentName,
+                                                  @NonNull List<SemanticModel> semanticModels) {
+        return createAskdataAgent(projectPath, agentName, semanticModels, null);
     }
 
-    public static DatabaseAdapter createDatabaseAdapter(@NonNull DatProject project, Path projectPath) {
+    @Deprecated
+    public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
+                                                  @NonNull String agentName,
+                                                  @NonNull List<SemanticModel> semanticModels,
+                                                  @NonNull Path projectPath) {
+        return createAskdataAgent(project, agentName, semanticModels, projectPath, null);
+    }
+
+    public static DatabaseAdapter createDatabaseAdapter(@NonNull DatProject project, @NonNull Path projectPath) {
         return FactoryUtil.createDatabaseAdapter(createDatabaseAdapterFactoryDescriptor(project, projectPath));
     }
 
-    private static void adjustDatabaseConfig(@NonNull DatProject project, Path projectPath) {
+    private static void adjustDatabaseConfig(@NonNull DatProject project, @NonNull Path projectPath) {
         DatabaseConfig databaseConfig = project.getDb();
-        if (projectPath != null
-                && DuckDBDatabaseAdapterFactory.IDENTIFIER.equals(databaseConfig.getProvider())
+        if (DuckDBDatabaseAdapterFactory.IDENTIFIER.equals(databaseConfig.getProvider())
                 && databaseConfig.getConfiguration().getOptional(DuckDBDatabaseAdapterFactory.FILE_PATH).isEmpty()) {
             Path datDirPath = projectPath.resolve(DAT_DIR_NAME);
             if (!Files.exists(datDirPath)) {
@@ -245,13 +244,14 @@ public class ProjectUtil {
         }
     }
 
-    private static FactoryDescriptor createDatabaseAdapterFactoryDescriptor(
-            @NonNull DatProject project, Path projectPath) {
+    private static FactoryDescriptor createDatabaseAdapterFactoryDescriptor(@NonNull DatProject project,
+                                                                            @NonNull Path projectPath) {
         adjustDatabaseConfig(project, projectPath); // 调整数据库配置
         return FactoryDescriptor.from(project.getDb().getProvider(), project.getDb().getConfiguration());
     }
 
-    private static void validateAgents(List<AgentConfig> agents, List<SemanticModel> semanticModels) {
+    private static void validateAgents(@NonNull List<AgentConfig> agents,
+                                       @NonNull List<SemanticModel> semanticModels) {
         Set<String> existingNames = semanticModels.stream()
                 .map(SemanticModel::getName)
                 .collect(Collectors.toSet());
@@ -275,7 +275,7 @@ public class ProjectUtil {
         }
     }
 
-    public static DatProject loadProject(Path projectPath) {
+    public static DatProject loadProject(@NonNull Path projectPath) {
         Path filePath = findProjectConfigFile(projectPath);
         if (filePath == null) {
             throw new RuntimeException("The project configuration file not found "
@@ -291,7 +291,7 @@ public class ProjectUtil {
         }
     }
 
-    private static Path findProjectConfigFile(Path projectPath) {
+    private static Path findProjectConfigFile(@NonNull Path projectPath) {
         Path projectYaml = projectPath.resolve(PROJECT_CONFIG_FILE_NAME_YAML);
         Path projectYml = projectPath.resolve(PROJECT_CONFIG_FILE_NAME_YML);
         if (Files.exists(projectYaml)) {
@@ -302,14 +302,14 @@ public class ProjectUtil {
         return null;
     }
 
-    public static Map<Path, DatSchema> loadAllSchema(Path dirPath) {
+    public static Map<Path, DatSchema> loadAllSchema(@NonNull Path dirPath) {
         Map<Path, DatSchema> schemas = scanYamlFiles(dirPath).stream()
                 .collect(Collectors.toMap(p -> p, p -> loadSchema(p, dirPath)));
         validateYamlFiles(dirPath, schemas);
         return schemas;
     }
 
-    public static DatSchema loadSchema(Path filePath, Path dirPath) {
+    public static DatSchema loadSchema(@NonNull Path filePath, @NonNull Path dirPath) {
         try {
             String content = Files.readString(filePath);
             return DatSchemaUtil.datSchema(content);
@@ -319,7 +319,7 @@ public class ProjectUtil {
         }
     }
 
-    private static void validateYamlFiles(Path dirPath, Map<Path, DatSchema> schemas) {
+    private static void validateYamlFiles(@NonNull Path dirPath, @NonNull Map<Path, DatSchema> schemas) {
         Map<String, List<Path>> nameToPaths;
         Map<String, List<Path>> duplicates;
         // 校验种子名称是否重复
@@ -370,14 +370,14 @@ public class ProjectUtil {
         }
     }
 
-    public static Map<Path, DatModel> loadAllModel(Path modelsPath) {
+    public static Map<Path, DatModel> loadAllModel(@NonNull Path modelsPath) {
         Map<Path, DatModel> models = scanSqlFiles(modelsPath).stream()
                 .collect(Collectors.toMap(p -> p, p -> loadModel(p, modelsPath)));
         validateModelFiles(modelsPath, models);
         return models;
     }
 
-    public static DatModel loadModel(Path filePath, Path modelsPath) {
+    public static DatModel loadModel(@NonNull Path filePath, @NonNull Path modelsPath) {
         try {
             String content = Files.readString(filePath);
             String name = FileUtil.fileNameWithoutSuffix(filePath.getFileName().toString());
@@ -388,7 +388,7 @@ public class ProjectUtil {
         }
     }
 
-    private static void validateModelFiles(Path modelsPath, Map<Path, DatModel> models) {
+    private static void validateModelFiles(@NonNull Path modelsPath, @NonNull Map<Path, DatModel> models) {
         Map<String, List<Path>> nameToPaths = models.entrySet().stream()
                 .collect(Collectors.groupingBy(
                         e -> e.getValue().getName(),
@@ -411,14 +411,14 @@ public class ProjectUtil {
         }
     }
 
-    public static Map<Path, DatSeed> loadAllSeed(Path seedsPath) {
+    public static Map<Path, DatSeed> loadAllSeed(@NonNull Path seedsPath) {
         Map<Path, DatSeed> seeds = scanCsvFiles(seedsPath).stream()
                 .collect(Collectors.toMap(p -> p, p -> loadSeed(p, seedsPath)));
         validateSeedFiles(seedsPath, seeds);
         return seeds;
     }
 
-    private static DatSeed loadSeed(Path filePath, Path seedsPath) {
+    private static DatSeed loadSeed(@NonNull Path filePath, @NonNull Path seedsPath) {
         try {
             String content = Files.readString(filePath);
             String name = FileUtil.fileNameWithoutSuffix(filePath.getFileName().toString());
@@ -429,7 +429,7 @@ public class ProjectUtil {
         }
     }
 
-    private static void validateSeedFiles(Path seedsPath, Map<Path, DatSeed> seeds) {
+    private static void validateSeedFiles(@NonNull Path seedsPath, @NonNull Map<Path, DatSeed> seeds) {
         Map<String, List<Path>> nameToPaths = seeds.entrySet().stream()
                 .collect(Collectors.groupingBy(
                         e -> e.getValue().getName(),
@@ -452,7 +452,7 @@ public class ProjectUtil {
         }
     }
 
-    public static List<Path> scanYamlFiles(Path dirPath) {
+    public static List<Path> scanYamlFiles(@NonNull Path dirPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(dirPath),
                 "There is no '" + dirPath.getFileName() + "' directory in the project root directory");
@@ -473,11 +473,11 @@ public class ProjectUtil {
         return files;
     }
 
-    private static boolean isYamlFile(String fileName) {
+    private static boolean isYamlFile(@NonNull String fileName) {
         return YAML_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }
 
-    public static List<Path> scanSqlFiles(Path modelsPath) {
+    public static List<Path> scanSqlFiles(@NonNull Path modelsPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(modelsPath),
                 "There is no 'models' directory in the project root directory");
@@ -498,11 +498,11 @@ public class ProjectUtil {
         return files;
     }
 
-    private static boolean isSqlFile(String fileName) {
+    private static boolean isSqlFile(@NonNull String fileName) {
         return SQL_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }
 
-    private static List<Path> scanCsvFiles(Path seedsPath) {
+    private static List<Path> scanCsvFiles(@NonNull Path seedsPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(seedsPath),
                 "There is no 'seeds' directory in the project root directory");
@@ -523,7 +523,7 @@ public class ProjectUtil {
         return files;
     }
 
-    private static boolean isCsvFile(String fileName) {
+    private static boolean isCsvFile(@NonNull String fileName) {
         return CSV_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }
 }

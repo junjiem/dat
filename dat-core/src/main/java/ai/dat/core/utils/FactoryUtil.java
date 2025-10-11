@@ -185,13 +185,15 @@ public final class FactoryUtil {
      * @param contentStore
      * @param chatModelFactoryDescriptors
      * @param databaseAdapterFactoryDescriptor
+     * @param variables
      * @return
      */
     public static AskdataAgent createAskdataAgent(@NonNull FactoryDescriptor factoryDescriptor,
                                                   List<SemanticModel> semanticModels,
                                                   @NonNull ContentStore contentStore,
                                                   @NonNull Map<String, FactoryDescriptor> chatModelFactoryDescriptors,
-                                                  @NonNull FactoryDescriptor databaseAdapterFactoryDescriptor) {
+                                                  @NonNull FactoryDescriptor databaseAdapterFactoryDescriptor,
+                                                  Map<String, Object> variables) {
         AskdataAgentFactory factory = AskdataAgentFactoryManager.getFactory(factoryDescriptor.getIdentifier());
         DatabaseAdapter databaseAdapter = createDatabaseAdapter(databaseAdapterFactoryDescriptor);
         List<ChatModelInstance> chatModelInstances = chatModelFactoryDescriptors.entrySet().stream()
@@ -200,12 +202,32 @@ public final class FactoryUtil {
                 .collect(Collectors.toList());
         try {
             return factory.create(factoryDescriptor.getConfig(), semanticModels, contentStore,
-                    chatModelInstances, databaseAdapter);
+                    chatModelInstances, databaseAdapter, variables);
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to create askdata agent, factory identifier: '%s'.",
                             factoryDescriptor.getIdentifier()), e);
         }
+    }
+
+    /**
+     * Create Askdata Agent
+     *
+     * @param factoryDescriptor
+     * @param semanticModels
+     * @param contentStore
+     * @param chatModelFactoryDescriptors
+     * @param databaseAdapterFactoryDescriptor
+     * @return
+     */
+    @Deprecated
+    public static AskdataAgent createAskdataAgent(@NonNull FactoryDescriptor factoryDescriptor,
+                                                  List<SemanticModel> semanticModels,
+                                                  @NonNull ContentStore contentStore,
+                                                  @NonNull Map<String, FactoryDescriptor> chatModelFactoryDescriptors,
+                                                  @NonNull FactoryDescriptor databaseAdapterFactoryDescriptor) {
+        return createAskdataAgent(factoryDescriptor, semanticModels, contentStore,
+                chatModelFactoryDescriptors, databaseAdapterFactoryDescriptor, Collections.emptyMap());
     }
 
     /**

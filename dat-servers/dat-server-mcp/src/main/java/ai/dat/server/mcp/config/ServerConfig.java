@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @Component
@@ -16,10 +19,18 @@ import java.nio.file.Paths;
 @Slf4j
 public class ServerConfig implements InitializingBean {
 
+    // 项目路径
     private String projectPath = ".";
+
+    // 动态参数
+    private Map<String, Object> variables = Collections.emptyMap();
 
     public Path getAbsoluteProjectPath() {
         return Paths.get(projectPath).toAbsolutePath();
+    }
+
+    public Map<String, Object> getVariables() {
+        return new HashMap<>(variables);
     }
 
     /**
@@ -30,6 +41,7 @@ public class ServerConfig implements InitializingBean {
     public void postConstruct() {
         log.info("=== ServerConfig PostConstruct ===");
         log.info("  - Project path: {}", projectPath);
+        log.info("  - Variables: {}", variables);
         log.info("================================");
     }
 
@@ -40,12 +52,19 @@ public class ServerConfig implements InitializingBean {
     public void afterPropertiesSet() {
         log.info("=== ServerConfig AfterPropertiesSet ===");
         log.info("  - Project path: {}", projectPath);
+        log.info("  - Variables: {}", variables);
         log.info("=====================================");
 
         // 验证项目路径
         if (projectPath == null || projectPath.trim().isEmpty()) {
             log.warn("Project path is empty, using current directory");
             projectPath = ".";
+        }
+
+        // 验证动态参数
+        if (variables == null || variables.isEmpty()) {
+            log.warn("Variables is null, using empty map");
+            variables = Collections.emptyMap();
         }
     }
 }

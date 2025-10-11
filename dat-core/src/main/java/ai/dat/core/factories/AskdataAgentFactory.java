@@ -7,7 +7,9 @@ import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.factories.data.ChatModelInstance;
 import ai.dat.core.semantic.data.SemanticModel;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 问数Agent工厂接口类
@@ -22,5 +24,16 @@ public interface AskdataAgentFactory extends Factory {
                         List<SemanticModel> semanticModels,
                         ContentStore contentStore,
                         List<ChatModelInstance> chatModelInstances,
-                        DatabaseAdapter databaseAdapter);
+                        DatabaseAdapter databaseAdapter,
+                        Map<String, Object> variables);
+
+    @Deprecated
+    default AskdataAgent create(ReadableConfig config,
+                                List<SemanticModel> semanticModels,
+                                ContentStore contentStore,
+                                List<ChatModelInstance> chatModelInstances,
+                                DatabaseAdapter databaseAdapter) {
+        return create(config, semanticModels, contentStore, chatModelInstances, databaseAdapter,
+                Collections.emptyMap());
+    }
 }
