@@ -119,7 +119,8 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
                                List<SemanticModel> semanticModels,
                                @NonNull ContentStore contentStore,
                                @NonNull List<ChatModelInstance> chatModelInstances,
-                               @NonNull DatabaseAdapter databaseAdapter) {
+                               @NonNull DatabaseAdapter databaseAdapter,
+                               Map<String, Object> variables) {
         Preconditions.checkArgument(!chatModelInstances.isEmpty(),
                 "chatModelInstances cannot be empty");
         FactoryUtil.validateFactoryOptions(this, config);
@@ -159,6 +160,9 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
 
         if (semanticModels != null && !semanticModels.isEmpty()) {
             builder.semanticModels(semanticModels);
+        }
+        if (variables != null && !variables.isEmpty()) {
+            builder.variables(variables);
         }
 
         return builder.build();

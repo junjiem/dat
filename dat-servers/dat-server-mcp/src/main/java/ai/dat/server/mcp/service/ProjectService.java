@@ -26,19 +26,17 @@ public class ProjectService {
 
     private static final Map<String, ProjectRunner> projectRunnerPool = new HashMap<>();
 
-    private ProjectRunner getProjectRunner(@NonNull String conversationId, String agentName) {
+    private ProjectRunner getProjectRunner(@NonNull String conversationId, @NonNull String agentName) {
         ProjectRunner projectRunner = projectRunnerPool.get(conversationId);
         if (projectRunner == null) {
-            Preconditions.checkArgument(agentName != null && !agentName.isEmpty(),
-                    "The agent name cannot be empty");
             Path projectPath = serverConfig.getAbsoluteProjectPath();
+            Map<String, Object> variables = serverConfig.getVariables();
             try {
-                projectRunner = new ProjectRunner(projectPath, agentName);
+                projectRunner = new ProjectRunner(projectPath, agentName, variables);
                 projectRunnerPool.put(conversationId, projectRunner);
             } catch (Exception e) {
                 log.error("Failed to initialize project runner", e);
-                throw new RuntimeException("Failed to initialize project runner: "
-                        + e.getMessage(), e);
+                throw new RuntimeException("Failed to initialize project runner: " + e.getMessage(), e);
             }
         }
         return projectRunner;

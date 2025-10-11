@@ -12,6 +12,9 @@ import picocli.CommandLine.Option;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -44,15 +47,21 @@ public class McpServerCommand implements Callable<Integer> {
             defaultValue = "8081")
     private int port;
 
+    @Option(names = {"-var", "--variable"},
+            arity = "1..*",
+            description = "Dynamic variable, key-value pairs in format key=value")
+    private Map<String, Object> variables;
+
     @Override
     public Integer call() {
         try {
             Path path = Paths.get(projectPath).toAbsolutePath();
             log.info("Start MCP server the project: {}", path);
             System.out.println("📁 Project path: " + path);
+            System.out.println("🛠️ Dynamic variables: " + variables);
 
             ProjectBuilder builder = new ProjectBuilder(path);
-            builder.build();
+            builder.build(variables);
 
             System.out.println();
             System.out.println("🚀 Starting DAT MCP Server...");
@@ -63,12 +72,16 @@ public class McpServerCommand implements Callable<Integer> {
             SpringApplication app = new SpringApplication(Application.class);
             app.setBannerMode(Banner.Mode.OFF);
 
-            String[] args = {
-                    "--spring.profiles.active=mcp",
-                    "--server.port=" + port,
-                    "--server.address=" + host,
-                    "--dat.server.project-path=" + projectPath
-            };
+            List<String> argsList = new ArrayList<>() {{
+                add("--spring.profiles.active=mcp");
+                add("--server.port=" + port);
+                add("--server.address=" + host);
+                add("--dat.server.project-path=" + projectPath);
+            }};
+            if (variables != null && !variables.isEmpty()) {
+                variables.forEach((k, v) -> argsList.add("--dat.server.variables." + k + "=" + v));
+            }
+            String[] args = argsList.toArray(new String[0]);
 
             // 直接运行Spring Boot应用，它会阻塞当前线程
             try {

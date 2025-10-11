@@ -4,6 +4,7 @@ import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.contentstore.ContentStore;
 import lombok.NonNull;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +21,13 @@ public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
     private CompletableFuture<String> userResponseFuture = new CompletableFuture<>();
     private CompletableFuture<Boolean> userApprovalFuture = new CompletableFuture<>();
 
+    public AbstractHitlAskdataAgent(@NonNull ContentStore contentStore,
+                                    @NonNull DatabaseAdapter databaseAdapter,
+                                    Map<String, Object> variables) {
+        super(contentStore, databaseAdapter);
+    }
+
+    @Deprecated
     public AbstractHitlAskdataAgent(@NonNull ContentStore contentStore,
                                     @NonNull DatabaseAdapter databaseAdapter) {
         super(contentStore, databaseAdapter);

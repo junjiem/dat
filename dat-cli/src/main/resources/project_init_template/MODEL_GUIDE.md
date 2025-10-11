@@ -75,6 +75,28 @@ semantic_models:
     model: ref('country_covid_cases')
 ```
 
+> **注：** 数据模型（models目录下.sql后缀）文件中支持 [Jinja](https://jinja.palletsprojects.com) 模板语言，在执行`build`、`run`、`server`命令时可以指定需要传入的变量。
+>
+> 示例：models/**/country_covid_cases.sql
+> ```sql
+> select CAST(STR_TO_DATE(cases.date_rep, '%d/%m/%Y') AS DATE) as report_date, -- 报告日期
+>        cases.cases                                           as cases, -- 病例数
+>        cases.deaths                                          as deaths, -- 死亡数
+>        country_codes.country                                 as country, -- 国家
+>        cases.geo_id                                          as geo_id -- 地理标识
+> from covid_cases as cases
+>          join country_codes
+>               on cases.geo_id = country_codes.alpha_2code
+> {% if start_date -%}
+> where CAST(STR_TO_DATE(cases.date_rep, '%d/%m/%Y') AS DATE) > '{{ start_date }}'
+> {% endif %}
+> ;
+> ```
+>
+> ```shell
+> dat run -var start_date="2020-01-01" -var key1=value1 -var k2=v2
+> ```
+
 #### 方式二：设置查询SQL语句
 
 ```yaml
@@ -82,6 +104,29 @@ semantic_models:
   - name: covid_cases
     model: select * from ...
 ```
+
+> **注：** 模型SQL中支持 [Jinja](https://jinja.palletsprojects.com) 模板语言，在执行`build`、`run`、`server`命令时可以指定需要传入的变量。
+> 
+> 示例：
+> 
+> ```yaml
+> semantic_models:
+>  - name: covid_cases
+>    model: |
+>      select
+>        CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
+>        cases,
+>        deaths,
+>        geo_id
+>      from covid_cases
+>      {% if start_date -%}
+>      where CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) > '{{ start_date }}'
+>      {% endif %}
+> ```
+> 
+> ```shell
+> dat run -var start_date="2020-01-01" -var key1=value1 -var k2=v2
+> ```
 
 #### 方式三：配置库表名
 

@@ -76,6 +76,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                 @NonNull ChatModel defaultModel,
                                 @NonNull StreamingChatModel defaultStreamingModel,
                                 List<SemanticModel> semanticModels,
+                                Map<String, Object> variables,
                                 String language,
                                 Boolean intentClassification,
                                 ChatModel intentClassificationModel,
@@ -85,7 +86,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                 String textToSqlRules,
                                 Integer maxHistories,
                                 String instruction) {
-        super(contentStore, databaseAdapter);
+        super(contentStore, databaseAdapter, variables);
         SemanticModelUtil.validateSemanticModels(semanticModels);
         this.semanticModels = semanticModels;
         this.language = Optional.ofNullable(language).orElse("English");
@@ -203,7 +204,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
 
         // 转换和执行
         try {
-            List<Map<String, Object>> results = executeQuery(semanticSql, semanticModels);
+            executeQuery(semanticSql, semanticModels);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

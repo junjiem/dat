@@ -21,24 +21,22 @@ Now you can edit the `dat_project.yaml` file to describe your Project, here is t
 - embedding_store (object, optional): Embedding store configuration
   - provider (string, required): Embedding store factory identifier
   - configuration (object): Configuration options
-- llms (list[object]): Large language models configurations
+- llms (list\[object\]): Large language models configurations
   - name (string, required): LLM's name
   - provider (string, required): Large language model factory identifier
   - configuration (object): Configuration options
 - content_store (object, optional): Content store configuration
   - provider (string, required): Content store factory identifier
-  - llm (string, required): You need to fill in correct llm
   - configuration (object): Configuration options
-- agents (list[object]): Ask data agents configurations
+- agents (list\[object\]): Ask data agents configurations
   - name (string, required): Agent's name
   - description (string, optional): Agent's description
   - provider (string, required): Askdata agent factory identifier
-  - llm (string, required): You need to fill in correct llm
-  - semantic_models (list[string], optional): You need to fill in correct semantic model names
+  - semantic_models (list\[string\], optional): You need to fill in correct semantic model names
   - configuration (object): Configuration options
 
 
-> **Note:** For more project configurations, please refer to `dat_project.yaml.template`.
+> **Note:** For more project configurations, please refer to [`dat_project.yaml.template`](./dat_project.yaml.template).
 
 
 ### Models

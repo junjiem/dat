@@ -6,20 +6,25 @@ semantic_models:
     model: |
       -- 这是一个 MySQL 方言的示例查询SQL
       select
-      CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
-      cases,
-      deaths,
-      geo_id
+        CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
+        cases,
+        deaths,
+        geo_id
       from covid_cases
-      
+      {% if start_date -%}
+      where CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) > '{{ start_date }}'
+      {% endif %}
       /*
       -- 这是一个 DuckDB 方言的示例查询SQL
       select
-      CAST(strptime(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
-      cases,
-      deaths,
-      geo_id
+        CAST(strptime(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
+        cases,
+        deaths,
+        geo_id
       from covid_cases
+      {% if start_date -%}
+      where CAST(strptime(date_rep, '%d/%m/%Y') AS DATE) > '{{ start_date }}'
+      {% endif %}
       */
     defaults:
       agg_time_dimension: report_date

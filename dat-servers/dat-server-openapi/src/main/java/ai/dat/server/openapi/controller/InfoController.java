@@ -93,6 +93,7 @@ public class InfoController {
         );
         return ResponseEntity.ok(Map.of(
                 "project", projectMap,
+                "variables", serverConfig.getVariables(),
                 "timestamp", LocalDateTime.now()
         ));
     }
@@ -111,6 +112,7 @@ public class InfoController {
                 )).collect(Collectors.toList());
         return ResponseEntity.ok(Map.of(
                 "agents", agentList,
+                "variables", serverConfig.getVariables(),
                 "timestamp", LocalDateTime.now()
         ));
     }
