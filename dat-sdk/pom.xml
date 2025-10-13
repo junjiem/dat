@@ -44,76 +44,6 @@
             <version>1.16.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-storer-weaviate</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-storer-pgvector</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-embedder-openai</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-embedder-ollama</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-embedder-jina</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-llm-openai</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-llm-anthropic</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-llm-ollama</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-llm-gemini</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-adapter-mysql</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-adapter-oracle</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-adapter-postgresql</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-agent-agentic</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -129,39 +59,5 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <!-- 完整版 (默认) -->
-        <profile>
-            <id>jar:full</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <dependencies>
-                <!-- 在完整版中显式包含这些依赖 -->
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-storer-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-adapter-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <!-- 精简版 -->
-        <profile>
-            <id>jar:lite</id>
-            <!-- 精简版不添加额外的依赖 -->
-        </profile>
-    </profiles>
 
 </project>

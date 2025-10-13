@@ -2,7 +2,6 @@ package ai.dat.core.data.project;
 
 import ai.dat.core.configuration.Configuration;
 import ai.dat.core.configuration.ReadableConfig;
-import ai.dat.llm.openai.OpneAiChatModelFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;

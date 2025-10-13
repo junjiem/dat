@@ -14,7 +14,7 @@
     <properties>
         <project.finalName>${project.artifactId}-${project.version}</project.finalName>
         <main.class>ai.dat.cli.DatCli</main.class>
-        <finalName.ending></finalName.ending>
+        <finalName.suffix></finalName.suffix>
     </properties>
 
     <dependencies>
@@ -23,12 +23,6 @@
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-sdk</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!-- Picocli CLI Framework -->
@@ -59,14 +53,89 @@
             <version>${logback.version}</version>
         </dependency>
 
-        <!-- DAT OpenAPI Server-->
+        <!-- DAT Embedding Store -->
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-storer-weaviate</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-storer-pgvector</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- DAT Embedding Model -->
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-embedder-openai</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-embedder-ollama</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-embedder-jina</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- DAT Chat Model -->
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-llm-openai</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-llm-anthropic</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-llm-ollama</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-llm-gemini</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- DAT Database Adapter -->
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-adapter-mysql</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-adapter-oracle</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-adapter-postgresql</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- DAT Askdata Agent -->
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-agent-agentic</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- DAT OpenAPI Server -->
         <dependency>
             <groupId>ai.dat</groupId>
             <artifactId>dat-server-openapi</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- DAT MCP Server-->
+        <!-- DAT MCP Server -->
         <dependency>
             <groupId>ai.dat</groupId>
             <artifactId>dat-server-mcp</artifactId>
@@ -162,7 +231,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <project.finalName>${project.artifactId}-${project.version}${finalName.ending}</project.finalName>
+                <project.finalName>${project.artifactId}-${project.version}${finalName.suffix}</project.finalName>
             </properties>
             <build>
                 <plugins>
@@ -204,7 +273,7 @@
         <profile>
             <id>pkg:bundled</id>
             <properties>
-                <project.finalName>${project.artifactId}-${project.version}${finalName.ending}</project.finalName>
+                <project.finalName>${project.artifactId}-${project.version}${finalName.suffix}</project.finalName>
                 <project.package.finalName>${project.finalName}-bundled</project.package.finalName>
                 <jlink.jre.outputDirectory>${project.build.directory}/jlink-jre</jlink.jre.outputDirectory>
             </properties>
@@ -292,8 +361,25 @@
                 </os>
             </activation>
             <properties>
-                <finalName.ending>-windows-amd64</finalName.ending>
+                <finalName.suffix>-windows-amd64</finalName.suffix>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-storer-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-adapter-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -318,19 +404,19 @@
                                             </excludes>
                                         </filter>
                                         <filter>
-                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
-                                            <excludes>
-                                                <exclude>libduckdb_java.so_linux_amd64</exclude>
-                                                <exclude>libduckdb_java.so_linux_arm64</exclude>
-                                                <exclude>libduckdb_java.so_osx_universal</exclude>
-                                            </excludes>
-                                        </filter>
-                                        <filter>
                                             <artifact>ai.djl.huggingface:tokenizers</artifact>
                                             <excludes>
                                                 <exclude>native/lib/linux-aarch64/cpu/**</exclude>
                                                 <exclude>native/lib/linux-x86_64/cpu/**</exclude>
                                                 <exclude>native/lib/osx-aarch64/cpu/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
+                                            <excludes>
+                                                <exclude>libduckdb_java.so_linux_amd64</exclude>
+                                                <exclude>libduckdb_java.so_linux_arm64</exclude>
+                                                <exclude>libduckdb_java.so_osx_universal</exclude>
                                             </excludes>
                                         </filter>
                                     </filters>
@@ -352,8 +438,25 @@
                 </os>
             </activation>
             <properties>
-                <finalName.ending>-linux-amd64</finalName.ending>
+                <finalName.suffix>-linux-amd64</finalName.suffix>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-storer-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-adapter-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -378,19 +481,19 @@
                                             </excludes>
                                         </filter>
                                         <filter>
-                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
-                                            <excludes>
-                                                <exclude>libduckdb_java.so_linux_arm64</exclude>
-                                                <exclude>libduckdb_java.so_osx_universal</exclude>
-                                                <exclude>libduckdb_java.so_windows_amd64</exclude>
-                                            </excludes>
-                                        </filter>
-                                        <filter>
                                             <artifact>ai.djl.huggingface:tokenizers</artifact>
                                             <excludes>
                                                 <exclude>native/lib/linux-aarch64/cpu/**</exclude>
                                                 <exclude>native/lib/osx-aarch64/cpu/**</exclude>
                                                 <exclude>native/lib/win-x86_64/cpu/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
+                                            <excludes>
+                                                <exclude>libduckdb_java.so_linux_arm64</exclude>
+                                                <exclude>libduckdb_java.so_osx_universal</exclude>
+                                                <exclude>libduckdb_java.so_windows_amd64</exclude>
                                             </excludes>
                                         </filter>
                                     </filters>
@@ -412,8 +515,25 @@
                 </os>
             </activation>
             <properties>
-                <finalName.ending>-linux-arm64</finalName.ending>
+                <finalName.suffix>-linux-arm64</finalName.suffix>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-storer-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-adapter-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -438,19 +558,19 @@
                                             </excludes>
                                         </filter>
                                         <filter>
-                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
-                                            <excludes>
-                                                <exclude>libduckdb_java.so_linux_amd64</exclude>
-                                                <exclude>libduckdb_java.so_osx_universal</exclude>
-                                                <exclude>libduckdb_java.so_windows_amd64</exclude>
-                                            </excludes>
-                                        </filter>
-                                        <filter>
                                             <artifact>ai.djl.huggingface:tokenizers</artifact>
                                             <excludes>
                                                 <exclude>native/lib/linux-x86_64/cpu/**</exclude>
                                                 <exclude>native/lib/osx-aarch64/cpu/**</exclude>
                                                 <exclude>native/lib/win-x86_64/cpu/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
+                                            <excludes>
+                                                <exclude>libduckdb_java.so_linux_amd64</exclude>
+                                                <exclude>libduckdb_java.so_osx_universal</exclude>
+                                                <exclude>libduckdb_java.so_windows_amd64</exclude>
                                             </excludes>
                                         </filter>
                                     </filters>
@@ -472,8 +592,25 @@
                 </os>
             </activation>
             <properties>
-                <finalName.ending>-macos-arm64</finalName.ending>
+                <finalName.suffix>-macos-arm64</finalName.suffix>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-storer-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-adapter-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -498,19 +635,19 @@
                                             </excludes>
                                         </filter>
                                         <filter>
-                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
-                                            <excludes>
-                                                <exclude>libduckdb_java.so_linux_arm64</exclude>
-                                                <exclude>libduckdb_java.so_linux_amd64</exclude>
-                                                <exclude>libduckdb_java.so_windows_amd64</exclude>
-                                            </excludes>
-                                        </filter>
-                                        <filter>
                                             <artifact>ai.djl.huggingface:tokenizers</artifact>
                                             <excludes>
                                                 <exclude>native/lib/linux-aarch64/cpu/**</exclude>
                                                 <exclude>native/lib/linux-x86_64/cpu/**</exclude>
                                                 <exclude>native/lib/win-x86_64/cpu/**</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>org.duckdb:duckdb_jdbc</artifact>
+                                            <excludes>
+                                                <exclude>libduckdb_java.so_linux_arm64</exclude>
+                                                <exclude>libduckdb_java.so_linux_amd64</exclude>
+                                                <exclude>libduckdb_java.so_windows_amd64</exclude>
                                             </excludes>
                                         </filter>
                                     </filters>
@@ -520,6 +657,15 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <!-- Any OS Lite -->
+        <profile>
+            <id>os:any-os-lite</id>
+            <properties>
+                <finalName.suffix>-lite</finalName.suffix>
+            </properties>
+            <!-- 支持任意操作系统的精简版，不添加额外的依赖 -->
         </profile>
 
     </profiles>
