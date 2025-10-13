@@ -23,7 +23,7 @@ public class OpenAiStreamingToChatModel implements ChatModel {
     public ChatResponse chat(ChatRequest chatRequest) {
         ChatRequest finalChatRequest = ChatRequest.builder()
                 .messages(chatRequest.messages())
-                .parameters(defaultRequestParameters().overrideWith(chatRequest.parameters()))
+                .parameters(streamingChatModel.defaultRequestParameters().overrideWith(chatRequest.parameters()))
                 .build();
 
         CompletableFuture<ChatResponse> futureResponse = new CompletableFuture<>();
