@@ -13,7 +13,6 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/junjiem/dat/blob/main/LICENSE)
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/projects/jdk/17/)
 [![Maven](https://img.shields.io/badge/Maven-3.6+-green.svg)](https://maven.apache.org/)
-[![LangChain4j](https://img.shields.io/badge/LangChain4j-1.3.0-purple.svg)](https://github.com/langchain4j/langchain4j)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/junjiem/dat)
 
 ![DAT](./images/dat.png)
@@ -100,7 +99,7 @@ DAT致力于解决企业数据查询的最后一公里问题——让业务人�
 
 ```bash
 # 下载最新版本
-wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.4.0.tar.gz
+wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.5.0.tar.gz
 
 # 解压并配置环境变量
 tar -xzf dat-cli-x.x.x.tar.gz
