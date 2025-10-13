@@ -1,0 +1,6 @@
+# Ensure that .sh scripts use LF as line separator,
+# even if they are checked out to Windows(NTFS) file-system.
+# These .sh scripts will be run from the Unix and macOS.
+# If they appear to be CRLF style, Bash will fail to execute them.
+
+*.sh      text eol=lf
