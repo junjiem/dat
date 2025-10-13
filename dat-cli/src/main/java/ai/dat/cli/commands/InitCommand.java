@@ -1,11 +1,13 @@
 package ai.dat.cli.commands;
 
 import ai.dat.boot.utils.ProjectUtil;
-import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.processor.InputProcessor;
+import ai.dat.cli.provider.VersionProvider;
 import ai.dat.cli.utils.AnsiUtil;
 import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigurationUtils;
+import ai.dat.core.data.project.EmbeddingConfig;
+import ai.dat.core.data.project.EmbeddingStoreConfig;
 import ai.dat.core.factories.*;
 import ai.dat.core.utils.FactoryUtil;
 import ai.dat.core.utils.JinjaTemplateUtil;
@@ -120,6 +122,12 @@ public class InitCommand implements Callable<Integer> {
                 projectBasicConfiguration();
                 if (projectConfig.isBootMode()) { // 进入配置引导模式
                     projectDbConfiguration();
+                    if (!EmbeddingModelFactoryManager.isSupported(EmbeddingConfig.DEFAULT_PROVIDER)) {
+                        projectEmbeddingConfiguration();
+                    }
+                    if (!EmbeddingStoreFactoryManager.isSupported(EmbeddingStoreConfig.DEFAULT_PROVIDER)) {
+                        projectEmbeddingStoreConfiguration();
+                    }
                     projectLlmConfiguration();
                 }
             } catch (EndOfFileException e) {
@@ -187,20 +195,6 @@ public class InitCommand implements Callable<Integer> {
         return PROJECT_NAME_PATTERN.matcher(str.trim()).matches();
     }
 
-    private String selectDbProvider() {
-        System.out.println("===== DB provider selection =====");
-        String provider = selectProvider(DatabaseAdapterFactoryManager.getSupports());
-        projectConfig.getDbConfig().setProvider(provider);
-        return provider;
-    }
-
-    private String selectLlmProvider() {
-        System.out.println("===== LLM provider selection =====");
-        String provider = selectProvider(ChatModelFactoryManager.getSupports());
-        projectConfig.getLlmConfig().setProvider(provider);
-        return provider;
-    }
-
     private String selectProvider(Set<String> supports) {
         List<String> providers = new ArrayList<>(supports);
         Map<String, String> providerMap = IntStream.range(0, providers.size()).boxed()
@@ -228,29 +222,69 @@ public class InitCommand implements Callable<Integer> {
 
     private void projectDbConfiguration() {
         System.out.println("---------- Data source configuration ----------");
-        String provider = selectDbProvider();
+        System.out.println("===== DB provider selection =====");
+        String provider = selectProvider(DatabaseAdapterFactoryManager.getSupports());
+        ElementConfig config = new ElementConfig();
+        config.setProvider(provider);
         DatabaseAdapterFactory factory = DatabaseAdapterFactoryManager.getFactory(provider);
         Set<ConfigOption<?>> requiredOptions = factory.requiredOptions();
         if (!requiredOptions.isEmpty()) {
             System.out.println(AnsiUtil.string(
                     "===== DB provider '@|fg(cyan) " + provider + "|@' configuration ====="));
-            projectConfig.getDbConfig().setConfigs(toConfigs(requiredOptions));
+            config.setConfigs(inputConfigs(requiredOptions));
         }
+        projectConfig.setDbConfig(config);
     }
 
     private void projectLlmConfiguration() {
         System.out.println("---------- LLM configuration ----------");
-        String provider = selectLlmProvider();
+        System.out.println("===== LLM provider selection =====");
+        String provider = selectProvider(ChatModelFactoryManager.getSupports());
+        ElementConfig config = new ElementConfig();
+        config.setProvider(provider);
         ChatModelFactory factory = ChatModelFactoryManager.getFactory(provider);
         Set<ConfigOption<?>> requiredOptions = factory.requiredOptions();
         if (!requiredOptions.isEmpty()) {
             System.out.println(AnsiUtil.string(
                     "===== LLM provider '@|fg(cyan) " + provider + "|@' configuration ====="));
-            projectConfig.getLlmConfig().setConfigs(toConfigs(requiredOptions));
+            config.setConfigs(inputConfigs(requiredOptions));
         }
+        projectConfig.setLlmConfig(config);
     }
 
-    private Map<String, Object> toConfigs(Set<ConfigOption<?>> requiredOptions) {
+    private void projectEmbeddingConfiguration() {
+        System.out.println("---------- Embedding configuration ----------");
+        System.out.println("===== Embedding provider selection =====");
+        String provider = selectProvider(EmbeddingModelFactoryManager.getSupports());
+        ElementConfig config = new ElementConfig();
+        config.setProvider(provider);
+        EmbeddingModelFactory factory = EmbeddingModelFactoryManager.getFactory(provider);
+        Set<ConfigOption<?>> requiredOptions = factory.requiredOptions();
+        if (!requiredOptions.isEmpty()) {
+            System.out.println(AnsiUtil.string(
+                    "===== Embedding provider '@|fg(cyan) " + provider + "|@' configuration ====="));
+            config.setConfigs(inputConfigs(requiredOptions));
+        }
+        projectConfig.setEmbeddingConfig(config);
+    }
+
+    private void projectEmbeddingStoreConfiguration() {
+        System.out.println("---------- Embedding Store configuration ----------");
+        System.out.println("===== Embedding Store provider selection =====");
+        String provider = selectProvider(EmbeddingStoreFactoryManager.getSupports());
+        ElementConfig config = new ElementConfig();
+        config.setProvider(provider);
+        EmbeddingStoreFactory factory = EmbeddingStoreFactoryManager.getFactory(provider);
+        Set<ConfigOption<?>> requiredOptions = factory.requiredOptions();
+        if (!requiredOptions.isEmpty()) {
+            System.out.println(AnsiUtil.string(
+                    "===== Embedding Store provider '@|fg(cyan) " + provider + "|@' configuration ====="));
+            config.setConfigs(inputConfigs(requiredOptions));
+        }
+        projectConfig.setEmbeddingStoreConfig(config);
+    }
+
+    private Map<String, Object> inputConfigs(Set<ConfigOption<?>> requiredOptions) {
         Map<String, Object> configs = new HashMap<>();
         requiredOptions.forEach(option -> {
             while (true) {
@@ -267,9 +301,11 @@ public class InitCommand implements Callable<Integer> {
                 String input;
                 if (hasDefaultValue) {
                     input = PROCESSOR.readLine(prompt, defaultValue);
-                } else if (FactoryUtil.isSensitive(key)) {
-                    input = PROCESSOR.readPassword(prompt);
-                } else {
+                }
+//                else if (FactoryUtil.isSensitive(key)) {
+//                    input = PROCESSOR.readPassword(prompt);
+//                }
+                else {
                     input = PROCESSOR.readLine(prompt);
                 }
                 if (input.isEmpty()) continue;
@@ -436,14 +472,16 @@ public class InitCommand implements Callable<Integer> {
         private String name;
         private String description;
         private boolean bootMode = false;
-        private ElementConfig dbConfig = new ElementConfig();
-        private ElementConfig llmConfig = new ElementConfig();
+        private ElementConfig dbConfig;
+        private ElementConfig embeddingConfig;
+        private ElementConfig embeddingStoreConfig;
+        private ElementConfig llmConfig;
     }
 
     @Getter
     @Setter
     static class ElementConfig {
         private String provider;
-        private Map<String, Object> configs = new HashMap<>();
+        private Map<String, Object> configs;
     }
 }

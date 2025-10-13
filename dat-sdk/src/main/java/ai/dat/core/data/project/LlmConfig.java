@@ -15,11 +15,14 @@ import java.util.Map;
 @Getter
 public class LlmConfig {
 
-    @NonNull
-    private String name = "default";
+    public static final String DEFAULT_NAME = "default";
+    public static final String DEFAULT_PROVIDER = "openai";
 
     @NonNull
-    private String provider = OpneAiChatModelFactory.IDENTIFIER;
+    private String name = DEFAULT_NAME;
+
+    @NonNull
+    private String provider = DEFAULT_PROVIDER;
 
     @JsonIgnore
     @NonNull

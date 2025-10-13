@@ -1,6 +1,5 @@
 package ai.dat.boot.utils;
 
-import ai.dat.adapter.duckdb.DuckDBDatabaseAdapterFactory;
 import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.agent.AskdataAgent;
 import ai.dat.core.contentstore.ContentStore;
@@ -16,7 +15,6 @@ import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.DatSchemaUtil;
 import ai.dat.core.utils.FactoryUtil;
 import ai.dat.core.utils.SemanticModelUtil;
-import ai.dat.storer.duckdb.DuckDBEmbeddingStoreFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -31,7 +29,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -134,8 +135,8 @@ public class ProjectUtil {
 
     private static void adjustEmbeddingStoreConfig(@NonNull DatProject project, @NonNull Path projectPath) {
         EmbeddingStoreConfig embeddingStore = project.getEmbeddingStore();
-        if (DuckDBEmbeddingStoreFactory.IDENTIFIER.equals(embeddingStore.getProvider())
-                && embeddingStore.getConfiguration().getOptional(DuckDBEmbeddingStoreFactory.FILE_PATH).isEmpty()) {
+        if (EmbeddingStoreConfig.DUCKDB_PROVIDER.equals(embeddingStore.getProvider())
+                && embeddingStore.getConfiguration().getOptional(EmbeddingStoreConfig.DUCKDB_FILE_PATH).isEmpty()) {
             Path datDirPath = projectPath.resolve(DAT_DIR_NAME);
             if (!Files.exists(datDirPath)) {
                 try {
@@ -148,7 +149,7 @@ public class ProjectUtil {
             String storeFileName = DUCKDB_EMBEDDING_STORE_FILE_PREFIX + contentStoreFingerprint(project);
             Path filePath = projectPath.resolve(DAT_DIR_NAME + File.separator + storeFileName);
             embeddingStore.setConfiguration(
-                    Map.of(DuckDBEmbeddingStoreFactory.FILE_PATH.key(), filePath.toAbsolutePath().toString())
+                    Map.of(EmbeddingStoreConfig.DUCKDB_FILE_PATH.key(), filePath.toAbsolutePath().toString())
             );
         }
     }
@@ -226,8 +227,8 @@ public class ProjectUtil {
 
     private static void adjustDatabaseConfig(@NonNull DatProject project, @NonNull Path projectPath) {
         DatabaseConfig databaseConfig = project.getDb();
-        if (DuckDBDatabaseAdapterFactory.IDENTIFIER.equals(databaseConfig.getProvider())
-                && databaseConfig.getConfiguration().getOptional(DuckDBDatabaseAdapterFactory.FILE_PATH).isEmpty()) {
+        if (DatabaseConfig.DUCKDB_PROVIDER.equals(databaseConfig.getProvider())
+                && databaseConfig.getConfiguration().getOptional(DatabaseConfig.DUCKDB_FILE_PATH).isEmpty()) {
             Path datDirPath = projectPath.resolve(DAT_DIR_NAME);
             if (!Files.exists(datDirPath)) {
                 try {
@@ -239,7 +240,7 @@ public class ProjectUtil {
             }
             Path filePath = projectPath.resolve(DAT_DIR_NAME + File.separator + DUCKDB_DATABASE_FILE_NAME);
             databaseConfig.setConfiguration(
-                    Map.of(DuckDBDatabaseAdapterFactory.FILE_PATH.key(), filePath.toAbsolutePath().toString())
+                    Map.of(DatabaseConfig.DUCKDB_FILE_PATH.key(), filePath.toAbsolutePath().toString())
             );
         }
     }

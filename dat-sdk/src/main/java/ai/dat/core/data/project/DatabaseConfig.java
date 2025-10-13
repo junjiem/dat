@@ -1,6 +1,7 @@
 package ai.dat.core.data.project;
 
-import ai.dat.adapter.postgresql.PostgreSqlDatabaseAdapterFactory;
+import ai.dat.core.configuration.ConfigOption;
+import ai.dat.core.configuration.ConfigOptions;
 import ai.dat.core.configuration.Configuration;
 import ai.dat.core.configuration.ReadableConfig;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -15,8 +16,17 @@ import java.util.Map;
 @Getter
 public class DatabaseConfig {
 
+    public static final String DUCKDB_PROVIDER = "duckdb";
+
+    public static final ConfigOption<String> DUCKDB_FILE_PATH =
+            ConfigOptions.key("file-path")
+                    .stringType()
+                    .noDefaultValue();
+
+    public static final String DEFAULT_PROVIDER = "postgresql";
+
     @NonNull
-    private String provider = PostgreSqlDatabaseAdapterFactory.IDENTIFIER;
+    private String provider = DEFAULT_PROVIDER;
 
     @JsonIgnore
     @NonNull

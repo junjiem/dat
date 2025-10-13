@@ -1,17 +1,13 @@
 package ai.dat.core.factories;
 
-import ai.dat.adapter.postgresql.PostgreSqlDatabaseAdapterFactory;
 import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ConfigOptions;
 import ai.dat.core.configuration.ReadableConfig;
-import ai.dat.core.data.project.DatProject;
+import ai.dat.core.data.project.*;
 import ai.dat.core.exception.ValidationException;
 import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.JinjaTemplateUtil;
 import ai.dat.core.utils.YamlTemplateUtil;
-import ai.dat.embedder.inprocess.BgeSmallZhV15QuantizedEmbeddingModelFactory;
-import ai.dat.llm.openai.OpneAiChatModelFactory;
-import ai.dat.storer.duckdb.DuckDBEmbeddingStoreFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.networknt.schema.ValidationMessage;
 import lombok.Getter;
@@ -32,7 +28,6 @@ public class DatProjectFactory {
 
     private static final YAMLMapper YAML_MAPPER = new YAMLMapper();
 
-    private static final String DEFAULT_NAME = "default";
     private static final String LLM_NAME_PREFIX = "llm_";
     private static final String AGENT_NAME_PREFIX = "agent_";
 
@@ -109,7 +104,7 @@ public class DatProjectFactory {
         List<SingleItemTemplate> dbs = DatabaseAdapterFactoryManager.getSupports().stream()
                 .map(identifier -> {
                     DatabaseAdapterFactory factory = DatabaseAdapterFactoryManager.getFactory(identifier);
-                    boolean display = PostgreSqlDatabaseAdapterFactory.IDENTIFIER.equals(identifier);
+                    boolean display = DatabaseConfig.DEFAULT_PROVIDER.equals(identifier);
                     return new SingleItemTemplate(identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
@@ -119,8 +114,8 @@ public class DatProjectFactory {
         List<MultipleItemTemplate> llms = ChatModelFactoryManager.getSupports().stream()
                 .map(identifier -> {
                     ChatModelFactory factory = ChatModelFactoryManager.getFactory(identifier);
-                    boolean display = OpneAiChatModelFactory.IDENTIFIER.equals(identifier);
-                    String name = display ? DEFAULT_NAME : LLM_NAME_PREFIX + (llmNameAtomic.getAndIncrement());
+                    boolean display = LlmConfig.DEFAULT_PROVIDER.equals(identifier);
+                    String name = display ? LlmConfig.DEFAULT_NAME : LLM_NAME_PREFIX + (llmNameAtomic.getAndIncrement());
                     return new MultipleItemTemplate(name, identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
@@ -129,17 +124,16 @@ public class DatProjectFactory {
         List<SingleItemTemplate> embeddings = EmbeddingModelFactoryManager.getSupports().stream()
                 .map(identifier -> {
                     EmbeddingModelFactory factory = EmbeddingModelFactoryManager.getFactory(identifier);
-                    boolean display = BgeSmallZhV15QuantizedEmbeddingModelFactory.IDENTIFIER.equals(identifier);
+                    boolean display = EmbeddingConfig.DEFAULT_PROVIDER.equals(identifier);
                     return new SingleItemTemplate(identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
                 .collect(Collectors.toList());
 
         List<SingleItemTemplate> embeddingStores = EmbeddingStoreFactoryManager.getSupports().stream()
-                .filter(identifier -> !InMemoryEmbeddingStoreFactory.IDENTIFIER.equals(identifier))
                 .map(identifier -> {
                     EmbeddingStoreFactory factory = EmbeddingStoreFactoryManager.getFactory(identifier);
-                    boolean display = DuckDBEmbeddingStoreFactory.IDENTIFIER.equals(identifier);
+                    boolean display = EmbeddingStoreConfig.DEFAULT_PROVIDER.equals(identifier);
                     return new SingleItemTemplate(identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
@@ -148,7 +142,7 @@ public class DatProjectFactory {
         List<SingleItemTemplate> contentStores = ContentStoreFactoryManager.getSupports().stream()
                 .map(identifier -> {
                     ContentStoreFactory factory = ContentStoreFactoryManager.getFactory(identifier);
-                    boolean display = DefaultContentStoreFactory.IDENTIFIER.equals(identifier);
+                    boolean display = ContentStoreConfig.DEFAULT_PROVIDER.equals(identifier);
                     return new SingleItemTemplate(identifier, display, getConfiguration(factory));
                 })
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
@@ -158,8 +152,8 @@ public class DatProjectFactory {
         List<MultipleItemContainCommentTemplate> agents = AskdataAgentFactoryManager.getSupports().stream()
                 .map(identifier -> {
                     AskdataAgentFactory factory = AskdataAgentFactoryManager.getFactory(identifier);
-                    boolean display = DefaultAskdataAgentFactory.IDENTIFIER.equals(identifier);
-                    String name = display ? DEFAULT_NAME : AGENT_NAME_PREFIX + (agentNameAtomic.getAndIncrement());
+                    boolean display = AgentConfig.DEFAULT_PROVIDER.equals(identifier);
+                    String name = display ? AgentConfig.DEFAULT_NAME : AGENT_NAME_PREFIX + (agentNameAtomic.getAndIncrement());
                     return new MultipleItemContainCommentTemplate(factory.factoryDescription(), name,
                             identifier, display, getConfiguration(factory));
                 })
