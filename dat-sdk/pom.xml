@@ -39,10 +39,11 @@
         </dependency>
 
         <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-storer-duckdb</artifactId>
-            <version>${project.version}</version>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.16.0</version>
         </dependency>
+
         <dependency>
             <groupId>ai.dat</groupId>
             <artifactId>dat-storer-weaviate</artifactId>
@@ -54,16 +55,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!--        <dependency>-->
-        <!--            <groupId>ai.dat</groupId>-->
-        <!--            <artifactId>dat-embedder-bge-small-zh-v15</artifactId>-->
-        <!--            <version>${project.version}</version>-->
-        <!--        </dependency>-->
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>ai.dat</groupId>
             <artifactId>dat-embedder-openai</artifactId>
@@ -116,11 +107,6 @@
             <artifactId>dat-adapter-postgresql</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>ai.dat</groupId>
-            <artifactId>dat-adapter-duckdb</artifactId>
-            <version>${project.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>ai.dat</groupId>
@@ -143,5 +129,39 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!-- 完整版 (默认) -->
+        <profile>
+            <id>jar:full</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <!-- 在完整版中显式包含这些依赖 -->
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-storer-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-adapter-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- 精简版 -->
+        <profile>
+            <id>jar:lite</id>
+            <!-- 精简版不添加额外的依赖 -->
+        </profile>
+    </profiles>
 
 </project>

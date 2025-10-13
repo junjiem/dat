@@ -2,7 +2,6 @@ package ai.dat.core.data.project;
 
 import ai.dat.core.configuration.Configuration;
 import ai.dat.core.configuration.ReadableConfig;
-import ai.dat.embedder.inprocess.BgeSmallZhV15QuantizedEmbeddingModelFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -15,8 +14,10 @@ import java.util.Map;
 @Getter
 public class EmbeddingConfig {
 
+    public static final String DEFAULT_PROVIDER = "bge-small-zh-v15-q";
+
     @NonNull
-    private String provider = BgeSmallZhV15QuantizedEmbeddingModelFactory.IDENTIFIER;
+    private String provider = DEFAULT_PROVIDER;
 
     @JsonIgnore
     @NonNull

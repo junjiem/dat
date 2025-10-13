@@ -2,7 +2,6 @@ package ai.dat.core.data.project;
 
 import ai.dat.core.configuration.Configuration;
 import ai.dat.core.configuration.ReadableConfig;
-import ai.dat.core.factories.DefaultAskdataAgentFactory;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -17,13 +16,16 @@ import java.util.Map;
 @Getter
 public class AgentConfig {
 
+    public static final String DEFAULT_NAME = "default";
+    public static final String DEFAULT_PROVIDER = "default";
+
     @NonNull
-    private String name = "default";
+    private String name = DEFAULT_NAME;
 
     private String description;
 
     @NonNull
-    private String provider = DefaultAskdataAgentFactory.IDENTIFIER;
+    private String provider = DEFAULT_PROVIDER;
 
     @NonNull
     @JsonProperty("semantic_models")

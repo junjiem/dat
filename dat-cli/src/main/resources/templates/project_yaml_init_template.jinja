@@ -15,8 +15,32 @@ db:
     {{ "  configuration:" }}
     {% for key, value in project.dbConfig.configs.items() -%}
         {{ "    " ~ key ~ ": " ~ value }}
-    {% endfor %}
+    {% endfor -%}
 {% endif %}
+
+{% if project.embeddingConfig -%}
+embedding:
+{{ "  provider: " ~ project.embeddingConfig.provider }}
+{% if project.embeddingConfig.configs -%}
+    {{ "  configuration:" }}
+    {% for key, value in project.embeddingConfig.configs.items() -%}
+        {{ "    " ~ key ~ ": " ~ value }}
+    {% endfor -%}
+{% endif %}
+
+{% endif -%}
+
+{% if project.embeddingStoreConfig -%}
+embedding_store:
+{{ "  provider: " ~ project.embeddingStoreConfig.provider }}
+{% if project.embeddingStoreConfig.configs -%}
+    {{ "  configuration:" }}
+    {% for key, value in project.embeddingStoreConfig.configs.items() -%}
+        {{ "    " ~ key ~ ": " ~ value }}
+    {% endfor -%}
+{% endif %}
+
+{% endif -%}
 
 llms:
 {{ "  - name: default" }}
@@ -25,7 +49,7 @@ llms:
     {{ "    configuration:" }}
     {% for key, value in project.llmConfig.configs.items() -%}
         {{ "      " ~ key ~ ": " ~ value }}
-    {% endfor %}
+    {% endfor -%}
 {% endif %}
 
 agents:
