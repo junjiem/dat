@@ -34,7 +34,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -196,28 +195,11 @@ public class InitCommand implements Callable<Integer> {
     }
 
     private String selectProvider(Set<String> supports) {
-        List<String> providers = new ArrayList<>(supports);
-        Map<String, String> providerMap = IntStream.range(0, providers.size()).boxed()
-                .collect(Collectors.toMap(i -> (i + 1) + "",
-                        providers::get, (o1, o2) -> o1, LinkedHashMap::new));
-        providerMap.forEach((k, v) -> System.out.printf(AnsiUtil.string(
-                "@|fg(cyan) %s|@. %s%n"), k, v));
-        String hint = providers.size() > 1
-                ? " @|fg(green) (1-" + providers.size() + ")|@ [User input]"
-                : " [press Enter to use the 1]";
-        while (true) {
-            String choice = PROCESSOR.readLine(AnsiUtil.string(
-                    "@|fg(yellow) Please select a provider|@" + hint + ": "));
-            if (choice.isEmpty() && providers.size() == 1) {
-                choice = "1";
-            }
-            String provider = providerMap.get(choice);
-            if (provider != null) {
-                System.out.println(AnsiUtil.string("@|fg(green) ✓ Selected: " + provider + "|@"));
-                return provider;
-            }
-            System.out.println(AnsiUtil.string("@|fg(red) ⚠️ Invalid choice, please try again|@"));
-        }
+        List<String> options = supports.stream().toList();
+        String selected = PROCESSOR.readSelect(AnsiUtil.string(
+                "@|fg(yellow) Please select a provider:|@"), options);
+        System.out.println(AnsiUtil.string("@|fg(green) ✓ Selected: " + selected + "|@"));
+        return selected;
     }
 
     private void projectDbConfiguration() {
@@ -289,27 +271,42 @@ public class InitCommand implements Callable<Integer> {
         requiredOptions.forEach(option -> {
             while (true) {
                 String key = option.key();
+                Class<?> clazz = option.getClazz();
                 boolean hasDefaultValue = option.hasDefaultValue();
-                String hint = " [User input]";
-                String defaultValue = null;
-                if (hasDefaultValue) {
-                    defaultValue = ConfigurationUtils.convertValue(option.defaultValue(), String.class);
-                    hint = " @|fg(green) (Default: " + defaultValue + ")|@" +
-                            " [User input/press Enter to use the default value]";
-                }
-                String prompt = AnsiUtil.string("@|fg(cyan) " + key + "|@" + hint + ": ");
+
                 String input;
-                if (hasDefaultValue) {
-                    input = PROCESSOR.readLine(prompt, defaultValue);
+                if (clazz.isEnum()) {
+                    List<String> options = Arrays.stream((Enum<?>[]) clazz.getEnumConstants())
+                            .map(Enum::name).collect(Collectors.toList());
+                    String prompt = AnsiUtil.string("@|fg(cyan) Please select a " + key + ":|@");
+                    if (hasDefaultValue) {
+                        String defaultValue = ConfigurationUtils.convertValue(option.defaultValue(), String.class);
+                        input = PROCESSOR.readSelect(prompt, options, defaultValue, false);
+                    } else {
+                        input = PROCESSOR.readSelect(prompt, options, false);
+                    }
+                } else {
+                    String hint = " [User input]";
+                    String defaultValue = null;
+                    if (hasDefaultValue) {
+                        defaultValue = ConfigurationUtils.convertValue(option.defaultValue(), String.class);
+                        hint = " @|fg(green) (Default: " + defaultValue + ")|@" +
+                                " [User input/press Enter to use the default value]";
+                    }
+                    String prompt = AnsiUtil.string("@|fg(cyan) " + key + "|@" + hint + ": ");
+                    if (hasDefaultValue) {
+                        input = PROCESSOR.readLine(prompt, defaultValue);
+                    } else if (FactoryUtil.isSensitive(key)) {
+                        input = PROCESSOR.readPassword(prompt);
+                    } else {
+                        input = PROCESSOR.readLine(prompt);
+                    }
                 }
-//                else if (FactoryUtil.isSensitive(key)) {
-//                    input = PROCESSOR.readPassword(prompt);
-//                }
-                else {
-                    input = PROCESSOR.readLine(prompt);
-                }
+
                 if (input.isEmpty()) continue;
-                configs.put(option.key(), input);
+
+                Object value = ConfigurationUtils.convertValue(input, clazz);
+                configs.put(option.key(), value);
                 return;
             }
         });
