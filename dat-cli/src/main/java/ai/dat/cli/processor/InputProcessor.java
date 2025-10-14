@@ -4,7 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.history.DefaultHistory;
+import org.jline.terminal.Attributes;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.InfoCmp;
@@ -12,6 +14,8 @@ import org.jline.utils.InfoCmp;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -246,6 +250,110 @@ public class InputProcessor implements AutoCloseable {
      */
     public String readPassword(String prompt) {
         return lineReader.readLine(prompt, '*');
+    }
+
+    /**
+     * 读取列表选择
+     *
+     * @param prompt
+     * @param options
+     * @return
+     */
+    public String readSelect(String prompt, List<String> options) {
+        return readSelect(prompt, options, null, true);
+    }
+
+    /**
+     * 读取列表选择，支持默认选项
+     *
+     * @param prompt
+     * @param options
+     * @param defaultOption
+     * @return
+     */
+    public String readSelect(String prompt, List<String> options, String defaultOption) {
+        return readSelect(prompt, options, defaultOption, true);
+    }
+
+    /**
+     * 读取列表选择
+     *
+     * @param prompt
+     * @param options
+     * @param displayIndex
+     * @return
+     */
+    public String readSelect(String prompt, List<String> options, boolean displayIndex) {
+        return readSelect(prompt, options, null, displayIndex);
+    }
+
+    /**
+     * 读取列表选择
+     *
+     * @param prompt
+     * @param options
+     * @param defaultOption
+     * @param displayIndex
+     * @return
+     */
+    public String readSelect(String prompt, List<String> options, String defaultOption, Boolean displayIndex) {
+        boolean display = Optional.ofNullable(displayIndex).orElse(false);
+
+        int currentSelection = 0;
+        boolean selected = false;
+        int defaultIndex = -1;
+
+        if (StringUtils.isNotBlank(defaultOption)) {
+            defaultIndex = options.indexOf(defaultOption);
+            if (defaultIndex >= 0) {
+                currentSelection = defaultIndex;
+            }
+        }
+
+        try {
+            // 保存原始终端属性
+            Attributes originalAttributes = terminal.enterRawMode();
+            terminal.enterRawMode();
+
+            try {
+                while (!selected) {
+                    // 清屏并显示选项
+                    terminal.writer().println("\033[2J\033[H"); // 清屏指令
+                    terminal.writer().println(prompt);
+
+                    for (int i = 0; i < options.size(); i++) {
+                        String option = (display ? (i + 1) + ". " : "") + options.get(i);
+                        if (defaultIndex >= 0 && i == defaultIndex) {
+                            option += " (Default)";
+                        }
+                        if (i == currentSelection) {
+                            terminal.writer().println("> \033[1;32m" + option + "\033[0m"); // 绿色高亮
+                        } else {
+                            terminal.writer().println("  " + option);
+                        }
+                    }
+                    terminal.flush();
+
+                    // 读取键盘输入
+                    int key = terminal.reader().read();
+                    if (key == 13 || key == 10) { // Enter键或Ctrl+Enter键
+                        selected = true;
+                    } else if (key == 65 || key == 'k') { // 上箭头或k键
+                        currentSelection = Math.max(0, currentSelection - 1);
+                    } else if (key == 66 || key == 'j') { // 下箭头或j键
+                        currentSelection = Math.min(options.size() - 1, currentSelection + 1);
+                    } else if (key == 3) { // Ctrl+C
+                        throw new UserInterruptException("User interrupt received (Ctrl+C)");
+                    }
+                }
+            } finally {
+                terminal.setAttributes(originalAttributes);
+            }
+
+            return options.get(currentSelection);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read select", e);
+        }
     }
 
     /**
