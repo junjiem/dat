@@ -14,7 +14,7 @@
     <properties>
         <project.finalName>${project.artifactId}-${project.version}</project.finalName>
         <main.class>ai.dat.cli.DatCli</main.class>
-        <finalName.suffix></finalName.suffix>
+        <finalName.suffix>full</finalName.suffix>
     </properties>
 
     <dependencies>
@@ -231,7 +231,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <project.finalName>${project.artifactId}-${project.version}${finalName.suffix}</project.finalName>
+                <project.finalName>${project.artifactId}-${project.version}-${finalName.suffix}</project.finalName>
             </properties>
             <build>
                 <plugins>
@@ -273,7 +273,7 @@
         <profile>
             <id>pkg:bundled</id>
             <properties>
-                <project.finalName>${project.artifactId}-${project.version}${finalName.suffix}</project.finalName>
+                <project.finalName>${project.artifactId}-${project.version}-${finalName.suffix}</project.finalName>
                 <project.package.finalName>${project.finalName}-bundled</project.package.finalName>
                 <jlink.jre.outputDirectory>${project.build.directory}/jlink-jre</jlink.jre.outputDirectory>
             </properties>
@@ -354,14 +354,14 @@
         <!-- Windows amd64 -->
         <profile>
             <id>os:windows-amd64</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
+<!--            <activation>-->
+<!--                <os>-->
+<!--                    <family>windows</family>-->
+<!--                    <arch>amd64</arch>-->
+<!--                </os>-->
+<!--            </activation>-->
             <properties>
-                <finalName.suffix>-windows-amd64</finalName.suffix>
+                <finalName.suffix>windows-amd64</finalName.suffix>
             </properties>
             <dependencies>
                 <dependency>
@@ -431,14 +431,14 @@
         <!-- Linux amd64 -->
         <profile>
             <id>os:linux-amd64</id>
-            <activation>
-                <os>
-                    <family>linux</family>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
+<!--            <activation>-->
+<!--                <os>-->
+<!--                    <family>linux</family>-->
+<!--                    <arch>amd64</arch>-->
+<!--                </os>-->
+<!--            </activation>-->
             <properties>
-                <finalName.suffix>-linux-amd64</finalName.suffix>
+                <finalName.suffix>linux-amd64</finalName.suffix>
             </properties>
             <dependencies>
                 <dependency>
@@ -508,14 +508,14 @@
         <!-- Linux arm64 -->
         <profile>
             <id>os:linux-arm64</id>
-            <activation>
-                <os>
-                    <family>linux</family>
-                    <arch>aarch64</arch>
-                </os>
-            </activation>
+<!--            <activation>-->
+<!--                <os>-->
+<!--                    <family>linux</family>-->
+<!--                    <arch>aarch64</arch>-->
+<!--                </os>-->
+<!--            </activation>-->
             <properties>
-                <finalName.suffix>-linux-arm64</finalName.suffix>
+                <finalName.suffix>linux-arm64</finalName.suffix>
             </properties>
             <dependencies>
                 <dependency>
@@ -585,14 +585,14 @@
         <!-- MaxOS arm64 -->
         <profile>
             <id>os:macos-arm64</id>
-            <activation>
-                <os>
-                    <family>mac</family>
-                    <arch>aarch64</arch>
-                </os>
-            </activation>
+<!--            <activation>-->
+<!--                <os>-->
+<!--                    <family>mac</family>-->
+<!--                    <arch>aarch64</arch>-->
+<!--                </os>-->
+<!--            </activation>-->
             <properties>
-                <finalName.suffix>-macos-arm64</finalName.suffix>
+                <finalName.suffix>macos-arm64</finalName.suffix>
             </properties>
             <dependencies>
                 <dependency>
@@ -659,13 +659,42 @@
             </build>
         </profile>
 
+        <!-- Any OS Full -->
+        <profile>
+            <id>os:any-os-full</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <finalName.suffix>full</finalName.suffix>
+            </properties>
+            <!-- 支持任意操作系统的【完整版】 -->
+            <dependencies>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-storer-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-adapter-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
         <!-- Any OS Lite -->
         <profile>
             <id>os:any-os-lite</id>
             <properties>
-                <finalName.suffix>-lite</finalName.suffix>
+                <finalName.suffix>lite</finalName.suffix>
             </properties>
-            <!-- 支持任意操作系统的精简版，不添加额外的依赖 -->
+            <!-- 支持任意操作系统的【精简版】，不添加额外的依赖 -->
         </profile>
 
     </profiles>
