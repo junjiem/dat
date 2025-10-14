@@ -122,9 +122,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 需要完整历史来获取PR信息
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -132,95 +129,9 @@ jobs:
       - name: List all artifacts
         run: |
           find dist -type f -name "*.tar.gz"
-      - name: Generate Release Notes
-        id: release_notes
-        run: |
-          # 获取最新的tag信息
-          TAG_NAME="${{ github.ref_name }}"
-
-          # 获取该tag对应的commit
-          COMMIT_SHA=$(git rev-list -n 1 "$TAG_NAME")
-
-          echo "## Release $TAG_NAME" > release_notes.md
-          echo "" >> release_notes.md
-          echo "**发布时间:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> release_notes.md
-          echo "" >> release_notes.md
-
-          # 更安全地获取上一个tag
-          # 方法1：获取当前tag之前的所有tag，取最新的一个
-          PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -A 1 "$TAG_NAME" | tail -n 1)
-          
-          # 方法2：如果方法1失败，尝试使用git describe的替代方案
-          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "$TAG_NAME" ]; then
-            PREVIOUS_TAG=$(git describe --tags --abbrev=0 "$TAG_NAME"^ 2>/dev/null || echo "")
-          fi
-          
-          # 方法3：如果仍然没有找到前一个tag，列出所有tag并排除当前tag
-          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "$TAG_NAME" ]; then
-            ALL_TAGS=$(git tag --sort=-v:refname)
-            PREVIOUS_TAG=$(echo "$ALL_TAGS" | grep -v "^$TAG_NAME$" | head -n 1)
-          fi
-
-          if [ -n "$PREVIOUS_TAG" ]; then
-            echo "### 📝 变更内容 ($PREVIOUS_TAG → $TAG_NAME)" >> release_notes.md
-            echo "" >> release_notes.md
-
-            # 获取两个tag之间的commits
-            COMMITS=$(git log --pretty=format:"%H" "$PREVIOUS_TAG..$TAG_NAME")
-
-            if [ -n "$COMMITS" ]; then
-              # 提取PR信息和合并的commits
-              echo "#### 🔄 合并的Pull Requests:" >> release_notes.md
-              echo "" >> release_notes.md
-
-              # 获取包含PR信息的commits
-              git log --pretty=format:"%s %b" "$PREVIOUS_TAG..$TAG_NAME" | grep -E "(Merge pull request|#PR)" | while read -r commit_msg; do
-                # 提取PR号码
-                PR_NUMBER=$(echo "$commit_msg" | grep -oE '#[0-9]+' | head -1 | sed 's/#//')
-                if [ -n "$PR_NUMBER" ]; then
-                  echo "- PR #$PR_NUMBER" >> release_notes.md
-                fi
-              done
-
-              echo "" >> release_notes.md
-              echo "#### 📋 提交历史:" >> release_notes.md
-              echo "" >> release_notes.md
-
-              # 添加详细的提交信息
-              git log --pretty=format:"- [%h] %s" "$PREVIOUS_TAG..$TAG_NAME" >> release_notes.md
-            else
-              echo "无变更记录" >> release_notes.md
-            fi
-          else
-            echo "### 🎉 首次发布" >> release_notes.md
-            echo "" >> release_notes.md
-            echo "这是项目的第一个发布版本。" >> release_notes.md
-          fi
-
-          echo "" >> release_notes.md
-          echo "### 📦 下载说明" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "本发布包含以下变体：" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "- **full**: 完整版本，包含所有功能" >> release_notes.md
-          echo "- **lite**: 轻量版本，仅包含核心功能" >> release_notes.md
-          echo "- **bundled**: 打包版本，包含JRE运行时" >> release_notes.md
-          echo "- **unbundled**: 未打包版本，需要单独安装Java环境" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "请根据您的操作系统和需求选择合适的版本下载。" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "---" >> release_notes.md
-          echo "*此发布由GitHub Actions自动生成*" >> release_notes.md
-
-          # 输出release notes内容
-          echo "RELEASE_NOTES<<EOF" >> "$GITHUB_OUTPUT"
-          cat release_notes.md >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-        shell: bash
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/**/*.tar.gz
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
