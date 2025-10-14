@@ -146,8 +146,20 @@ jobs:
           echo "**发布时间:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> release_notes.md
           echo "" >> release_notes.md
 
-          # 获取上一个tag（用于比较变更）
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          # 更安全地获取上一个tag
+          # 方法1：获取当前tag之前的所有tag，取最新的一个
+          PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -A 1 "$TAG_NAME" | tail -n 1)
+          
+          # 方法2：如果方法1失败，尝试使用git describe的替代方案
+          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "$TAG_NAME" ]; then
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 "$TAG_NAME"^ 2>/dev/null || echo "")
+          fi
+          
+          # 方法3：如果仍然没有找到前一个tag，列出所有tag并排除当前tag
+          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "$TAG_NAME" ]; then
+            ALL_TAGS=$(git tag --sort=-v:refname)
+            PREVIOUS_TAG=$(echo "$ALL_TAGS" | grep -v "^$TAG_NAME$" | head -n 1)
+          fi
 
           if [ -n "$PREVIOUS_TAG" ]; then
             echo "### 📝 变更内容 ($PREVIOUS_TAG → $TAG_NAME)" >> release_notes.md
