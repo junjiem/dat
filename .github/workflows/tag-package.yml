@@ -1,0 +1,214 @@
+name: Tag Build
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # Unbundled variants (without JRE)
+          - os: ubuntu-latest
+            maven_profile: os:any-os-full
+            asset_suffix: full
+            package_type: unbundled
+          - os: ubuntu-latest
+            maven_profile: os:any-os-lite
+            asset_suffix: lite
+            package_type: unbundled
+          - os: windows-latest
+            maven_profile: os:windows-amd64
+            asset_suffix: windows-amd64
+            package_type: unbundled
+          - os: macos-latest
+            maven_profile: os:macos-arm64
+            asset_suffix: macos-arm64
+            package_type: unbundled
+          - os: ubuntu-latest
+            maven_profile: os:linux-amd64
+            asset_suffix: linux-amd64
+            package_type: unbundled
+          - os: ubuntu-latest
+            maven_profile: os:linux-arm64
+            asset_suffix: linux-arm64
+            package_type: unbundled
+          # Bundled variants (with JRE)
+          - os: windows-latest
+            maven_profile: os:windows-amd64
+            asset_suffix: windows-amd64
+            package_type: bundled
+          - os: macos-latest
+            maven_profile: os:macos-arm64
+            asset_suffix: macos-arm64
+            package_type: bundled
+          - os: ubuntu-latest
+            maven_profile: os:linux-amd64
+            asset_suffix: linux-amd64
+            package_type: bundled
+          - os: ubuntu-latest
+            maven_profile: os:linux-arm64
+            asset_suffix: linux-arm64
+            package_type: bundled
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Package with Maven
+        shell: bash
+        run: |
+          if [ "${{ matrix.package_type }}" = "bundled" ]; then
+            mvn -B clean package -P pkg:bundled,${{ matrix.maven_profile }}
+          else
+            mvn -B clean package -P pkg:unbundled,${{ matrix.maven_profile }}
+          fi
+      - name: Resolve project version
+        id: project_version
+        shell: bash
+        run: |
+          VERSION=$(mvn -B help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+      - name: Prepare artifact
+        shell: bash
+        env:
+          VERSION: ${{ steps.project_version.outputs.version }}
+          SUFFIX: ${{ matrix.asset_suffix }}
+          PACKAGE_TYPE: ${{ matrix.package_type }}
+        run: |
+          mkdir -p dist
+          # 查找实际生成的文件
+          find dat-cli/target -name "*.tar.gz" -type f
+
+          if [ "$PACKAGE_TYPE" = "bundled" ]; then
+            # Bundled版本使用 -bundled 后缀
+            SRC="dat-cli/target/dat-cli-${VERSION}-${SUFFIX}-bundled.tar.gz"
+            if [ -f "$SRC" ]; then
+              DEST="dist/dat-cli-${VERSION}-${SUFFIX}-bundled.tar.gz"
+              cp "$SRC" "$DEST"
+              echo "Found bundled artifact: $SRC"
+            else
+              echo "ERROR: Bundled artifact not found: $SRC"
+              exit 1
+            fi
+          else
+            # Unbundled版本
+            SRC="dat-cli/target/dat-cli-${VERSION}-${SUFFIX}.tar.gz"
+            if [ -f "$SRC" ]; then
+              DEST="dist/dat-cli-${VERSION}-${SUFFIX}.tar.gz"
+              cp "$SRC" "$DEST"
+              echo "Found unbundled artifact: $SRC"
+            else
+              echo "ERROR: Unbundled artifact not found: $SRC"
+              exit 1
+            fi
+          fi
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dat-cli-${{ matrix.asset_suffix }}-${{ matrix.package_type }}
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 需要完整历史来获取PR信息
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: List all artifacts
+        run: |
+          find dist -type f -name "*.tar.gz"
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # 获取最新的tag信息
+          TAG_NAME="${{ github.ref_name }}"
+
+          # 获取该tag对应的commit
+          COMMIT_SHA=$(git rev-list -n 1 "$TAG_NAME")
+
+          echo "## Release $TAG_NAME" > release_notes.md
+          echo "" >> release_notes.md
+          echo "**发布时间:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> release_notes.md
+          echo "" >> release_notes.md
+
+          # 获取上一个tag（用于比较变更）
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "### 📝 变更内容 ($PREVIOUS_TAG → $TAG_NAME)" >> release_notes.md
+            echo "" >> release_notes.md
+
+            # 获取两个tag之间的commits
+            COMMITS=$(git log --pretty=format:"%H" "$PREVIOUS_TAG..$TAG_NAME")
+
+            if [ -n "$COMMITS" ]; then
+              # 提取PR信息和合并的commits
+              echo "#### 🔄 合并的Pull Requests:" >> release_notes.md
+              echo "" >> release_notes.md
+
+              # 获取包含PR信息的commits
+              git log --pretty=format:"%s %b" "$PREVIOUS_TAG..$TAG_NAME" | grep -E "(Merge pull request|#PR)" | while read -r commit_msg; do
+                # 提取PR号码
+                PR_NUMBER=$(echo "$commit_msg" | grep -oE '#[0-9]+' | head -1 | sed 's/#//')
+                if [ -n "$PR_NUMBER" ]; then
+                  echo "- PR #$PR_NUMBER" >> release_notes.md
+                fi
+              done
+
+              echo "" >> release_notes.md
+              echo "#### 📋 提交历史:" >> release_notes.md
+              echo "" >> release_notes.md
+
+              # 添加详细的提交信息
+              git log --pretty=format:"- [%h] %s" "$PREVIOUS_TAG..$TAG_NAME" >> release_notes.md
+            else
+              echo "无变更记录" >> release_notes.md
+            fi
+          else
+            echo "### 🎉 首次发布" >> release_notes.md
+            echo "" >> release_notes.md
+            echo "这是项目的第一个发布版本。" >> release_notes.md
+          fi
+
+          echo "" >> release_notes.md
+          echo "### 📦 下载说明" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "本发布包含以下变体：" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- **full**: 完整版本，包含所有功能" >> release_notes.md
+          echo "- **lite**: 轻量版本，仅包含核心功能" >> release_notes.md
+          echo "- **bundled**: 打包版本，包含JRE运行时" >> release_notes.md
+          echo "- **unbundled**: 未打包版本，需要单独安装Java环境" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "请根据您的操作系统和需求选择合适的版本下载。" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "*此发布由GitHub Actions自动生成*" >> release_notes.md
+
+          # 输出release notes内容
+          echo "RELEASE_NOTES<<EOF" >> "$GITHUB_OUTPUT"
+          cat release_notes.md >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        shell: bash
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*.tar.gz
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
