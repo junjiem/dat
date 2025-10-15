@@ -40,9 +40,7 @@ public class ProjectRunner {
         } catch (IOException e) {
             throw new RuntimeException("The project build failed", e);
         }
-        ContentStore contentStore = ProjectUtil.createContentStore(project, projectPath);
-        List<SemanticModel> semanticModels = contentStore.allMdls();
-        this.agent = ProjectUtil.createAskdataAgent(project, agentName, semanticModels, projectPath, variables);
+        this.agent = ProjectUtil.createAskdataAgent(project, agentName, projectPath, variables);
     }
 
     @Deprecated

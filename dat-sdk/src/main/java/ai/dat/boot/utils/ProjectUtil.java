@@ -163,12 +163,61 @@ public class ProjectUtil {
 
     public static AskdataAgent createAskdataAgent(@NonNull Path projectPath,
                                                   @NonNull String agentName,
+                                                  Map<String, Object> variables) {
+        DatProject project = loadProject(projectPath);
+        return createAskdataAgent(project, agentName, projectPath, variables);
+    }
+
+    public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
+                                                  @NonNull String agentName,
+                                                  @NonNull Path projectPath,
+                                                  Map<String, Object> variables) {
+        Preconditions.checkArgument(!agentName.isBlank(),
+                "agentName cannot be empty");
+        Map<String, AgentConfig> agentMap = project.getAgents().stream()
+                .collect(Collectors.toMap(AgentConfig::getName, o -> o));
+        Preconditions.checkArgument(agentMap.containsKey(agentName),
+                "The project doesn't exist agent: " + agentName);
+
+        List<SemanticModel> semanticModels = null;
+        AgentConfig agentConfig = agentMap.get(agentName);
+        List<String> semanticModelNames = agentConfig.getSemanticModels();
+        // When the corresponding list of semantic models is manually specified in the agent
+        if (!semanticModelNames.isEmpty()) {
+            ContentStore contentStore = ProjectUtil.createContentStore(project, projectPath);
+            List<SemanticModel> allSemanticModels = contentStore.allMdls();
+            validateAgent(agentConfig, allSemanticModels);
+            semanticModels = allSemanticModels.stream()
+                    .filter(model -> semanticModelNames.contains(model.getName()))
+                    .collect(Collectors.toList());
+        }
+
+        Map<String, FactoryDescriptor> chatModelFactoryDescriptors = project.getLlms().stream()
+                .collect(Collectors.toMap(LlmConfig::getName,
+                        o -> FactoryDescriptor.from(o.getProvider(), o.getConfiguration())));
+
+        FactoryDescriptor agentFactoryDescriptor = FactoryDescriptor.from(
+                agentConfig.getProvider(), agentConfig.getConfiguration());
+
+        FactoryDescriptor databaseAdapterFactoryDescriptor =
+                createDatabaseAdapterFactoryDescriptor(project, projectPath);
+
+        return FactoryUtil.createAskdataAgent(agentFactoryDescriptor,
+                semanticModels, createContentStore(project, projectPath),
+                chatModelFactoryDescriptors, databaseAdapterFactoryDescriptor,
+                variables);
+    }
+
+    @Deprecated
+    public static AskdataAgent createAskdataAgent(@NonNull Path projectPath,
+                                                  @NonNull String agentName,
                                                   @NonNull List<SemanticModel> semanticModels,
                                                   Map<String, Object> variables) {
         DatProject project = loadProject(projectPath);
         return createAskdataAgent(project, agentName, semanticModels, projectPath, variables);
     }
 
+    @Deprecated
     public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
                                                   @NonNull String agentName,
                                                   @NonNull List<SemanticModel> semanticModels,
@@ -273,6 +322,23 @@ public class ProjectUtil {
                             agentName
                     )).append("\n"));
             throw new ValidationException(sb.toString());
+        }
+    }
+
+    private static void validateAgent(@NonNull AgentConfig agentConfig,
+                                      @NonNull List<SemanticModel> semanticModels) {
+        Set<String> existingNames = semanticModels.stream()
+                .map(SemanticModel::getName)
+                .collect(Collectors.toSet());
+        List<String> missingNames = agentConfig.getSemanticModels().stream()
+                .filter(name -> !existingNames.contains(name))
+                .toList();
+        if (!missingNames.isEmpty()) {
+            String sb = String.format("There are non-existent semantic models %s in the agent '%s'",
+                    missingNames.stream().map(n -> String.format("'%s'", n))
+                            .collect(Collectors.joining(", ")),
+                    agentConfig.getName());
+            throw new ValidationException(sb);
         }
     }
 
