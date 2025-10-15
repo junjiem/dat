@@ -6,13 +6,16 @@ import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.factories.ChatModelFactory;
 import ai.dat.core.utils.FactoryUtil;
 import com.google.common.base.Preconditions;
+import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.openai.internal.OpenAiUtils;
+import dev.langchain4j.http.client.jdk.JdkHttpClient;
 
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -156,19 +159,31 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                             Custom parameters.
                             Alternatively, custom parameters can also be specified as a structure of nested maps.
                                                         
-                            For example1: aliyun qwen3 custom parameters
+                            For example1: Aliyun Qwen3 custom parameters
                             ```
                             custom-parameters:
                               extra_body:
                                 enable_thinking: false
                             ```
                                                         
-                            For example2: vllm qwen3 custom parameters
+                            For example2: vLLM Qwen3 custom parameters
                             ```
                             custom-parameters:
                               chat_template_kwargs:
                                 enable_thinking: false
                             ```
+                            """);
+
+    public static final ConfigOption<HttpClient.Version> HTTP_VERSION =
+            ConfigOptions.key("http-version")
+                    .enumType(HttpClient.Version.class)
+                    .defaultValue(HttpClient.Version.HTTP_2)
+                    .withDescription("""
+                            HTTP protocol version.
+                            `HTTP_1_1`: HTTP version 1.1
+                            `HTTP_2`: HTTP version 2
+                            
+                            Note: LMStudio and vLLM as for now does not support HTTP2, hence we need to enforce the use of HTTP1.1.
                             """);
 
     @Override
@@ -187,7 +202,7 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                 MAX_RETRIES, MAX_TOKENS, MAX_COMPLETION_TOKENS,
                 LOG_REQUESTS, LOG_RESPONSES, RESPONSE_FORMAT, STRICT_JSON_SCHEMA,
                 STRICT_TOOLS, STORE, RETURN_THINKING, SEED, USER,
-                ONLY_SUPPORT_STREAM_OUTPUT, CUSTOM_PARAMETERS));
+                ONLY_SUPPORT_STREAM_OUTPUT, CUSTOM_PARAMETERS, HTTP_VERSION));
     }
 
     @Override
@@ -234,6 +249,14 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                         builder.defaultRequestParameters(OpenAiChatRequestParameters.builder()
                                 .customParameters(customParameters).build()));
 
+        config.getOptional(HTTP_VERSION).ifPresent(httpVersion -> {
+            HttpClient.Builder httpClientBuilder = HttpClient.newBuilder()
+                    .version(httpVersion);
+            JdkHttpClientBuilder jdkHttpClientBuilder = JdkHttpClient.builder()
+                    .httpClientBuilder(httpClientBuilder);
+            builder.httpClientBuilder(jdkHttpClientBuilder);
+        });
+
         return builder.build();
     }
 
@@ -268,6 +291,14 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                 .ifPresent(customParameters ->
                         builder.defaultRequestParameters(OpenAiChatRequestParameters.builder()
                                 .customParameters(customParameters).build()));
+
+        config.getOptional(HTTP_VERSION).ifPresent(httpVersion -> {
+            HttpClient.Builder httpClientBuilder = HttpClient.newBuilder()
+                    .version(httpVersion);
+            JdkHttpClientBuilder jdkHttpClientBuilder = JdkHttpClient.builder()
+                    .httpClientBuilder(httpClientBuilder);
+            builder.httpClientBuilder(jdkHttpClientBuilder);
+        });
 
         return builder.build();
     }
