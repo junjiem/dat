@@ -9,6 +9,7 @@ import lombok.Getter;
 @Getter
 public enum SemanticModelRetrievalStrategy {
     FE("Full Embeddings"),
+    CE("Column Embeddings"),
     HYQE("HyQE (Hypothetical Question Embeddings)");
 
     private final String description;

@@ -5,7 +5,10 @@ import ai.dat.core.contentstore.data.SemanticModelRetrievalStrategy;
 import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
+import ai.dat.core.semantic.view.ElementView;
+import ai.dat.core.semantic.view.SemanticModelView;
 import ai.dat.core.utils.SemanticModelUtil;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -26,13 +29,16 @@ import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 默认实现的内存存储器类
@@ -71,6 +77,9 @@ public class DefaultContentStore implements ContentStore {
     private final Integer mdlHyQEMaxResults;
     private final Double mdlHyQEMinScore;
 
+    private final Integer mdlCEMaxResults;
+    private final Double mdlCEMinScore;
+
     @Builder
     public DefaultContentStore(@NonNull ChatModel defaultChatModel,
                                @NonNull EmbeddingModel embeddingModel,
@@ -80,6 +89,7 @@ public class DefaultContentStore implements ContentStore {
                                @NonNull EmbeddingStore<TextSegment> docEmbeddingStore,
                                Integer maxResults, Double minScore,
                                SemanticModelRetrievalStrategy mdlRetrievalStrategy,
+                               Integer mdlCEMaxResults, Double mdlCEMinScore,
                                ChatModel mdlHyQEChatModel,
                                String mdlHyQEInstruction, Integer mdlHyQEQuestions,
                                Integer mdlHyQEMaxResults, Double mdlHyQEMinScore) {
@@ -89,14 +99,24 @@ public class DefaultContentStore implements ContentStore {
         this.sqlEmbeddingStore = sqlEmbeddingStore;
         this.synEmbeddingStore = synEmbeddingStore;
         this.docEmbeddingStore = docEmbeddingStore;
+
         this.maxResults = Optional.ofNullable(maxResults).orElse(5);
         Preconditions.checkArgument(this.maxResults <= 20 && this.maxResults >= 1,
                 "maxResults must be between 1 and 20");
         this.minScore = Optional.ofNullable(minScore).orElse(0.6);
         Preconditions.checkArgument(this.minScore >= 0.0 && this.minScore <= 1.0,
                 "minScore must be between 0.0 and 1.0");
+
         this.mdlRetrievalStrategy = Optional.ofNullable(mdlRetrievalStrategy)
                 .orElse(SemanticModelRetrievalStrategy.FE);
+
+        this.mdlCEMaxResults = Optional.ofNullable(mdlCEMaxResults).orElse(maxResults);
+        Preconditions.checkArgument(this.mdlCEMaxResults <= 200 && this.mdlCEMaxResults >= 1,
+                "mdlHyQEMaxResults must be between 1 and 200");
+        this.mdlCEMinScore = Optional.ofNullable(mdlCEMinScore).orElse(minScore);
+        Preconditions.checkArgument(this.mdlCEMinScore >= 0.0 && this.mdlCEMinScore <= 1.0,
+                "mdlHyQEMinScore must be between 0.0 and 1.0");
+
         this.mdlHyQEAssistant = AiServices.builder(MdlHyQEAssistant.class)
                 .chatModel(Objects.requireNonNullElse(mdlHyQEChatModel, defaultChatModel))
                 .build();
@@ -116,6 +136,8 @@ public class DefaultContentStore implements ContentStore {
     public List<String> addMdls(List<SemanticModel> semanticModels) {
         if (SemanticModelRetrievalStrategy.HYQE == mdlRetrievalStrategy) {
             return addMdlsForHyQE(semanticModels);
+        } else if (SemanticModelRetrievalStrategy.CE == mdlRetrievalStrategy) {
+            return addMdlsForCE(semanticModels);
         }
         return addMdlsForFE(semanticModels);
     }
@@ -137,10 +159,11 @@ public class DefaultContentStore implements ContentStore {
                         throw new RuntimeException("Failed to serialize semantic model to JSON: "
                                 + e.getMessage(), e);
                     }
+                    TextSegment textSegment = TextSegment.from(json, MDL_METADATA);
                     List<TextSegment> embedTextSegments = questions.stream().map(TextSegment::from).toList();
                     List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
                     List<TextSegment> textSegments = questions.stream()
-                            .map(question -> TextSegment.from(json, MDL_METADATA))
+                            .map(question -> textSegment)
                             .collect(Collectors.toList());
                     return mdlEmbeddingStore.addAll(embeddings, textSegments);
                 })
@@ -157,12 +180,47 @@ public class DefaultContentStore implements ContentStore {
                                               @V("semantic_model") String semanticModel);
     }
 
+    private List<String> addMdlsForCE(List<SemanticModel> semanticModels) {
+        return semanticModels.stream()
+                .map(semanticModel -> {
+                    SemanticModelUtil.validateSemanticModel(semanticModel);
+                    SemanticModelView semanticModelView = SemanticModelUtil.toSemanticModelView(semanticModel);
+                    List<String> columnTexts = Stream.of(
+                                    semanticModelView.getEntities().stream(),
+                                    semanticModelView.getDimensions().stream(),
+                                    semanticModelView.getMeasures().stream()
+                            )
+                            .flatMap(Function.identity())
+                            .map(o -> new SemanticModelColumnView(semanticModelView, (ElementView) o))
+                            .map(c -> {
+                                try {
+                                    return JSON_MAPPER.writeValueAsString(c);
+                                } catch (JsonProcessingException e) {
+                                    throw new RuntimeException("Failed to serialize semantic model column view to JSON: "
+                                            + e.getMessage(), e);
+                                }
+                            }).toList();
+                    String json;
+                    try {
+                        json = JSON_MAPPER.writeValueAsString(semanticModel);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException("Failed to serialize semantic model to JSON: "
+                                + e.getMessage(), e);
+                    }
+                    TextSegment textSegment = TextSegment.from(json, MDL_METADATA);
+                    List<TextSegment> embedTextSegments = columnTexts.stream().map(TextSegment::from).toList();
+                    List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
+                    List<TextSegment> textSegments = columnTexts.stream()
+                            .map(question -> textSegment)
+                            .collect(Collectors.toList());
+                    return mdlEmbeddingStore.addAll(embeddings, textSegments);
+                })
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
     private List<String> addMdlsForFE(List<SemanticModel> semanticModels) {
-        List<TextSegment> embedTextSegments = semanticModels.stream()
-                .map(SemanticModelUtil::toSemanticModelViewText)
-                .map(TextSegment::from)
-                .toList();
-        List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
         List<TextSegment> textSegments = semanticModels.stream()
                 .map(semanticModel -> {
                     SemanticModelUtil.validateSemanticModel(semanticModel);
@@ -175,6 +233,11 @@ public class DefaultContentStore implements ContentStore {
                     }
                     return TextSegment.from(json, MDL_METADATA);
                 }).collect(Collectors.toList());
+        List<TextSegment> embedTextSegments = semanticModels.stream()
+                .map(SemanticModelUtil::toSemanticModelViewText)
+                .map(TextSegment::from)
+                .toList();
+        List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
         return mdlEmbeddingStore.addAll(embeddings, textSegments);
     }
 
@@ -185,6 +248,9 @@ public class DefaultContentStore implements ContentStore {
         if (SemanticModelRetrievalStrategy.HYQE == mdlRetrievalStrategy) {
             maxResults = this.mdlHyQEMaxResults;
             minScore = this.mdlHyQEMinScore;
+        } else if (SemanticModelRetrievalStrategy.CE == mdlRetrievalStrategy) {
+            maxResults = this.mdlCEMaxResults;
+            minScore = this.mdlCEMinScore;
         }
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingModel(embeddingModel)
@@ -388,5 +454,32 @@ public class DefaultContentStore implements ContentStore {
     @Override
     public void removeAllDocs() {
         docEmbeddingStore.removeAll();
+    }
+
+    @Getter
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    static class SemanticModelColumnView {
+        @NonNull
+        private String name;
+
+        @NonNull
+        private String description;
+
+        private String alias;
+
+        @NonNull
+        private List<String> tags;
+
+        @NonNull
+        private ElementView column;
+
+        public SemanticModelColumnView(@NonNull SemanticModelView semanticModel,
+                                       @NonNull ElementView columnElement) {
+            this.name = semanticModel.getName();
+            this.description = semanticModel.getDescription();
+            this.alias = semanticModel.getAlias();
+            this.tags = semanticModel.getTags();
+            this.column = columnElement;
+        }
     }
 }
