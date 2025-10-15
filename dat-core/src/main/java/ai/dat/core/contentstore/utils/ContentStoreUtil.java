@@ -1,7 +1,7 @@
 package ai.dat.core.contentstore.utils;
 
-import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.semantic.data.SemanticModel;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +32,7 @@ public class ContentStoreUtil {
                     }
                 })
                 .filter(Objects::nonNull)
+                // 去重
                 .collect(Collectors.collectingAndThen(
                         Collectors.toMap(
                                 SemanticModel::getName,

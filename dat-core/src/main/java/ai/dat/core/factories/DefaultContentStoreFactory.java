@@ -52,6 +52,20 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                                     .map(e -> e.name() + ": " + e.getDescription())
                                     .collect(Collectors.joining("\n")));
 
+    public static final ConfigOption<Integer> SEMANTIC_MODEL_CE_MAX_RESULTS =
+            ConfigOptions.key("semantic-model.ce-max-results")
+                    .intType()
+                    .noDefaultValue()
+                    .withDescription("Semantic model CE strategy retrieve TopK maximum value, must be between 1 and 200. " +
+                            "If not specified, use the max-results.");
+
+    public static final ConfigOption<Double> SEMANTIC_MODEL_CE_MIN_SCORE =
+            ConfigOptions.key("semantic-model.ce-min-score")
+                    .doubleType()
+                    .noDefaultValue()
+                    .withDescription("Semantic model CE strategy retrieve Score minimum value, must be between 0.0 and 1.0. " +
+                            "If not specified, use the min-score.");
+
     public static final ConfigOption<String> SEMANTIC_MODEL_HYQE_LLM =
             ConfigOptions.key("semantic-model.hyqe-llm")
                     .stringType()
@@ -98,7 +112,9 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(MAX_RESULTS, MIN_SCORE, DEFAULT_LLM,
-                SEMANTIC_MODEL_RETRIEVAL_STRATEGY, SEMANTIC_MODEL_HYQE_LLM,
+                SEMANTIC_MODEL_RETRIEVAL_STRATEGY,
+                SEMANTIC_MODEL_CE_MAX_RESULTS, SEMANTIC_MODEL_CE_MIN_SCORE,
+                SEMANTIC_MODEL_HYQE_LLM,
                 SEMANTIC_MODEL_HYQE_INSTRUCTION, SEMANTIC_MODEL_HYQE_QUESTION_NUM,
                 SEMANTIC_MODEL_HYQE_MAX_RESULTS, SEMANTIC_MODEL_HYQE_MIN_SCORE));
     }
@@ -152,6 +168,9 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
             config.getOptional(SEMANTIC_MODEL_HYQE_QUESTION_NUM).ifPresent(builder::mdlHyQEQuestions);
             config.getOptional(SEMANTIC_MODEL_HYQE_MAX_RESULTS).ifPresent(builder::mdlHyQEMaxResults);
             config.getOptional(SEMANTIC_MODEL_HYQE_MIN_SCORE).ifPresent(builder::mdlHyQEMinScore);
+        } else if (SemanticModelRetrievalStrategy.CE == semanticModelRetrievalStrategy) {
+            config.getOptional(SEMANTIC_MODEL_CE_MAX_RESULTS).ifPresent(builder::mdlCEMaxResults);
+            config.getOptional(SEMANTIC_MODEL_CE_MIN_SCORE).ifPresent(builder::mdlCEMinScore);
         }
 
         return builder.build();
@@ -173,6 +192,13 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
         config.getOptional(SEMANTIC_MODEL_HYQE_LLM)
                 .ifPresent(n -> Preconditions.checkArgument(instances.containsKey(n),
                         String.format(errorMessageFormat, SEMANTIC_MODEL_HYQE_LLM.key(), llmNames)));
+
+        config.getOptional(SEMANTIC_MODEL_CE_MAX_RESULTS)
+                .ifPresent(n -> Preconditions.checkArgument(n >= 1 && n <= 200,
+                        "'" + SEMANTIC_MODEL_CE_MAX_RESULTS.key() + "' value must be between 1 and 200"));
+        config.getOptional(SEMANTIC_MODEL_CE_MIN_SCORE)
+                .ifPresent(n -> Preconditions.checkArgument(n >= 0.0 && n <= 1.0,
+                        "'" + SEMANTIC_MODEL_CE_MIN_SCORE.key() + "' value must be between 0.0 and 1.0"));
 
         Integer semanticModelHyQEQuestionNum = config.get(SEMANTIC_MODEL_HYQE_QUESTION_NUM);
         Preconditions.checkArgument(semanticModelHyQEQuestionNum >= 3 && semanticModelHyQEQuestionNum <= 20,
