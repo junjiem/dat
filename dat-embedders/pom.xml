@@ -20,6 +20,7 @@
         <module>dat-embedder-openai</module>
         <module>dat-embedder-ollama</module>
         <module>dat-embedder-jina</module>
+        <module>dat-embedder-xinference</module>
     </modules>
 
 </project>

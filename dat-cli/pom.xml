@@ -81,6 +81,11 @@
             <artifactId>dat-embedder-jina</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-embedder-xinference</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- DAT Chat Model -->
         <dependency>
