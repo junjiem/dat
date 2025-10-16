@@ -128,11 +128,11 @@ dat init
 # Description: 我的第一个智能问数项目
 # Database type: mysql
 ```
-> 💡 <strong style="color: orange;">提示：</strong> 更多项目配置，请参考项目下的 `dat_project.yaml.template` 。
-
-> 💡 <strong style="color: orange;">提示：</strong> 如果你没有现成的数据库可以访问或只是想对本地CSV数据进行问数，初始化项目时数据库可以选择`duckdb`，默认会在项目的`.dat`目录下创建'duckdb'前缀的本地数据存储。
 
 ![DAT CLI INIT DEMO](./images/dat_cli_init_demo.png)
+
+> 💡 <strong style="color: orange;">提示：</strong> 如果你没有现成的数据库可以访问，或只是想对本地 CSV 数据进行问数，初始化项目时数据库可以选择`duckdb`，默认会在项目的 `.dat` 目录下创建 'duckdb' 前缀的本地内嵌数据存储。
+
 
 #### 3️⃣ 配置数据源
 
@@ -165,7 +165,9 @@ embedding:
   provider: bge-small-zh-v15-q
 ```
 
->  💡 <strong style="color: orange;">提示：</strong>
+> 💡 <strong style="color: orange;">提示：</strong> 更多项目配置，请参考项目下的 `dat_project.yaml.template` 。
+
+> 💡 <strong style="color: orange;">提示：</strong>
 > 
 > 如果你没有现成的数据可以使用，你可以执行`seed`命令加载初始化项目中示例的种子数据入库。
 >
@@ -214,6 +216,10 @@ semantic_models:
         description: 订单数量
         agg: count
 ```
+
+> 💡 <strong style="color: orange;">提示：</strong> 这只是个示例，请根据你真实的数据进行配置。
+> 更多语义模型配置说明，请查看项目下的 `MODEL_GUIDE.md` 手册 。
+
 
 #### 5️⃣ 开始智能问数
 
@@ -377,27 +383,29 @@ DAT采用模块化设计，每个模块职责清晰：
 dat-parent/
 ├── 🧠 dat-core/           # 核心接口和工厂管理
 ├── 🔌 dat-adapters/       # 数据库适配器
+│   ├── dat-adapter-duckdb/   # 【本地内置数据库】
 │   ├── dat-adapter-mysql/
-│   ├── dat-adapter-postgresql/
 │   ├── dat-adapter-oracle/
-│   └── dat-adapter-duckdb/      # 【本地内嵌数据库】
+│   └── dat-adapter-postgresql/
 ├── 🤖 dat-llms/          # LLM集成模块
 │   ├── dat-llm-anthropic/
+│   ├── dat-llm-gemini/
+│   ├── dat-llm-ollama/
 │   ├── dat-llm-openai/
-│   ├── dat-llm-openai/
-│   └── dat-llm-gemini/
+│   └── dat-llm-xinference/
 ├── 📊 dat-embedders/     # 嵌入模型集成
-│   ├── dat-embedder-bge-small-zh/        # 【本地内嵌Embedding模型】
-│   ├── dat-embedder-bge-small-zh-q/      # 【本地内嵌Embedding模型】
-│   ├── dat-embedder-bge-small-zh-v15/    # 【本地内嵌Embedding模型】
-│   ├── dat-embedder-bge-small-zh-v15-q/  # 【本地内嵌Embedding模型】
-│   ├── dat-embedder-openai/
+│   ├── dat-embedder-bge-small-zh/        # 【本地内置Embedding模型】
+│   ├── dat-embedder-bge-small-zh-q/      # 【本地内置Embedding模型】
+│   ├── dat-embedder-bge-small-zh-v15/    # 【本地内置Embedding模型】
+│   ├── dat-embedder-bge-small-zh-v15-q/  # 【本地内置Embedding模型】
+│   ├── dat-embedder-jina/
 │   ├── dat-embedder-ollama/
-│   └── dat-embedder-jina/
+│   ├── dat-embedder-openai/
+│   └── dat-embedder-xinference/
 ├── 💾 dat-storers/       # 向量存储后端
-│   ├── dat-storer-duckdb/    # 【本地内嵌向量存储】
-│   ├── dat-storer-weaviate/
-│   └── dat-storer-pgvector/
+│   ├── dat-storer-duckdb/    # 【本地内置向量存储】
+│   ├── dat-storer-pgvector/
+│   └── dat-storer-weaviate/
 ├── 🎭 dat-agents/        # 智能代理实现
 │   └── dat-agent-agentic/
 ├── 📡 dat-servers/       # 服务端组件
