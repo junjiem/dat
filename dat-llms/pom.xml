@@ -17,6 +17,7 @@
         <module>dat-llm-anthropic</module>
         <module>dat-llm-ollama</module>
         <module>dat-llm-gemini</module>
+        <module>dat-llm-xinference</module>
     </modules>
 
 </project>

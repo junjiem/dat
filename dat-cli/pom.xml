@@ -103,6 +103,11 @@
             <artifactId>dat-llm-gemini</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-llm-xinference</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- DAT Database Adapter -->
         <dependency>
