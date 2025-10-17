@@ -136,11 +136,15 @@ agents:
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    description:  # Ask data agent description" }}
     {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    provider: " ~ item.provider }}
     {% if not item.display -%}{{ "#" }}{% endif -%}
-    {{ "    #semantic_models: # (List<String>, [Optional]) Specify the semantic model directly. Once specified, it will not be retrieved again." }}
+    {{ "    #semantic_models: # (List<String>, [Optional]) Specify the semantic model names directly. Once specified, it will not be retrieved again semantic model." }}
     {% if not item.display -%}{{ "#" }}{% endif -%}
     {{ "      #- covid_cases  # You need to fill in correct semantic model name" }}
     {% if not item.display -%}{{ "#" }}{% endif -%}
     {{ "      #- country_covid_cases  # You need to fill in correct semantic model name" }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}
+    {{ "    #semantic_model_tags: # (List<String>, [Optional]) Specify the semantic model tags directly. Once specified, it will not be retrieved again semantic model." }}
+    {% if not item.display -%}{{ "#" }}{% endif -%}
+    {{ "      #- covid  # You need to fill in correct semantic model tag" }}
     {% if item.configuration -%}
         {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    configuration:" }}
         {% for line in item.configuration.split('\n') -%}

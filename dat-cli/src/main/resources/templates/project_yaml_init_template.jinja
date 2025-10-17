@@ -56,9 +56,11 @@ agents:
 {{ "  - name: default" }}
 {{ "    description: default ask data agent" }}
 {{ "    provider: default" }}
-{{ "    #semantic_models: # Optional. If a semantic models is specified here, the specified semantic models will be given as the context to the LLM." }}
+{{ "    #semantic_models: # (List<String>, [Optional]) If semantic model names is specified here, the specified semantic models will be given as the context to the LLM." }}
 {{ "      #- covid_cases  # You need to fill in correct semantic model name" }}
 {{ "      #- country_covid_cases  # You need to fill in correct semantic model name" }}
+{{ "    #semantic_model_tags: # (List<String>, [Optional]) If semantic model tags is specified here, the relevant semantic models will be given as the context to the LLM." }}
+{{ "      #- covid  # You need to fill in correct semantic model tag" }}
 {% if agent_configuration -%}
     {{ "    configuration:" }}
     {% for line in agent_configuration.split('\n') -%}
