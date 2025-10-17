@@ -86,12 +86,13 @@ class FileChangeAnalyzer {
                 }
                 List<RelevantFileState> modelFileStates = Collections.emptyList();
                 DatSchema schema = null;
-                if (hasChanged || !fileState.getModelFileStates().isEmpty()) {
+                boolean hasModelFiles = !fileState.getModelFileStates().isEmpty();
+                if (hasChanged || hasModelFiles) {
                     schema = ProjectUtil.loadSchema(filePath, modelsPath);
                 }
-                if (!fileState.getModelFileStates().isEmpty()) {
+                if (hasModelFiles) {
                     modelFileStates = resolveModelFileStates(relativePath, schema);
-                    hasChanged = hasModelFileChanged(modelFileStates, fileState.getModelFileStates());
+                    hasChanged = hasChanged || hasModelFileChanged(modelFileStates, fileState.getModelFileStates());
                 }
                 if (hasChanged) {
                     // YAML文件已修改
