@@ -29,11 +29,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
 
 @Slf4j
 public class ProjectUtil {
@@ -182,13 +182,15 @@ public class ProjectUtil {
         List<SemanticModel> semanticModels = null;
         AgentConfig agentConfig = agentMap.get(agentName);
         List<String> semanticModelNames = agentConfig.getSemanticModels();
-        // When the corresponding list of semantic models is manually specified in the agent
-        if (!semanticModelNames.isEmpty()) {
+        List<String> semanticModelTags = agentConfig.getSemanticModelTags();
+        // When the corresponding list of semantic_models or semantic_model_tags is manually specified in the agent
+        if (!semanticModelNames.isEmpty() || !semanticModelTags.isEmpty()) {
             ContentStore contentStore = ProjectUtil.createContentStore(project, projectPath);
             List<SemanticModel> allSemanticModels = contentStore.allMdls();
             validateAgent(agentConfig, allSemanticModels);
             semanticModels = allSemanticModels.stream()
-                    .filter(model -> semanticModelNames.contains(model.getName()))
+                    .filter(model -> semanticModelNames.contains(model.getName())
+                            || model.getTags().stream().anyMatch(semanticModelTags::contains))
                     .collect(Collectors.toList());
         }
 
@@ -300,6 +302,7 @@ public class ProjectUtil {
         return FactoryDescriptor.from(project.getDb().getProvider(), project.getDb().getConfiguration());
     }
 
+    @Deprecated
     private static void validateAgents(@NonNull List<AgentConfig> agents,
                                        @NonNull List<SemanticModel> semanticModels) {
         Set<String> existingNames = semanticModels.stream()
@@ -314,11 +317,11 @@ public class ProjectUtil {
                 .filter(e -> !e.getValue().isEmpty())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         if (!missingNames.isEmpty()) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             missingNames.forEach((agentName, missings) ->
                     sb.append(String.format("There are non-existent semantic models %s in the agent '%s'",
                             missings.stream().map(n -> String.format("'%s'", n))
-                                    .collect(Collectors.joining(", ")),
+                                    .collect(joining(", ")),
                             agentName
                     )).append("\n"));
             throw new ValidationException(sb.toString());
@@ -333,12 +336,29 @@ public class ProjectUtil {
         List<String> missingNames = agentConfig.getSemanticModels().stream()
                 .filter(name -> !existingNames.contains(name))
                 .toList();
-        if (!missingNames.isEmpty()) {
-            String sb = String.format("There are non-existent semantic models %s in the agent '%s'",
-                    missingNames.stream().map(n -> String.format("'%s'", n))
-                            .collect(Collectors.joining(", ")),
-                    agentConfig.getName());
-            throw new ValidationException(sb);
+        Set<String> existingTags = semanticModels.stream()
+                .map(SemanticModel::getTags)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+        List<String> missingTags = agentConfig.getSemanticModelTags().stream()
+                .filter(tag -> !existingTags.contains(tag))
+                .toList();
+        if (!missingNames.isEmpty() || !missingTags.isEmpty()) {
+            String message = Stream.of(
+                    !missingNames.isEmpty() ?
+                            String.format("There are non-existent semantic model names %s in the agent '%s'. " +
+                                            "Please check the semantic models YAML in your project!",
+                                    missingNames.stream().map(n -> String.format("'%s'", n)).collect(joining(", ")),
+                                    agentConfig.getName())
+                            : null,
+                    !missingTags.isEmpty() ?
+                            String.format("There are non-existent semantic model tags %s in the agent '%s'. " +
+                                            "Please check the semantic models YAML in your project!",
+                                    missingTags.stream().map(n -> String.format("'%s'", n)).collect(joining(", ")),
+                                    agentConfig.getName())
+                            : null
+            ).filter(Objects::nonNull).collect(joining("\n"));
+            throw new ValidationException(message);
         }
     }
 

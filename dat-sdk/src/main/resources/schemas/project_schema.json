@@ -195,7 +195,14 @@
             "minItems": 1,
             "maxItems": 20,
             "uniqueItems": true,
-            "description": "Agent依赖的Semantic models名称集合"
+            "description": "Agent依赖的Semantic Model名称集合"
+          },
+          "semantic_model_tags": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "uniqueItems": true,
+            "description": "Agent依赖的Semantic Model标签集合"
           },
           "configuration": {
             "type": [

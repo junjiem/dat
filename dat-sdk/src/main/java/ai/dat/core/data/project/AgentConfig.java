@@ -31,6 +31,10 @@ public class AgentConfig {
     @JsonProperty("semantic_models")
     private List<String> semanticModels = Collections.emptyList();
 
+    @NonNull
+    @JsonProperty("semantic_model_tags")
+    private List<String> semanticModelTags = Collections.emptyList();
+
     @JsonIgnore
     @NonNull
     private ReadableConfig configuration = new Configuration();
