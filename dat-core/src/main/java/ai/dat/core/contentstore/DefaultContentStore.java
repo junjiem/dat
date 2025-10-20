@@ -1,5 +1,6 @@
 package ai.dat.core.contentstore;
 
+import ai.dat.core.contentstore.data.BusinessKnowledgeRetrievalStrategy;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.contentstore.data.SemanticModelRetrievalStrategy;
 import ai.dat.core.contentstore.data.WordSynonymPair;
@@ -12,7 +13,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.document.splitter.DocumentByRegexSplitter;
+import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
@@ -69,6 +74,7 @@ public class DefaultContentStore implements ContentStore {
     private final Integer maxResults;
     private final Double minScore;
 
+    // -------------------------------------------- Semantic Model -------------------------------------------------
     private final SemanticModelRetrievalStrategy mdlRetrievalStrategy;
 
     private final MdlHyQEAssistant mdlHyQEAssistant;
@@ -79,6 +85,17 @@ public class DefaultContentStore implements ContentStore {
 
     private final Integer mdlCEMaxResults;
     private final Double mdlCEMinScore;
+    // -------------------------------------------------------------------------------------------------------------
+
+    // -------------------------------------------- Business Knowledge ---------------------------------------------
+    private final BusinessKnowledgeRetrievalStrategy docRetrievalStrategy;
+
+    private final Integer docGCEMaxChunkSize;
+    private final Integer docGCEMaxChunkOverlap;
+    private final String docGCEChunkRegex;
+    private final Integer docGCEMaxResults;
+    private final Double docGCEMinScore;
+    // -------------------------------------------------------------------------------------------------------------
 
     @Builder
     public DefaultContentStore(@NonNull ChatModel defaultChatModel,
@@ -92,7 +109,11 @@ public class DefaultContentStore implements ContentStore {
                                Integer mdlCEMaxResults, Double mdlCEMinScore,
                                ChatModel mdlHyQEChatModel,
                                String mdlHyQEInstruction, Integer mdlHyQEQuestions,
-                               Integer mdlHyQEMaxResults, Double mdlHyQEMinScore) {
+                               Integer mdlHyQEMaxResults, Double mdlHyQEMinScore,
+                               BusinessKnowledgeRetrievalStrategy docRetrievalStrategy,
+                               Integer docGCEMaxChunkSize, Integer docGCEMaxChunkOverlap,
+                               String docGCEChunkRegex,
+                               Integer docGCEMaxResults, Double docGCEMinScore) {
         this.defaultChatModel = defaultChatModel;
         this.embeddingModel = embeddingModel;
         this.mdlEmbeddingStore = mdlEmbeddingStore;
@@ -107,15 +128,16 @@ public class DefaultContentStore implements ContentStore {
         Preconditions.checkArgument(this.minScore >= 0.0 && this.minScore <= 1.0,
                 "minScore must be between 0.0 and 1.0");
 
+        // -------------------------------------------- Semantic Model ------------------------------------------
         this.mdlRetrievalStrategy = Optional.ofNullable(mdlRetrievalStrategy)
                 .orElse(SemanticModelRetrievalStrategy.FE);
 
         this.mdlCEMaxResults = Optional.ofNullable(mdlCEMaxResults).orElse(maxResults);
         Preconditions.checkArgument(this.mdlCEMaxResults <= 200 && this.mdlCEMaxResults >= 1,
-                "mdlHyQEMaxResults must be between 1 and 200");
+                "mdlCEMaxResults must be between 1 and 200");
         this.mdlCEMinScore = Optional.ofNullable(mdlCEMinScore).orElse(minScore);
         Preconditions.checkArgument(this.mdlCEMinScore >= 0.0 && this.mdlCEMinScore <= 1.0,
-                "mdlHyQEMinScore must be between 0.0 and 1.0");
+                "mdlCEMinScore must be between 0.0 and 1.0");
 
         this.mdlHyQEAssistant = AiServices.builder(MdlHyQEAssistant.class)
                 .chatModel(Objects.requireNonNullElse(mdlHyQEChatModel, defaultChatModel))
@@ -130,6 +152,28 @@ public class DefaultContentStore implements ContentStore {
         this.mdlHyQEMinScore = Optional.ofNullable(mdlHyQEMinScore).orElse(minScore);
         Preconditions.checkArgument(this.mdlHyQEMinScore >= 0.0 && this.mdlHyQEMinScore <= 1.0,
                 "mdlHyQEMinScore must be between 0.0 and 1.0");
+        // -----------------------------------------------------------------------------------------------------
+
+        // -------------------------------------------- Business Knowledge -------------------------------------
+        this.docRetrievalStrategy = Optional.ofNullable(docRetrievalStrategy)
+                .orElse(BusinessKnowledgeRetrievalStrategy.FE);
+
+        this.docGCEMaxChunkSize = Optional.ofNullable(docGCEMaxChunkSize).orElse(4096);
+        Preconditions.checkArgument(this.docGCEMaxChunkSize > 0,
+                "docGCEMaxChunkSize must be greater than 0");
+        this.docGCEMaxChunkOverlap = Optional.ofNullable(docGCEMaxChunkOverlap).orElse(0);
+        Preconditions.checkArgument(this.docGCEMaxChunkOverlap >= 0,
+                "docGCEMaxChunkOverlap must be greater than than or equal to 0");
+        Preconditions.checkArgument(this.docGCEMaxChunkSize > this.docGCEMaxChunkOverlap,
+                "docGCEMaxChunkOverlap value must be less than docGCEMaxChunkSize value");
+        this.docGCEChunkRegex = docGCEChunkRegex;
+        this.docGCEMaxResults = Optional.ofNullable(docGCEMaxResults).orElse(maxResults);
+        Preconditions.checkArgument(this.docGCEMaxResults <= 100 && this.docGCEMaxResults >= 1,
+                "docGCEMaxResults must be between 1 and 100");
+        this.docGCEMinScore = Optional.ofNullable(docGCEMinScore).orElse(minScore);
+        Preconditions.checkArgument(this.docGCEMinScore >= 0.0 && this.docGCEMinScore <= 1.0,
+                "docGCEMinScore must be between 0.0 and 1.0");
+        // -----------------------------------------------------------------------------------------------------
     }
 
     @Override
@@ -413,6 +457,25 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<String> addDocs(List<String> docs) {
+        if (BusinessKnowledgeRetrievalStrategy.GCE == docRetrievalStrategy) {
+            return addDocsForGCE(docs);
+        }
+        return addDocsForFE(docs);
+    }
+
+    private List<String> addDocsForGCE(List<String> docs) {
+        DocumentSplitter splitter = DocumentSplitters.recursive(docGCEMaxChunkSize, docGCEMaxChunkOverlap);
+        if (docGCEChunkRegex != null) {
+            splitter = new DocumentByRegexSplitter(docGCEChunkRegex, "\n",
+                    docGCEMaxChunkSize, docGCEMaxChunkOverlap, splitter);
+        }
+        List<Document> documents = docs.stream().map(Document::document).collect(Collectors.toList());
+        List<TextSegment> textSegments = splitter.splitAll(documents);
+        List<Embedding> embeddings = embeddingModel.embedAll(textSegments).content();
+        return docEmbeddingStore.addAll(embeddings, textSegments);
+    }
+
+    private List<String> addDocsForFE(List<String> docs) {
         List<TextSegment> textSegments = docs.stream()
                 .map(doc -> TextSegment.from(doc, DOC_METADATA))
                 .collect(Collectors.toList());
@@ -422,6 +485,12 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public ContentRetriever getDocContentRetriever() {
+        Integer maxResults = this.maxResults;
+        Double minScore = this.minScore;
+        if (BusinessKnowledgeRetrievalStrategy.GCE == docRetrievalStrategy) {
+            maxResults = this.docGCEMaxResults;
+            minScore = this.docGCEMinScore;
+        }
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingModel(embeddingModel)
                 .embeddingStore(docEmbeddingStore)
