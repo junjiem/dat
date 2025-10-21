@@ -6,6 +6,7 @@ import ai.dat.core.semantic.data.SemanticModel;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.rag.content.Content;
 
 import java.util.List;
 import java.util.Objects;
@@ -20,6 +21,14 @@ public class ContentStoreUtil {
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private ContentStoreUtil() {
+    }
+
+    public static List<TextSegment> toTextSegments(List<Content> contents) {
+        return contents.stream().map(Content::textSegment).collect(Collectors.toList());
+    }
+
+    public static List<SemanticModel> contents2SemanticModels(List<Content> contents) {
+        return toSemanticModels(toTextSegments(contents));
     }
 
     public static List<SemanticModel> toSemanticModels(List<TextSegment> textSegments) {
@@ -43,6 +52,10 @@ public class ContentStoreUtil {
                 ));
     }
 
+    public static List<QuestionSqlPair> contents2QuestionSqlPairs(List<Content> contents) {
+        return toQuestionSqlPairs(toTextSegments(contents));
+    }
+
     public static List<QuestionSqlPair> toQuestionSqlPairs(List<TextSegment> textSegments) {
         return textSegments.stream()
                 .map(textSegment -> {
@@ -56,6 +69,10 @@ public class ContentStoreUtil {
                 .collect(Collectors.toList());
     }
 
+    public static List<WordSynonymPair> contents2NounSynonymPairs(List<Content> contents) {
+        return toNounSynonymPairs(toTextSegments(contents));
+    }
+
     public static List<WordSynonymPair> toNounSynonymPairs(List<TextSegment> textSegments) {
         return textSegments.stream()
                 .map(textSegment -> {
@@ -67,6 +84,10 @@ public class ContentStoreUtil {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    public static List<String> contents2Docs(List<Content> contents) {
+        return toDocs(toTextSegments(contents));
     }
 
     public static List<String> toDocs(List<TextSegment> textSegments) {

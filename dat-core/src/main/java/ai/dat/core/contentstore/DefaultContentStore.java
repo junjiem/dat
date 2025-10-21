@@ -306,12 +306,8 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<SemanticModel> retrieveMdl(String question) {
-        List<TextSegment> textSegments = getMdlContentRetriever()
-                .retrieve(Query.from(question))
-                .stream()
-                .map(Content::textSegment)
-                .collect(Collectors.toList());
-        return ContentStoreUtil.toSemanticModels(textSegments);
+        List<Content> contents = getMdlContentRetriever().retrieve(Query.from(question));
+        return ContentStoreUtil.contents2SemanticModels(contents);
     }
 
     @Override
@@ -378,12 +374,8 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<QuestionSqlPair> retrieveSql(String question) {
-        List<TextSegment> textSegments = getSqlContentRetriever()
-                .retrieve(Query.from(question))
-                .stream()
-                .map(Content::textSegment)
-                .collect(Collectors.toList());
-        return ContentStoreUtil.toQuestionSqlPairs(textSegments);
+        List<Content> contents = getSqlContentRetriever().retrieve(Query.from(question));
+        return ContentStoreUtil.contents2QuestionSqlPairs(contents);
     }
 
     @Override
@@ -431,12 +423,8 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<WordSynonymPair> retrieveSyn(String question) {
-        List<TextSegment> textSegments = getSynContentRetriever()
-                .retrieve(Query.from(question))
-                .stream()
-                .map(Content::textSegment)
-                .collect(Collectors.toList());
-        return ContentStoreUtil.toNounSynonymPairs(textSegments);
+        List<Content> contents = getSynContentRetriever().retrieve(Query.from(question));
+        return ContentStoreUtil.contents2NounSynonymPairs(contents);
     }
 
     @Override
@@ -501,12 +489,8 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<String> retrieveDoc(String question) {
-        List<TextSegment> textSegments = getDocContentRetriever()
-                .retrieve(Query.from(question))
-                .stream()
-                .map(Content::textSegment)
-                .collect(Collectors.toList());
-        return ContentStoreUtil.toDocs(textSegments);
+        List<Content> contents = getDocContentRetriever().retrieve(Query.from(question));
+        return ContentStoreUtil.contents2Docs(contents);
     }
 
     @Override
