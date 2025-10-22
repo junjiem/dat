@@ -1,6 +1,6 @@
 package ai.dat.core.contentstore;
 
-import ai.dat.core.contentstore.data.BusinessKnowledgeRetrievalStrategy;
+import ai.dat.core.contentstore.data.BusinessKnowledgeIndexingMethod;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.contentstore.data.SemanticModelRetrievalStrategy;
 import ai.dat.core.contentstore.data.WordSynonymPair;
@@ -88,13 +88,14 @@ public class DefaultContentStore implements ContentStore {
     // -------------------------------------------------------------------------------------------------------------
 
     // -------------------------------------------- Business Knowledge ---------------------------------------------
-    private final BusinessKnowledgeRetrievalStrategy docRetrievalStrategy;
+    private final BusinessKnowledgeIndexingMethod docIndexingMethod;
 
     private final Integer docGCEMaxChunkSize;
     private final Integer docGCEMaxChunkOverlap;
     private final String docGCEChunkRegex;
-    private final Integer docGCEMaxResults;
-    private final Double docGCEMinScore;
+
+    private final Integer docMaxResults;
+    private final Double docMinScore;
     // -------------------------------------------------------------------------------------------------------------
 
     @Builder
@@ -110,10 +111,10 @@ public class DefaultContentStore implements ContentStore {
                                ChatModel mdlHyQEChatModel,
                                String mdlHyQEInstruction, Integer mdlHyQEQuestions,
                                Integer mdlHyQEMaxResults, Double mdlHyQEMinScore,
-                               BusinessKnowledgeRetrievalStrategy docRetrievalStrategy,
+                               BusinessKnowledgeIndexingMethod docIndexingMethod,
                                Integer docGCEMaxChunkSize, Integer docGCEMaxChunkOverlap,
                                String docGCEChunkRegex,
-                               Integer docGCEMaxResults, Double docGCEMinScore) {
+                               Integer docMaxResults, Double docMinScore) {
         this.defaultChatModel = defaultChatModel;
         this.embeddingModel = embeddingModel;
         this.mdlEmbeddingStore = mdlEmbeddingStore;
@@ -155,8 +156,8 @@ public class DefaultContentStore implements ContentStore {
         // -----------------------------------------------------------------------------------------------------
 
         // -------------------------------------------- Business Knowledge -------------------------------------
-        this.docRetrievalStrategy = Optional.ofNullable(docRetrievalStrategy)
-                .orElse(BusinessKnowledgeRetrievalStrategy.FE);
+        this.docIndexingMethod = Optional.ofNullable(docIndexingMethod)
+                .orElse(BusinessKnowledgeIndexingMethod.FE);
 
         this.docGCEMaxChunkSize = Optional.ofNullable(docGCEMaxChunkSize).orElse(4096);
         Preconditions.checkArgument(this.docGCEMaxChunkSize > 0,
@@ -167,12 +168,13 @@ public class DefaultContentStore implements ContentStore {
         Preconditions.checkArgument(this.docGCEMaxChunkSize > this.docGCEMaxChunkOverlap,
                 "docGCEMaxChunkOverlap value must be less than docGCEMaxChunkSize value");
         this.docGCEChunkRegex = docGCEChunkRegex;
-        this.docGCEMaxResults = Optional.ofNullable(docGCEMaxResults).orElse(maxResults);
-        Preconditions.checkArgument(this.docGCEMaxResults <= 100 && this.docGCEMaxResults >= 1,
-                "docGCEMaxResults must be between 1 and 100");
-        this.docGCEMinScore = Optional.ofNullable(docGCEMinScore).orElse(minScore);
-        Preconditions.checkArgument(this.docGCEMinScore >= 0.0 && this.docGCEMinScore <= 1.0,
-                "docGCEMinScore must be between 0.0 and 1.0");
+
+        this.docMaxResults = Optional.ofNullable(docMaxResults).orElse(this.maxResults);
+        Preconditions.checkArgument(this.docMaxResults <= 100 && this.docMaxResults >= 1,
+                "docMaxResults must be between 1 and 100");
+        this.docMinScore = Optional.ofNullable(docMinScore).orElse(this.minScore);
+        Preconditions.checkArgument(this.docMinScore >= 0.0 && this.docMinScore <= 1.0,
+                "docMinScore must be between 0.0 and 1.0");
         // -----------------------------------------------------------------------------------------------------
     }
 
@@ -445,7 +447,7 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<String> addDocs(List<String> docs) {
-        if (BusinessKnowledgeRetrievalStrategy.GCE == docRetrievalStrategy) {
+        if (BusinessKnowledgeIndexingMethod.GCE == docIndexingMethod) {
             return addDocsForGCE(docs);
         }
         return addDocsForFE(docs);
@@ -473,17 +475,11 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public ContentRetriever getDocContentRetriever() {
-        Integer maxResults = this.maxResults;
-        Double minScore = this.minScore;
-        if (BusinessKnowledgeRetrievalStrategy.GCE == docRetrievalStrategy) {
-            maxResults = this.docGCEMaxResults;
-            minScore = this.docGCEMinScore;
-        }
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingModel(embeddingModel)
                 .embeddingStore(docEmbeddingStore)
-                .maxResults(maxResults)
-                .minScore(minScore)
+                .maxResults(docMaxResults)
+                .minScore(docMinScore)
                 .build();
     }
 

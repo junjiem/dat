@@ -5,7 +5,7 @@ import ai.dat.core.configuration.ConfigOptions;
 import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.DefaultContentStore;
-import ai.dat.core.contentstore.data.BusinessKnowledgeRetrievalStrategy;
+import ai.dat.core.contentstore.data.BusinessKnowledgeIndexingMethod;
 import ai.dat.core.contentstore.data.SemanticModelRetrievalStrategy;
 import ai.dat.core.factories.data.ChatModelInstance;
 import ai.dat.core.utils.FactoryUtil;
@@ -103,46 +103,46 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
     // -------------------------------------------------------------------------------------------------------------
 
     // -------------------------------------------- Business Knowledge ---------------------------------------------
-    public static final ConfigOption<BusinessKnowledgeRetrievalStrategy> BUSINESS_KNOWLEDGE_RETRIEVAL_STRATEGY =
-            ConfigOptions.key("business-knowledge.retrieval-strategy")
-                    .enumType(BusinessKnowledgeRetrievalStrategy.class)
-                    .defaultValue(BusinessKnowledgeRetrievalStrategy.FE)
-                    .withDescription("Business knowledge chunking embeddings and retrieval strategy.\n" +
-                            Arrays.stream(BusinessKnowledgeRetrievalStrategy.values())
+    public static final ConfigOption<BusinessKnowledgeIndexingMethod> BUSINESS_KNOWLEDGE_INDEXING_METHOD =
+            ConfigOptions.key("business-knowledge.indexing-method")
+                    .enumType(BusinessKnowledgeIndexingMethod.class)
+                    .defaultValue(BusinessKnowledgeIndexingMethod.FE)
+                    .withDescription("Business knowledge indexing method.\n" +
+                            Arrays.stream(BusinessKnowledgeIndexingMethod.values())
                                     .map(e -> e.name() + ": " + e.getDescription())
                                     .collect(Collectors.joining("\n")));
 
-    public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_SIZE =
-            ConfigOptions.key("business-knowledge.gce-max-chunk-size")
+    public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE =
+            ConfigOptions.key("business-knowledge.indexing.gce-max-chunk-size")
                     .intType()
                     .defaultValue(4096)
-                    .withDescription("Business knowledge GCE strategy maximum chunk length.");
+                    .withDescription("Business knowledge `GCE` indexing method maximum chunk length.");
 
-    public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_OVERLAP =
-            ConfigOptions.key("business-knowledge.gce-max-chunk-overlap")
+    public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP =
+            ConfigOptions.key("business-knowledge.indexing.gce-max-chunk-overlap")
                     .intType()
                     .defaultValue(0)
-                    .withDescription("Business knowledge GCE strategy maximum chunk overlap length.");
+                    .withDescription("Business knowledge `GCE` indexing method maximum chunk overlap length.");
 
-    public static final ConfigOption<String> BUSINESS_KNOWLEDGE_GCE_CHUNK_REGEX =
-            ConfigOptions.key("business-knowledge.gce-chunk-regex")
+    public static final ConfigOption<String> BUSINESS_KNOWLEDGE_INDEXING_GCE_CHUNK_REGEX =
+            ConfigOptions.key("business-knowledge.indexing.gce-chunk-regex")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("Business knowledge GCE strategy split chunk regular expression. " +
+                    .withDescription("Business knowledge `GCE` indexing method split chunk regular expression. " +
                             "When it is empty, use the default built-in recursive split method.");
 
-    public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_GCE_MAX_RESULTS =
-            ConfigOptions.key("business-knowledge.gce-max-results")
+    public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS =
+            ConfigOptions.key("business-knowledge.retrieval.max-results")
                     .intType()
                     .noDefaultValue()
-                    .withDescription("Business knowledge GCE strategy retrieve TopK maximum value, must be between 1 and 100. " +
+                    .withDescription("Business knowledge retrieve TopK maximum value, must be between 1 and 100. " +
                             "If not specified, use the max-results.");
 
-    public static final ConfigOption<Double> BUSINESS_KNOWLEDGE_GCE_MIN_SCORE =
-            ConfigOptions.key("business-knowledge.gce-min-score")
+    public static final ConfigOption<Double> BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE =
+            ConfigOptions.key("business-knowledge.retrieval.min-score")
                     .doubleType()
                     .noDefaultValue()
-                    .withDescription("Business knowledge GCE strategy retrieve Score minimum value, must be between 0.0 and 1.0. " +
+                    .withDescription("Business knowledge retrieve Score minimum value, must be between 0.0 and 1.0. " +
                             "If not specified, use the min-score.");
     // -------------------------------------------------------------------------------------------------------------
 
@@ -166,10 +166,12 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                 SEMANTIC_MODEL_HYQE_INSTRUCTION, SEMANTIC_MODEL_HYQE_QUESTION_NUM,
                 SEMANTIC_MODEL_HYQE_MAX_RESULTS, SEMANTIC_MODEL_HYQE_MIN_SCORE,
 
-                BUSINESS_KNOWLEDGE_RETRIEVAL_STRATEGY,
-                BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_SIZE, BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_OVERLAP,
-                BUSINESS_KNOWLEDGE_GCE_CHUNK_REGEX,
-                BUSINESS_KNOWLEDGE_GCE_MAX_RESULTS, BUSINESS_KNOWLEDGE_GCE_MIN_SCORE
+                BUSINESS_KNOWLEDGE_INDEXING_METHOD,
+                BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE,
+                BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP,
+                BUSINESS_KNOWLEDGE_INDEXING_GCE_CHUNK_REGEX,
+                BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS,
+                BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE
         ));
     }
 
@@ -178,9 +180,10 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
         return Set.of(SEMANTIC_MODEL_RETRIEVAL_STRATEGY,
                 SEMANTIC_MODEL_HYQE_INSTRUCTION, SEMANTIC_MODEL_HYQE_QUESTION_NUM,
 
-                BUSINESS_KNOWLEDGE_RETRIEVAL_STRATEGY,
-                BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_SIZE, BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_OVERLAP,
-                BUSINESS_KNOWLEDGE_GCE_CHUNK_REGEX
+                BUSINESS_KNOWLEDGE_INDEXING_METHOD,
+                BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE,
+                BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP,
+                BUSINESS_KNOWLEDGE_INDEXING_GCE_CHUNK_REGEX
         );
     }
 
@@ -210,8 +213,8 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
         SemanticModelRetrievalStrategy semanticModelRetrievalStrategy =
                 config.get(SEMANTIC_MODEL_RETRIEVAL_STRATEGY);
 
-        BusinessKnowledgeRetrievalStrategy businessKnowledgeRetrievalStrategy =
-                config.get(BUSINESS_KNOWLEDGE_RETRIEVAL_STRATEGY);
+        BusinessKnowledgeIndexingMethod businessKnowledgeIndexMethod =
+                config.get(BUSINESS_KNOWLEDGE_INDEXING_METHOD);
 
         DefaultContentStore.DefaultContentStoreBuilder builder = DefaultContentStore.builder()
                 .defaultChatModel(defaultInstance.getChatModel())
@@ -223,7 +226,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                 .maxResults(maxResults)
                 .minScore(minScore)
                 .mdlRetrievalStrategy(semanticModelRetrievalStrategy)
-                .docRetrievalStrategy(businessKnowledgeRetrievalStrategy);
+                .docIndexingMethod(businessKnowledgeIndexMethod);
 
         if (SemanticModelRetrievalStrategy.HYQE == semanticModelRetrievalStrategy) {
             builder.mdlHyQEChatModel(semanticModelHyQEInstance.getChatModel());
@@ -236,13 +239,13 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
             config.getOptional(SEMANTIC_MODEL_CE_MIN_SCORE).ifPresent(builder::mdlCEMinScore);
         }
 
-        if (BusinessKnowledgeRetrievalStrategy.GCE == businessKnowledgeRetrievalStrategy) {
-            config.getOptional(BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_SIZE).ifPresent(builder::docGCEMaxChunkSize);
-            config.getOptional(BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_OVERLAP).ifPresent(builder::docGCEMaxChunkOverlap);
-            config.getOptional(BUSINESS_KNOWLEDGE_GCE_CHUNK_REGEX).ifPresent(builder::docGCEChunkRegex);
-            config.getOptional(BUSINESS_KNOWLEDGE_GCE_MAX_RESULTS).ifPresent(builder::docGCEMaxResults);
-            config.getOptional(BUSINESS_KNOWLEDGE_GCE_MIN_SCORE).ifPresent(builder::docGCEMinScore);
+        if (BusinessKnowledgeIndexingMethod.GCE == businessKnowledgeIndexMethod) {
+            config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE).ifPresent(builder::docGCEMaxChunkSize);
+            config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP).ifPresent(builder::docGCEMaxChunkOverlap);
+            config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_GCE_CHUNK_REGEX).ifPresent(builder::docGCEChunkRegex);
         }
+        config.getOptional(BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS).ifPresent(builder::docMaxResults);
+        config.getOptional(BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE).ifPresent(builder::docMinScore);
 
         return builder.build();
     }
@@ -281,20 +284,20 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                 .ifPresent(n -> Preconditions.checkArgument(n >= 0.0 && n <= 1.0,
                         "'" + SEMANTIC_MODEL_HYQE_MIN_SCORE.key() + "' value must be between 0.0 and 1.0"));
 
-        Integer businessKnowledgeGCEMaxChunkSize = config.get(BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_SIZE);
-        Integer businessKnowledgeGCEMaxChunkOverlap = config.get(BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_OVERLAP);
+        Integer businessKnowledgeGCEMaxChunkSize = config.get(BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE);
+        Integer businessKnowledgeGCEMaxChunkOverlap = config.get(BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP);
         Preconditions.checkArgument(businessKnowledgeGCEMaxChunkSize > 0,
-                "'" + BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_SIZE.key() + "' value must be greater than 0");
+                "'" + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE.key() + "' value must be greater than 0");
         Preconditions.checkArgument(businessKnowledgeGCEMaxChunkOverlap >= 0,
-                "'" + BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_OVERLAP.key() + "' value must be greater than than or equal to 0");
+                "'" + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP.key() + "' value must be greater than than or equal to 0");
         Preconditions.checkArgument(businessKnowledgeGCEMaxChunkSize > businessKnowledgeGCEMaxChunkOverlap,
-                "'" + BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_SIZE.key() + "' value must be less than '"
-                        + BUSINESS_KNOWLEDGE_GCE_MAX_CHUNK_OVERLAP.key() + "' value");
-        config.getOptional(BUSINESS_KNOWLEDGE_GCE_MAX_RESULTS)
+                "'" + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE.key() + "' value must be less than '"
+                        + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP.key() + "' value");
+        config.getOptional(BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS)
                 .ifPresent(n -> Preconditions.checkArgument(n >= 1 && n <= 100,
-                        "'" + BUSINESS_KNOWLEDGE_GCE_MAX_RESULTS.key() + "' value must be between 1 and 100"));
-        config.getOptional(BUSINESS_KNOWLEDGE_GCE_MIN_SCORE)
+                        "'" + BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS.key() + "' value must be between 1 and 100"));
+        config.getOptional(BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE)
                 .ifPresent(n -> Preconditions.checkArgument(n >= 0.0 && n <= 1.0,
-                        "'" + BUSINESS_KNOWLEDGE_GCE_MIN_SCORE.key() + "' value must be between 0.0 and 1.0"));
+                        "'" + BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE.key() + "' value must be between 0.0 and 1.0"));
     }
 }

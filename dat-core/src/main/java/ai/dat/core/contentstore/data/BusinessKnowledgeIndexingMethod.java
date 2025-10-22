@@ -7,13 +7,13 @@ import lombok.Getter;
  * @Date 2025/10/20
  */
 @Getter
-public enum BusinessKnowledgeRetrievalStrategy {
+public enum BusinessKnowledgeIndexingMethod {
     FE("Full Embeddings"),
     GCE("General Chunking Embeddings");
 
     private final String description;
 
-    BusinessKnowledgeRetrievalStrategy(String description) {
+    BusinessKnowledgeIndexingMethod(String description) {
         this.description = description;
     }
 }
