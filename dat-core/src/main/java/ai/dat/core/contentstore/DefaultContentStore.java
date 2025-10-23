@@ -554,7 +554,7 @@ public class DefaultContentStore implements ContentStore {
             splitter = new DocumentByRegexSplitter(docGCEChunkRegex, "\n",
                     docGCEMaxChunkSize, docGCEMaxChunkOverlap, splitter);
         }
-        List<Document> documents = docs.stream().map(Document::document).collect(Collectors.toList());
+        List<Document> documents = docs.stream().map(doc -> Document.document(doc, DOC_METADATA)).collect(Collectors.toList());
         List<TextSegment> textSegments = splitter.splitAll(documents);
         List<Embedding> embeddings = embeddingModel.embedAll(textSegments).content();
         return docEmbeddingStore.addAll(embeddings, textSegments);
