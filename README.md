@@ -407,7 +407,8 @@ dat-parent/
 │   ├── dat-reranker-ms-marco-minilm-l6-v2/      # 【本地内置Reranking模型】
 │   ├── dat-reranker-ms-marco-minilm-l6-v2-q/    # 【本地内置Reranking模型】
 │   ├── dat-reranker-ms-marco-tinybert-l2-v2/    # 【本地内置Reranking模型】
-│   └── dat-reranker-ms-marco-tinybert-l2-v2-q/  # 【本地内置Reranking模型】
+│   ├── dat-reranker-ms-marco-tinybert-l2-v2-q/  # 【本地内置Reranking模型】
+│   └── dat-reranker-jina/
 ├── 💾 dat-storers/       # 向量存储后端
 │   ├── dat-storer-duckdb/    # 【本地内置向量存储】
 │   ├── dat-storer-pgvector/
