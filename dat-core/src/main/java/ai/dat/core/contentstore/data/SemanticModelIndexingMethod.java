@@ -7,14 +7,14 @@ import lombok.Getter;
  * @Date 2025/9/24
  */
 @Getter
-public enum SemanticModelRetrievalStrategy {
+public enum SemanticModelIndexingMethod {
     FE("Full Embeddings"),
     CE("Column Embeddings"),
     HYQE("HyQE (Hypothetical Question Embeddings)");
 
     private final String description;
 
-    SemanticModelRetrievalStrategy(String description) {
+    SemanticModelIndexingMethod(String description) {
         this.description = description;
     }
 }

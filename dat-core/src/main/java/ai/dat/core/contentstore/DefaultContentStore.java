@@ -2,7 +2,7 @@ package ai.dat.core.contentstore;
 
 import ai.dat.core.contentstore.data.BusinessKnowledgeIndexingMethod;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
-import ai.dat.core.contentstore.data.SemanticModelRetrievalStrategy;
+import ai.dat.core.contentstore.data.SemanticModelIndexingMethod;
 import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
@@ -75,16 +75,14 @@ public class DefaultContentStore implements ContentStore {
     private final Double minScore;
 
     // -------------------------------------------- Semantic Model -------------------------------------------------
-    private final SemanticModelRetrievalStrategy mdlRetrievalStrategy;
+    private final SemanticModelIndexingMethod mdlIndexingMethod;
 
     private final MdlHyQEAssistant mdlHyQEAssistant;
     private final String mdlHyQEInstruction;
     private final Integer mdlHyQEQuestions;
-    private final Integer mdlHyQEMaxResults;
-    private final Double mdlHyQEMinScore;
 
-    private final Integer mdlCEMaxResults;
-    private final Double mdlCEMinScore;
+    private final Integer mdlMaxResults;
+    private final Double mdlMinScore;
     // -------------------------------------------------------------------------------------------------------------
 
     // -------------------------------------------- Business Knowledge ---------------------------------------------
@@ -106,11 +104,12 @@ public class DefaultContentStore implements ContentStore {
                                @NonNull EmbeddingStore<TextSegment> synEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> docEmbeddingStore,
                                Integer maxResults, Double minScore,
-                               SemanticModelRetrievalStrategy mdlRetrievalStrategy,
-                               Integer mdlCEMaxResults, Double mdlCEMinScore,
+
+                               SemanticModelIndexingMethod mdlIndexingMethod,
                                ChatModel mdlHyQEChatModel,
                                String mdlHyQEInstruction, Integer mdlHyQEQuestions,
-                               Integer mdlHyQEMaxResults, Double mdlHyQEMinScore,
+                               Integer mdlMaxResults, Double mdlMinScore,
+
                                BusinessKnowledgeIndexingMethod docIndexingMethod,
                                Integer docGCEMaxChunkSize, Integer docGCEMaxChunkOverlap,
                                String docGCEChunkRegex,
@@ -130,16 +129,8 @@ public class DefaultContentStore implements ContentStore {
                 "minScore must be between 0.0 and 1.0");
 
         // -------------------------------------------- Semantic Model ------------------------------------------
-        this.mdlRetrievalStrategy = Optional.ofNullable(mdlRetrievalStrategy)
-                .orElse(SemanticModelRetrievalStrategy.FE);
-
-        this.mdlCEMaxResults = Optional.ofNullable(mdlCEMaxResults).orElse(maxResults);
-        Preconditions.checkArgument(this.mdlCEMaxResults <= 200 && this.mdlCEMaxResults >= 1,
-                "mdlCEMaxResults must be between 1 and 200");
-        this.mdlCEMinScore = Optional.ofNullable(mdlCEMinScore).orElse(minScore);
-        Preconditions.checkArgument(this.mdlCEMinScore >= 0.0 && this.mdlCEMinScore <= 1.0,
-                "mdlCEMinScore must be between 0.0 and 1.0");
-
+        this.mdlIndexingMethod = Optional.ofNullable(mdlIndexingMethod)
+                .orElse(SemanticModelIndexingMethod.FE);
         this.mdlHyQEAssistant = AiServices.builder(MdlHyQEAssistant.class)
                 .chatModel(Objects.requireNonNullElse(mdlHyQEChatModel, defaultChatModel))
                 .build();
@@ -147,12 +138,12 @@ public class DefaultContentStore implements ContentStore {
         this.mdlHyQEQuestions = Optional.ofNullable(mdlHyQEQuestions).orElse(5);
         Preconditions.checkArgument(this.mdlHyQEQuestions <= 20 && this.mdlHyQEQuestions >= 3,
                 "mdlHyQEQuestions must be between 3 and 20");
-        this.mdlHyQEMaxResults = Optional.ofNullable(mdlHyQEMaxResults).orElse(maxResults);
-        Preconditions.checkArgument(this.mdlHyQEMaxResults <= 50 && this.mdlHyQEMaxResults >= 1,
-                "mdlHyQEMaxResults must be between 1 and 50");
-        this.mdlHyQEMinScore = Optional.ofNullable(mdlHyQEMinScore).orElse(minScore);
-        Preconditions.checkArgument(this.mdlHyQEMinScore >= 0.0 && this.mdlHyQEMinScore <= 1.0,
-                "mdlHyQEMinScore must be between 0.0 and 1.0");
+        this.mdlMaxResults = Optional.ofNullable(mdlMaxResults).orElse(this.maxResults);
+        Preconditions.checkArgument(this.mdlMaxResults <= 200 && this.mdlMaxResults >= 1,
+                "mdlMaxResults must be between 1 and 200");
+        this.mdlMinScore = Optional.ofNullable(mdlMinScore).orElse(this.minScore);
+        Preconditions.checkArgument(this.mdlMinScore >= 0.0 && this.mdlMinScore <= 1.0,
+                "mdlMinScore must be between 0.0 and 1.0");
         // -----------------------------------------------------------------------------------------------------
 
         // -------------------------------------------- Business Knowledge -------------------------------------
@@ -180,9 +171,9 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public List<String> addMdls(List<SemanticModel> semanticModels) {
-        if (SemanticModelRetrievalStrategy.HYQE == mdlRetrievalStrategy) {
+        if (SemanticModelIndexingMethod.HYQE == mdlIndexingMethod) {
             return addMdlsForHyQE(semanticModels);
-        } else if (SemanticModelRetrievalStrategy.CE == mdlRetrievalStrategy) {
+        } else if (SemanticModelIndexingMethod.CE == mdlIndexingMethod) {
             return addMdlsForCE(semanticModels);
         }
         return addMdlsForFE(semanticModels);
@@ -289,20 +280,11 @@ public class DefaultContentStore implements ContentStore {
 
     @Override
     public ContentRetriever getMdlContentRetriever() {
-        Integer maxResults = this.maxResults;
-        Double minScore = this.minScore;
-        if (SemanticModelRetrievalStrategy.HYQE == mdlRetrievalStrategy) {
-            maxResults = this.mdlHyQEMaxResults;
-            minScore = this.mdlHyQEMinScore;
-        } else if (SemanticModelRetrievalStrategy.CE == mdlRetrievalStrategy) {
-            maxResults = this.mdlCEMaxResults;
-            minScore = this.mdlCEMinScore;
-        }
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingModel(embeddingModel)
                 .embeddingStore(mdlEmbeddingStore)
-                .maxResults(maxResults)
-                .minScore(minScore)
+                .maxResults(mdlMaxResults)
+                .minScore(mdlMinScore)
                 .build();
     }
 
