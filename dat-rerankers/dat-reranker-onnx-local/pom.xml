@@ -1,0 +1,27 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ai.dat</groupId>
+        <artifactId>dat-rerankers</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>dat-reranker-onnx-local</artifactId>
+    <name>DAT : Rerankers : In-process(ONNX) local</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-onnx-scoring</artifactId>
+            <version>${langchain4j-beta.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>

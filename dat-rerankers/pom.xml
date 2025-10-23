@@ -18,6 +18,7 @@
         <module>dat-reranker-ms-marco-minilm-l6-v2-q</module>
         <module>dat-reranker-ms-marco-tinybert-l2-v2</module>
         <module>dat-reranker-ms-marco-tinybert-l2-v2-q</module>
+        <module>dat-reranker-onnx-local</module>
         <module>dat-reranker-jina</module>
     </modules>
 
