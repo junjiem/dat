@@ -1,9 +1,11 @@
 package ai.dat.core.contentstore;
 
-import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.semantic.data.SemanticModel;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.rag.content.aggregator.ContentAggregator;
+import dev.langchain4j.rag.content.aggregator.DefaultContentAggregator;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 
 import java.util.Collection;
@@ -25,6 +27,10 @@ public interface ContentStore {
     List<String> addMdls(List<SemanticModel> semanticModels);
 
     ContentRetriever getMdlContentRetriever();
+
+    default ContentAggregator getMdlContentAggregator() {
+        return new DefaultContentAggregator();
+    }
 
     List<SemanticModel> retrieveMdl(String question);
 
@@ -50,6 +56,10 @@ public interface ContentStore {
 
     ContentRetriever getSqlContentRetriever();
 
+    default ContentAggregator getSqlContentAggregator() {
+        return new DefaultContentAggregator();
+    }
+
     List<QuestionSqlPair> retrieveSql(String question);
 
     boolean isSql(TextSegment textSegment);
@@ -72,6 +82,10 @@ public interface ContentStore {
 
     ContentRetriever getSynContentRetriever();
 
+    default ContentAggregator getSynContentAggregator() {
+        return new DefaultContentAggregator();
+    }
+
     List<WordSynonymPair> retrieveSyn(String question);
 
     boolean isSyn(TextSegment textSegment);
@@ -93,6 +107,10 @@ public interface ContentStore {
     List<String> addDocs(List<String> docs);
 
     ContentRetriever getDocContentRetriever();
+
+    default ContentAggregator getDocContentAggregator() {
+        return new DefaultContentAggregator();
+    }
 
     List<String> retrieveDoc(String question);
 

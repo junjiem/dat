@@ -11,11 +11,11 @@ import ai.dat.core.factories.*;
 import ai.dat.core.factories.data.ChatModelInstance;
 import ai.dat.core.factories.data.FactoryDescriptor;
 import ai.dat.core.semantic.data.SemanticModel;
-import com.google.common.base.Preconditions;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.scoring.ScoringModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.NonNull;
 
@@ -46,6 +46,8 @@ public final class FactoryUtil {
                     "jaas.config"
             };
 
+    private static final String ERROR_MESSAGE = "Failed to create %s, factory identifier: '%s'.\n\t%s";
+
     private FactoryUtil() {
     }
 
@@ -60,9 +62,24 @@ public final class FactoryUtil {
         try {
             return factory.create(factoryDescriptor.getConfig());
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("Failed to create embedding model, factory identifier: '%s'.",
-                            factoryDescriptor.getIdentifier()), e);
+            throw new RuntimeException(String.format(ERROR_MESSAGE, "embedding model",
+                    factoryDescriptor.getIdentifier(), e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Create Scoring (reranking) Model
+     *
+     * @param factoryDescriptor
+     * @return
+     */
+    public static ScoringModel createScoringModel(@NonNull FactoryDescriptor factoryDescriptor) {
+        ScoringModelFactory factory = ScoringModelFactoryManager.getFactory(factoryDescriptor.getIdentifier());
+        try {
+            return factory.create(factoryDescriptor.getConfig());
+        } catch (Exception e) {
+            throw new RuntimeException(String.format(ERROR_MESSAGE, "scoring (reranking) model",
+                    factoryDescriptor.getIdentifier(), e.getMessage()), e);
         }
     }
 
@@ -81,9 +98,8 @@ public final class FactoryUtil {
         try {
             return factory.create(storeId, contentType, factoryDescriptor.getConfig());
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("Failed to create %s embedding store, factory identifier: '%s'.",
-                            contentType.name(), factoryDescriptor.getIdentifier()), e);
+            throw new RuntimeException(String.format(ERROR_MESSAGE, contentType.name() + " embedding store",
+                    factoryDescriptor.getIdentifier(), e.getMessage()), e);
         }
     }
 
@@ -98,9 +114,8 @@ public final class FactoryUtil {
         try {
             return factory.create(factoryDescriptor.getConfig());
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("Failed to create LLM, factory identifier: '%s'.",
-                            factoryDescriptor.getIdentifier()), e);
+            throw new RuntimeException(String.format(ERROR_MESSAGE, "LLM (Large language model)",
+                    factoryDescriptor.getIdentifier(), e.getMessage()), e);
         }
     }
 
@@ -115,9 +130,8 @@ public final class FactoryUtil {
         try {
             return factory.createStream(factoryDescriptor.getConfig());
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("Failed to create streaming LLM, factory identifier: '%s'.",
-                            factoryDescriptor.getIdentifier()), e);
+            throw new RuntimeException(String.format(ERROR_MESSAGE, "streaming LLM (Large language model)",
+                    factoryDescriptor.getIdentifier(), e.getMessage()), e);
         }
     }
 
@@ -132,9 +146,8 @@ public final class FactoryUtil {
         try {
             return factory.create(factoryDescriptor.getConfig());
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("Failed to create database adapter, factory identifier: '%s'.",
-                            factoryDescriptor.getIdentifier()), e);
+            throw new RuntimeException(String.format(ERROR_MESSAGE, "database adapter",
+                    factoryDescriptor.getIdentifier(), e.getMessage()), e);
         }
     }
 
@@ -146,13 +159,15 @@ public final class FactoryUtil {
      * @param embeddingModelFactoryDescriptor
      * @param embeddingStoreFactoryDescriptor
      * @param chatModelFactoryDescriptors
+     * @param rerankingFactoryDescriptor
      * @return
      */
     public static ContentStore createContentStore(@NonNull String storeId,
                                                   @NonNull FactoryDescriptor factoryDescriptor,
                                                   @NonNull FactoryDescriptor embeddingModelFactoryDescriptor,
                                                   @NonNull FactoryDescriptor embeddingStoreFactoryDescriptor,
-                                                  @NonNull Map<String, FactoryDescriptor> chatModelFactoryDescriptors) {
+                                                  @NonNull Map<String, FactoryDescriptor> chatModelFactoryDescriptors,
+                                                  FactoryDescriptor rerankingFactoryDescriptor) {
         ContentStoreFactory factory = ContentStoreFactoryManager.getFactory(factoryDescriptor.getIdentifier());
         EmbeddingModel embeddingModel = createEmbeddingModel(embeddingModelFactoryDescriptor);
         EmbeddingStore<TextSegment> mdlEmbeddingStore = createEmbeddingStore(
@@ -167,14 +182,37 @@ public final class FactoryUtil {
                 .map(e -> ChatModelInstance.from(e.getKey(), createChatModel(e.getValue()),
                         createStreamingChatModel(e.getValue())))
                 .collect(Collectors.toList());
+        ScoringModel scoringModel = Optional.ofNullable(rerankingFactoryDescriptor)
+                .map(FactoryUtil::createScoringModel)
+                .orElse(null);
         try {
             return factory.create(factoryDescriptor.getConfig(), embeddingModel,
-                    mdlEmbeddingStore, sqlEmbeddingStore, synEmbeddingStore, docEmbeddingStore, chatModelInstances);
+                    mdlEmbeddingStore, sqlEmbeddingStore, synEmbeddingStore, docEmbeddingStore,
+                    chatModelInstances, scoringModel);
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("Failed to create content store, factory identifier: '%s'.",
-                            factoryDescriptor.getIdentifier()), e);
+            throw new RuntimeException(String.format(ERROR_MESSAGE, "content store",
+                    factoryDescriptor.getIdentifier(), e.getMessage()), e);
         }
+    }
+
+    /**
+     * Create Content Store
+     *
+     * @param storeId
+     * @param factoryDescriptor
+     * @param embeddingModelFactoryDescriptor
+     * @param embeddingStoreFactoryDescriptor
+     * @param chatModelFactoryDescriptors
+     * @return
+     */
+    @Deprecated
+    public static ContentStore createContentStore(@NonNull String storeId,
+                                                  @NonNull FactoryDescriptor factoryDescriptor,
+                                                  @NonNull FactoryDescriptor embeddingModelFactoryDescriptor,
+                                                  @NonNull FactoryDescriptor embeddingStoreFactoryDescriptor,
+                                                  @NonNull Map<String, FactoryDescriptor> chatModelFactoryDescriptors) {
+        return createContentStore(storeId, factoryDescriptor, embeddingModelFactoryDescriptor,
+                embeddingStoreFactoryDescriptor, chatModelFactoryDescriptors, null);
     }
 
     /**
@@ -204,9 +242,8 @@ public final class FactoryUtil {
             return factory.create(factoryDescriptor.getConfig(), semanticModels, contentStore,
                     chatModelInstances, databaseAdapter, variables);
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("Failed to create askdata agent, factory identifier: '%s'.",
-                            factoryDescriptor.getIdentifier()), e);
+            throw new RuntimeException(String.format(ERROR_MESSAGE, "askdata agent",
+                    factoryDescriptor.getIdentifier(), e.getMessage()), e);
         }
     }
 

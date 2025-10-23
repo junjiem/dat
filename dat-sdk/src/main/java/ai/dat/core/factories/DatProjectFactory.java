@@ -139,6 +139,15 @@ public class DatProjectFactory {
                 .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
                 .collect(Collectors.toList());
 
+        List<SingleItemTemplate> rerankings = ScoringModelFactoryManager.getSupports().stream()
+                .map(identifier -> {
+                    ScoringModelFactory factory = ScoringModelFactoryManager.getFactory(identifier);
+                    boolean display = RerankingConfig.DEFAULT_PROVIDER.equals(identifier);
+                    return new SingleItemTemplate(identifier, display, getConfiguration(factory));
+                })
+                .sorted((o1, o2) -> Boolean.compare(o2.display, o1.display))
+                .collect(Collectors.toList());
+
         List<SingleItemTemplate> contentStores = ContentStoreFactoryManager.getSupports().stream()
                 .map(identifier -> {
                     ContentStoreFactory factory = ContentStoreFactoryManager.getFactory(identifier);
@@ -165,6 +174,7 @@ public class DatProjectFactory {
         variables.put("dbs", dbs);
         variables.put("llms", llms);
         variables.put("embeddings", embeddings);
+        variables.put("rerankings", rerankings);
         variables.put("embedding_stores", embeddingStores);
         variables.put("content_stores", contentStores);
         variables.put("agents", agents);

@@ -1,0 +1,11 @@
+Original model card:
+https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2
+
+ONNX model card:
+https://huggingface.co/Xenova/ms-marco-MiniLM-L-6-v2
+
+ONNX model file:
+https://huggingface.co/Xenova/ms-marco-MiniLM-L-6-v2/tree/main/onnx/model_quantized.onnx
+
+Tokenizer:
+https://huggingface.co/Xenova/ms-marco-MiniLM-L-6-v2/tree/main/tokenizer.json

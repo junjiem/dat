@@ -22,7 +22,11 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.scoring.ScoringModel;
 import dev.langchain4j.rag.content.Content;
+import dev.langchain4j.rag.content.aggregator.ContentAggregator;
+import dev.langchain4j.rag.content.aggregator.DefaultContentAggregator;
+import dev.langchain4j.rag.content.aggregator.ReRankingContentAggregator;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.rag.query.Query;
@@ -37,10 +41,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,8 +63,6 @@ public class DefaultContentStore implements ContentStore {
 
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
-    private final ChatModel defaultChatModel;
-
     private final EmbeddingModel embeddingModel;
 
     private final EmbeddingStore<TextSegment> mdlEmbeddingStore;
@@ -71,8 +70,16 @@ public class DefaultContentStore implements ContentStore {
     private final EmbeddingStore<TextSegment> synEmbeddingStore;
     private final EmbeddingStore<TextSegment> docEmbeddingStore;
 
+    private final ChatModel defaultChatModel;
+
     private final Integer maxResults;
     private final Double minScore;
+
+    private final ScoringModel scoringModel;
+
+    private final Boolean rerankMode;
+    private final Integer rerankMaxResults;
+    private final Double rerankMinScore;
 
     // -------------------------------------------- Semantic Model -------------------------------------------------
     private final SemanticModelIndexingMethod mdlIndexingMethod;
@@ -97,13 +104,15 @@ public class DefaultContentStore implements ContentStore {
     // -------------------------------------------------------------------------------------------------------------
 
     @Builder
-    public DefaultContentStore(@NonNull ChatModel defaultChatModel,
-                               @NonNull EmbeddingModel embeddingModel,
+    public DefaultContentStore(@NonNull EmbeddingModel embeddingModel,
                                @NonNull EmbeddingStore<TextSegment> mdlEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> sqlEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> synEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> docEmbeddingStore,
+                               @NonNull ChatModel defaultChatModel,
                                Integer maxResults, Double minScore,
+                               ScoringModel scoringModel, Boolean rerankMode,
+                               Integer rerankMaxResults, Double rerankMinScore,
 
                                SemanticModelIndexingMethod mdlIndexingMethod,
                                ChatModel mdlHyQEChatModel,
@@ -120,13 +129,22 @@ public class DefaultContentStore implements ContentStore {
         this.sqlEmbeddingStore = sqlEmbeddingStore;
         this.synEmbeddingStore = synEmbeddingStore;
         this.docEmbeddingStore = docEmbeddingStore;
-
         this.maxResults = Optional.ofNullable(maxResults).orElse(5);
-        Preconditions.checkArgument(this.maxResults <= 20 && this.maxResults >= 1,
-                "maxResults must be between 1 and 20");
+        Preconditions.checkArgument(this.maxResults <= 200 && this.maxResults >= 1,
+                "maxResults must be between 1 and 200");
         this.minScore = Optional.ofNullable(minScore).orElse(0.6);
         Preconditions.checkArgument(this.minScore >= 0.0 && this.minScore <= 1.0,
                 "minScore must be between 0.0 and 1.0");
+        this.scoringModel = scoringModel;
+        this.rerankMode = Optional.ofNullable(rerankMode).orElse(false);
+        Preconditions.checkArgument(!this.rerankMode || this.scoringModel != null,
+                "scoringModel cannot be null when rerankMode is true");
+        this.rerankMaxResults = Optional.ofNullable(rerankMaxResults).orElse(this.maxResults);
+        int rerankMaxResultsUpperLimit = Math.min(this.maxResults, 20);
+        Preconditions.checkArgument(this.rerankMaxResults <= rerankMaxResultsUpperLimit
+                        && this.rerankMaxResults >= 1,
+                "rerankMaxResults must be between 1 and %s", rerankMaxResultsUpperLimit);
+        this.rerankMinScore = rerankMinScore;
 
         // -------------------------------------------- Semantic Model ------------------------------------------
         this.mdlIndexingMethod = Optional.ofNullable(mdlIndexingMethod)
@@ -289,8 +307,26 @@ public class DefaultContentStore implements ContentStore {
     }
 
     @Override
+    public ContentAggregator getMdlContentAggregator() {
+        if (scoringModel == null) {
+            return new DefaultContentAggregator();
+        }
+        ReRankingContentAggregator.ReRankingContentAggregatorBuilder builder =
+                ReRankingContentAggregator.builder()
+                        .scoringModel(scoringModel)
+                        .maxResults(rerankMaxResults);
+        Optional.ofNullable(rerankMinScore).ifPresent(builder::minScore);
+        return builder.build();
+    }
+
+    @Override
     public List<SemanticModel> retrieveMdl(String question) {
-        List<Content> contents = getMdlContentRetriever().retrieve(Query.from(question));
+        Query query = Query.from(question);
+        List<Content> contents = getMdlContentRetriever().retrieve(query);
+        if (rerankMode && !contents.isEmpty()) {
+            contents = getMdlContentAggregator().aggregate(
+                    Collections.singletonMap(query, Collections.singletonList(contents)));
+        }
         return ContentStoreUtil.contents2SemanticModels(contents);
     }
 
@@ -357,8 +393,26 @@ public class DefaultContentStore implements ContentStore {
     }
 
     @Override
+    public ContentAggregator getSqlContentAggregator() {
+        if (scoringModel == null) {
+            return new DefaultContentAggregator();
+        }
+        ReRankingContentAggregator.ReRankingContentAggregatorBuilder builder =
+                ReRankingContentAggregator.builder()
+                        .scoringModel(scoringModel)
+                        .maxResults(rerankMaxResults);
+        Optional.ofNullable(rerankMinScore).ifPresent(builder::minScore);
+        return builder.build();
+    }
+
+    @Override
     public List<QuestionSqlPair> retrieveSql(String question) {
-        List<Content> contents = getSqlContentRetriever().retrieve(Query.from(question));
+        Query query = Query.from(question);
+        List<Content> contents = getSqlContentRetriever().retrieve(query);
+        if (rerankMode && !contents.isEmpty()) {
+            contents = getSqlContentAggregator().aggregate(
+                    Collections.singletonMap(query, Collections.singletonList(contents)));
+        }
         return ContentStoreUtil.contents2QuestionSqlPairs(contents);
     }
 
@@ -406,8 +460,26 @@ public class DefaultContentStore implements ContentStore {
     }
 
     @Override
+    public ContentAggregator getSynContentAggregator() {
+        if (scoringModel == null) {
+            return new DefaultContentAggregator();
+        }
+        ReRankingContentAggregator.ReRankingContentAggregatorBuilder builder =
+                ReRankingContentAggregator.builder()
+                        .scoringModel(scoringModel)
+                        .maxResults(rerankMaxResults);
+        Optional.ofNullable(rerankMinScore).ifPresent(builder::minScore);
+        return builder.build();
+    }
+
+    @Override
     public List<WordSynonymPair> retrieveSyn(String question) {
-        List<Content> contents = getSynContentRetriever().retrieve(Query.from(question));
+        Query query = Query.from(question);
+        List<Content> contents = getSynContentRetriever().retrieve(query);
+        if (rerankMode && !contents.isEmpty()) {
+            contents = getSynContentAggregator().aggregate(
+                    Collections.singletonMap(query, Collections.singletonList(contents)));
+        }
         return ContentStoreUtil.contents2NounSynonymPairs(contents);
     }
 
@@ -466,8 +538,26 @@ public class DefaultContentStore implements ContentStore {
     }
 
     @Override
+    public ContentAggregator getDocContentAggregator() {
+        if (scoringModel == null) {
+            return new DefaultContentAggregator();
+        }
+        ReRankingContentAggregator.ReRankingContentAggregatorBuilder builder =
+                ReRankingContentAggregator.builder()
+                        .scoringModel(scoringModel)
+                        .maxResults(rerankMaxResults);
+        Optional.ofNullable(rerankMinScore).ifPresent(builder::minScore);
+        return builder.build();
+    }
+
+    @Override
     public List<String> retrieveDoc(String question) {
-        List<Content> contents = getDocContentRetriever().retrieve(Query.from(question));
+        Query query = Query.from(question);
+        List<Content> contents = getDocContentRetriever().retrieve(query);
+        if (rerankMode && !contents.isEmpty()) {
+            contents = getDocContentAggregator().aggregate(
+                    Collections.singletonMap(query, Collections.singletonList(contents)));
+        }
         return ContentStoreUtil.contents2Docs(contents);
     }
 

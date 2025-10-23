@@ -39,7 +39,7 @@
     },
     "db": {
       "type": "object",
-      "description": "关系型数据库的上下文",
+      "description": "关系型数据库的设置",
       "required": [
         "provider"
       ],
@@ -59,7 +59,7 @@
     },
     "embedding": {
       "type": "object",
-      "description": "Embedding的上下文",
+      "description": "Embedding的设置",
       "required": [
         "provider"
       ],
@@ -67,7 +67,6 @@
         "provider": {
           "type": "string",
           "pattern": "^[A-Za-z0-9_\\-]+$",
-          "default": "bge-small-zh",
           "description": "Embedding提供者"
         },
         "configuration": {
@@ -83,7 +82,7 @@
     },
     "embedding_store": {
       "type": "object",
-      "description": "Embedding Store的上下文",
+      "description": "Embedding Store的设置",
       "required": [
         "provider"
       ],
@@ -109,7 +108,7 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "description": "LLM的上下文集合",
+      "description": "LLM的设置集合",
       "items": {
         "type": "object",
         "required": [
@@ -135,6 +134,29 @@
         },
         "additionalProperties": false
       }
+    },
+    "reranking": {
+      "type": "object",
+      "description": "Reranking的设置",
+      "required": [
+        "provider"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_\\-]+$",
+          "description": "Reranking提供者"
+        },
+        "configuration": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Reranking的配置",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
     },
     "content_store": {
       "type": "object",

@@ -381,19 +381,19 @@ DAT采用模块化设计，每个模块职责清晰：
 
 ```
 dat-parent/
-├── 🧠 dat-core/           # 核心接口和工厂管理
+├── ❤️ dat-core/           # 核心接口和工厂管理
 ├── 🔌 dat-adapters/       # 数据库适配器
 │   ├── dat-adapter-duckdb/   # 【本地内置数据库】
 │   ├── dat-adapter-mysql/
 │   ├── dat-adapter-oracle/
 │   └── dat-adapter-postgresql/
-├── 🤖 dat-llms/          # LLM集成模块
+├── 🧠 dat-llms/          # LLM集成模块
 │   ├── dat-llm-anthropic/
 │   ├── dat-llm-gemini/
 │   ├── dat-llm-ollama/
 │   ├── dat-llm-openai/
 │   └── dat-llm-xinference/
-├── 📊 dat-embedders/     # 嵌入模型集成
+├── 📍 dat-embedders/     # 嵌入模型集成
 │   ├── dat-embedder-bge-small-zh/        # 【本地内置Embedding模型】
 │   ├── dat-embedder-bge-small-zh-q/      # 【本地内置Embedding模型】
 │   ├── dat-embedder-bge-small-zh-v15/    # 【本地内置Embedding模型】
@@ -402,17 +402,20 @@ dat-parent/
 │   ├── dat-embedder-ollama/
 │   ├── dat-embedder-openai/
 │   └── dat-embedder-xinference/
+├── ⚖️ dat-rerankers/     # 重排模型集成
+│   ├── dat-reranker-onnx-builtin/
+│   └── dat-reranker-ms-marco-minilm-l6-v2-q/    # 【本地内置Reranking模型】
 ├── 💾 dat-storers/       # 向量存储后端
 │   ├── dat-storer-duckdb/    # 【本地内置向量存储】
 │   ├── dat-storer-pgvector/
 │   └── dat-storer-weaviate/
-├── 🎭 dat-agents/        # 智能代理实现
+├── 🤖 dat-agents/        # 智能代理实现
 │   └── dat-agent-agentic/
-├── 📡 dat-servers/       # 服务端组件
+├── 🌐 dat-servers/       # 服务端组件
 │   ├── dat-server-mcp/
 │   └── dat-server-openapi/
-├── 🛠️ dat-cli/           # 命令行工具
-└── 📚 dat-sdk/           # 开发工具包
+├── 📦 dat-sdk/           # 开发工具包
+└── 🖥️ dat-cli/           # 命令行工具
 ```
 
 ### 🔧 本地开发环境

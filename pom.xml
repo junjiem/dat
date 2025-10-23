@@ -11,6 +11,7 @@
     <modules>
         <module>dat-core</module>
         <module>dat-embedders</module>
+        <module>dat-rerankers</module>
         <module>dat-storers</module>
         <module>dat-llms</module>
         <module>dat-adapters</module>

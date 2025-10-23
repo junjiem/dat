@@ -128,9 +128,13 @@ public class ProjectUtil {
                 .collect(Collectors.toMap(LlmConfig::getName,
                         o -> FactoryDescriptor.from(o.getProvider(), o.getConfiguration())));
 
+        FactoryDescriptor rerankingFactoryDescriptor = Optional.ofNullable(project.getReranking())
+                .map(o -> FactoryDescriptor.from(o.getProvider(), o.getConfiguration()))
+                .orElse(null);
+
         return FactoryUtil.createContentStore(project.getName(),
-                contentStoreFactoryDescriptor, embeddingFactoryDescriptor,
-                embeddingStoreFactoryDescriptor, chatModelFactoryDescriptors);
+                contentStoreFactoryDescriptor, embeddingFactoryDescriptor, embeddingStoreFactoryDescriptor,
+                chatModelFactoryDescriptors, rerankingFactoryDescriptor);
     }
 
     private static void adjustEmbeddingStoreConfig(@NonNull DatProject project, @NonNull Path projectPath) {
@@ -179,13 +183,14 @@ public class ProjectUtil {
         Preconditions.checkArgument(agentMap.containsKey(agentName),
                 "The project doesn't exist agent: " + agentName);
 
+        ContentStore contentStore = ProjectUtil.createContentStore(project, projectPath);
+
         List<SemanticModel> semanticModels = null;
         AgentConfig agentConfig = agentMap.get(agentName);
         List<String> semanticModelNames = agentConfig.getSemanticModels();
         List<String> semanticModelTags = agentConfig.getSemanticModelTags();
         // When the corresponding list of semantic_models or semantic_model_tags is manually specified in the agent
         if (!semanticModelNames.isEmpty() || !semanticModelTags.isEmpty()) {
-            ContentStore contentStore = ProjectUtil.createContentStore(project, projectPath);
             List<SemanticModel> allSemanticModels = contentStore.allMdls();
             validateAgent(agentConfig, allSemanticModels);
             semanticModels = allSemanticModels.stream()
@@ -204,10 +209,8 @@ public class ProjectUtil {
         FactoryDescriptor databaseAdapterFactoryDescriptor =
                 createDatabaseAdapterFactoryDescriptor(project, projectPath);
 
-        return FactoryUtil.createAskdataAgent(agentFactoryDescriptor,
-                semanticModels, createContentStore(project, projectPath),
-                chatModelFactoryDescriptors, databaseAdapterFactoryDescriptor,
-                variables);
+        return FactoryUtil.createAskdataAgent(agentFactoryDescriptor, semanticModels, contentStore,
+                chatModelFactoryDescriptors, databaseAdapterFactoryDescriptor, variables);
     }
 
     @Deprecated

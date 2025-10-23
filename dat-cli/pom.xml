@@ -364,12 +364,12 @@
         <!-- Windows amd64 -->
         <profile>
             <id>os:windows-amd64</id>
-<!--            <activation>-->
-<!--                <os>-->
-<!--                    <family>windows</family>-->
-<!--                    <arch>amd64</arch>-->
-<!--                </os>-->
-<!--            </activation>-->
+            <!--            <activation>-->
+            <!--                <os>-->
+            <!--                    <family>windows</family>-->
+            <!--                    <arch>amd64</arch>-->
+            <!--                </os>-->
+            <!--            </activation>-->
             <properties>
                 <finalName.suffix>windows-amd64</finalName.suffix>
             </properties>
@@ -441,12 +441,12 @@
         <!-- Linux amd64 -->
         <profile>
             <id>os:linux-amd64</id>
-<!--            <activation>-->
-<!--                <os>-->
-<!--                    <family>linux</family>-->
-<!--                    <arch>amd64</arch>-->
-<!--                </os>-->
-<!--            </activation>-->
+            <!--            <activation>-->
+            <!--                <os>-->
+            <!--                    <family>linux</family>-->
+            <!--                    <arch>amd64</arch>-->
+            <!--                </os>-->
+            <!--            </activation>-->
             <properties>
                 <finalName.suffix>linux-amd64</finalName.suffix>
             </properties>
@@ -518,12 +518,12 @@
         <!-- Linux arm64 -->
         <profile>
             <id>os:linux-arm64</id>
-<!--            <activation>-->
-<!--                <os>-->
-<!--                    <family>linux</family>-->
-<!--                    <arch>aarch64</arch>-->
-<!--                </os>-->
-<!--            </activation>-->
+            <!--            <activation>-->
+            <!--                <os>-->
+            <!--                    <family>linux</family>-->
+            <!--                    <arch>aarch64</arch>-->
+            <!--                </os>-->
+            <!--            </activation>-->
             <properties>
                 <finalName.suffix>linux-arm64</finalName.suffix>
             </properties>
@@ -595,12 +595,12 @@
         <!-- MaxOS arm64 -->
         <profile>
             <id>os:macos-arm64</id>
-<!--            <activation>-->
-<!--                <os>-->
-<!--                    <family>mac</family>-->
-<!--                    <arch>aarch64</arch>-->
-<!--                </os>-->
-<!--            </activation>-->
+            <!--            <activation>-->
+            <!--                <os>-->
+            <!--                    <family>mac</family>-->
+            <!--                    <arch>aarch64</arch>-->
+            <!--                </os>-->
+            <!--            </activation>-->
             <properties>
                 <finalName.suffix>macos-arm64</finalName.suffix>
             </properties>
@@ -694,6 +694,17 @@
                     <groupId>ai.dat</groupId>
                     <artifactId>dat-adapter-duckdb</artifactId>
                     <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-reranker-ms-marco-minilm-l6-v2-q</artifactId>
+                    <version>${project.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.microsoft.onnxruntime</groupId>
+                            <artifactId>onnxruntime</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
         </profile>

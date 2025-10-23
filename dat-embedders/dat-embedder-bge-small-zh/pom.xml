@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>dat-embedder-bge-small-zh</artifactId>
-    <name>DAT : Embedders : In-process bge-small-zh</name>
+    <name>DAT : Embedders : In-process(ONNX) bge-small-zh</name>
 
     <dependencies>
         <dependency>
