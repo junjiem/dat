@@ -12,6 +12,7 @@ import ai.dat.core.utils.FactoryUtil;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.scoring.ScoringModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
             ConfigOptions.key("max-results")
                     .intType()
                     .defaultValue(5)
-                    .withDescription("Content store retrieve TopK maximum value, must be between 1 and 20");
+                    .withDescription("Content store retrieve TopK maximum value, must be between 1 and 200");
 
     public static final ConfigOption<Double> MIN_SCORE =
             ConfigOptions.key("min-score")
@@ -45,6 +46,26 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                     .stringType()
                     .defaultValue("default")
                     .withDescription("Specify the default LLM model name.");
+
+    public static final ConfigOption<Boolean> RERANK_MODE =
+            ConfigOptions.key("rerank-mode")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Rerank model will reorder the candidate content list based on " +
+                            "the semantic match with user query, improving the results of semantic ranking.");
+
+    public static final ConfigOption<Integer> RERANK_MAX_RESULTS =
+            ConfigOptions.key("rerank-max-results")
+                    .intType()
+                    .defaultValue(4)
+                    .withDescription("Content store re-rank TopK maximum value, must be between 1 and max-results, " +
+                            "and maximum not exceed 20");
+
+    public static final ConfigOption<Double> RERANK_MIN_SCORE =
+            ConfigOptions.key("rerank-min-score")
+                    .doubleType()
+                    .noDefaultValue()
+                    .withDescription("Content store re-rank Score minimum value");
 
     // -------------------------------------------- Semantic Model -------------------------------------------------
     public static final ConfigOption<SemanticModelIndexingMethod> SEMANTIC_MODEL_INDEXING_METHOD =
@@ -220,6 +241,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
     public Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(
                 MAX_RESULTS, MIN_SCORE, DEFAULT_LLM,
+                RERANK_MODE, RERANK_MAX_RESULTS, RERANK_MIN_SCORE,
 
                 SEMANTIC_MODEL_INDEXING_METHOD,
                 SEMANTIC_MODEL_INDEXING_HYQE_LLM,
@@ -266,16 +288,14 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                                @NonNull EmbeddingStore<TextSegment> sqlEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> synEmbeddingStore,
                                @NonNull EmbeddingStore<TextSegment> docEmbeddingStore,
-                               @NonNull List<ChatModelInstance> chatModelInstances) {
+                               @NonNull List<ChatModelInstance> chatModelInstances,
+                               ScoringModel scoringModel) {
         Preconditions.checkArgument(!chatModelInstances.isEmpty(),
                 "chatModelInstances cannot be empty");
         FactoryUtil.validateFactoryOptions(this, config);
         Map<String, ChatModelInstance> instances = chatModelInstances.stream()
                 .collect(Collectors.toMap(ChatModelInstance::getName, i -> i));
-        validateConfigOptions(config, instances);
-
-        Integer maxResults = config.get(MAX_RESULTS);
-        Double minScore = config.get(MIN_SCORE);
+        validateConfigOptions(config, instances, scoringModel);
 
         ChatModelInstance defaultInstance = config.getOptional(DEFAULT_LLM)
                 .map(instances::get).orElseGet(() -> chatModelInstances.get(0));
@@ -295,16 +315,22 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                 config.get(BUSINESS_KNOWLEDGE_INDEXING_METHOD);
 
         DefaultContentStore.DefaultContentStoreBuilder builder = DefaultContentStore.builder()
-                .defaultChatModel(defaultInstance.getChatModel())
                 .embeddingModel(embeddingModel)
                 .mdlEmbeddingStore(mdlEmbeddingStore)
                 .sqlEmbeddingStore(sqlEmbeddingStore)
                 .synEmbeddingStore(synEmbeddingStore)
                 .docEmbeddingStore(docEmbeddingStore)
-                .maxResults(maxResults)
-                .minScore(minScore)
+                .defaultChatModel(defaultInstance.getChatModel())
                 .mdlIndexingMethod(semanticModelIndexingMethod)
                 .docIndexingMethod(businessKnowledgeIndexingMethod);
+
+        config.getOptional(MAX_RESULTS).ifPresent(builder::maxResults);
+        config.getOptional(MIN_SCORE).ifPresent(builder::minScore);
+
+        Optional.ofNullable(scoringModel).ifPresent(builder::scoringModel);
+        config.getOptional(RERANK_MODE).ifPresent(builder::rerankMode);
+        config.getOptional(RERANK_MAX_RESULTS).ifPresent(builder::rerankMaxResults);
+        config.getOptional(RERANK_MIN_SCORE).ifPresent(builder::rerankMinScore);
 
         Optional<Integer> mdlMaxResultsOptional;
         Optional<Double> mdlMinScoreOptional;
@@ -382,13 +408,24 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
         return builder.build();
     }
 
-    private void validateConfigOptions(ReadableConfig config, Map<String, ChatModelInstance> instances) {
+    private void validateConfigOptions(ReadableConfig config,
+                                       Map<String, ChatModelInstance> instances,
+                                       ScoringModel scoringModel) {
         Integer maxResults = config.get(MAX_RESULTS);
-        Preconditions.checkArgument(maxResults >= 1 && maxResults <= 20,
-                "'" + MAX_RESULTS.key() + "' value must be between 1 and 20");
+        Preconditions.checkArgument(maxResults >= 1 && maxResults <= 200,
+                "'" + MAX_RESULTS.key() + "' value must be between 1 and 200");
         Double minScore = config.get(MIN_SCORE);
         Preconditions.checkArgument(minScore >= 0.0 && minScore <= 1.0,
                 "'" + MIN_SCORE.key() + "' value must be between 0.0 and 1.0");
+
+        Boolean rerankMode = config.get(RERANK_MODE);
+        Preconditions.checkArgument(!rerankMode || scoringModel != null,
+                "'" + RERANK_MODE.key() + "' is true, reranking has not been set yet");
+
+        Integer rerankMaxResults = config.get(RERANK_MAX_RESULTS);
+        int rerankMaxResultsUpperLimit = Math.min(maxResults, 20);
+        Preconditions.checkArgument(rerankMaxResults >= 1 && rerankMaxResults <= rerankMaxResultsUpperLimit,
+                "'" + RERANK_MAX_RESULTS.key() + "' value must be between 1 and " + rerankMaxResultsUpperLimit);
 
         String llmNames = String.join(", ", instances.keySet());
         config.getOptional(DEFAULT_LLM)

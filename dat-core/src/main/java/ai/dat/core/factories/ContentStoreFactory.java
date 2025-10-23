@@ -7,6 +7,7 @@ import ai.dat.core.factories.data.ChatModelInstance;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.scoring.ScoringModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.NonNull;
 
@@ -41,5 +42,18 @@ public interface ContentStoreFactory extends Factory {
                         EmbeddingStore<TextSegment> sqlEmbeddingStore,
                         EmbeddingStore<TextSegment> synEmbeddingStore,
                         EmbeddingStore<TextSegment> docEmbeddingStore,
-                        List<ChatModelInstance> chatModelInstances);
+                        List<ChatModelInstance> chatModelInstances,
+                        ScoringModel scoringModel);
+
+    @Deprecated
+    default ContentStore create(ReadableConfig config,
+                                EmbeddingModel embeddingModel,
+                                EmbeddingStore<TextSegment> mdlEmbeddingStore,
+                                EmbeddingStore<TextSegment> sqlEmbeddingStore,
+                                EmbeddingStore<TextSegment> synEmbeddingStore,
+                                EmbeddingStore<TextSegment> docEmbeddingStore,
+                                List<ChatModelInstance> chatModelInstances) {
+        return create(config, embeddingModel, mdlEmbeddingStore, sqlEmbeddingStore,
+                synEmbeddingStore, docEmbeddingStore, chatModelInstances, null);
+    }
 }

@@ -54,6 +54,8 @@ public class DatProject {
         this.llms = llms;
     }
 
+    private RerankingConfig reranking;
+
     @NonNull
     @JsonProperty("content_store")
     private ContentStoreConfig contentStore = new ContentStoreConfig();

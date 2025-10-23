@@ -7,7 +7,7 @@
 version: 1
 
 # ------------------------------------------------------------
-# Project basic configuration
+# Project basic configuration.
 # ------------------------------------------------------------
 name: dat_project_example
 description: dat project configuration example.
@@ -20,10 +20,10 @@ description: dat project configuration example.
 
 
 # ------------------------------------------------------------
-# Data source configuration
+# Data source configuration. [Required]
 {{ "# Supported providers are " }}
 {%- for item in dbs -%}
-    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+    {{ "`" ~ item.provider ~ "`" }}{% if item.display -%}{{ "(Default)" }}{% endif -%}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
 {% endfor -%}.
 # ------------------------------------------------------------
 db:
@@ -40,10 +40,10 @@ db:
 
 
 # ------------------------------------------------------------
-# Embedding model configuration
+# Embedding model configuration. [Optional]
 {{ "# Supported providers are " }}
 {%- for item in embeddings -%}
-    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+    {{ "`" ~ item.provider ~ "`" }}{% if item.display -%}{{ "(Default)" }}{% endif -%}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
 {% endfor -%}.
 # ------------------------------------------------------------
 embedding:
@@ -60,10 +60,10 @@ embedding:
 
 
 # ------------------------------------------------------------
-# Embedding store configuration
+# Embedding store configuration. [Optional]
 {{ "# Supported providers are " }}
 {%- for item in embedding_stores -%}
-    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+    {{ "`" ~ item.provider ~ "`" }}{% if item.display -%}{{ "(Default)" }}{% endif -%}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
 {% endfor -%}.
 # ------------------------------------------------------------
 embedding_store:
@@ -80,10 +80,10 @@ embedding_store:
 
 
 # ------------------------------------------------------------
-# Large language models configurations
+# Large language models configurations. [Required]
 {{ "# Supported providers are " }}
 {%- for item in llms -%}
-    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+    {{ "`" ~ item.provider ~ "`" }}{% if item.display -%}{{ "(Default)" }}{% endif -%}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
 {% endfor -%}.
 # ------------------------------------------------------------
 llms:
@@ -101,10 +101,30 @@ llms:
 
 
 # ------------------------------------------------------------
-# Content store configuration
+# Scoring (reranking) model configuration. [Optional]
+{{ "# Supported providers are " }}
+{%- for item in rerankings -%}
+    {{ "`" ~ item.provider ~ "`" }}{% if item.display -%}{{ "(Default)" }}{% endif -%}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+{% endfor -%}.
+# ------------------------------------------------------------
+reranking:
+{% for item in rerankings -%}
+    {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  provider: " ~ item.provider }}
+    {% if item.configuration -%}
+        {% if not item.display -%}{{ "#" }}{% endif -%}{{ "  configuration:" }}
+        {% for line in item.configuration.split('\n') -%}
+            {% if not item.display -%}{{ "#" }}{% endif -%}{{ "    " ~ line }}
+        {% endfor -%}
+    {% endif -%}
+    {% if not loop.last -%}{{ "\n" }}{% endif -%}
+{% endfor %}
+
+
+# ------------------------------------------------------------
+# Content store configuration. [Optional]
 {{ "# Supported providers are " }}
 {%- for item in content_stores -%}
-    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+    {{ "`" ~ item.provider ~ "`" }}{% if item.display -%}{{ "(Default)" }}{% endif -%}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
 {% endfor -%}.
 # ------------------------------------------------------------
 content_store:
@@ -121,10 +141,10 @@ content_store:
 
 
 # ------------------------------------------------------------
-# Ask data agents configurations
+# Ask data agents configurations. [Required]
 {{ "# Supported providers are " }}
 {%- for item in agents -%}
-    {{ "`" ~ item.provider ~ "`" }}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
+    {{ "`" ~ item.provider ~ "`" }}{% if item.display -%}{{ "(Default)" }}{% endif -%}{%- if not loop.last -%}{{ ", " }}{%- endif -%}
 {% endfor -%}.
 {% for item in agents -%}
     {{ "# `" ~ item.provider ~ "`: " ~ item.comment }}
