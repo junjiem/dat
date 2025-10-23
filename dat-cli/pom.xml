@@ -87,6 +87,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- DAT Reranking Model -->
+        <dependency>
+            <groupId>ai.dat</groupId>
+            <artifactId>dat-reranker-jina</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- DAT Chat Model -->
         <dependency>
             <groupId>ai.dat</groupId>
