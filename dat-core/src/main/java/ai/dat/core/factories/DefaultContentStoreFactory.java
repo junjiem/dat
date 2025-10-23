@@ -6,6 +6,7 @@ import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.DefaultContentStore;
 import ai.dat.core.contentstore.data.BusinessKnowledgeIndexingMethod;
+import ai.dat.core.contentstore.data.BusinessKnowledgeIndexingParentMode;
 import ai.dat.core.contentstore.data.SemanticModelIndexingMethod;
 import ai.dat.core.factories.data.ChatModelInstance;
 import ai.dat.core.utils.FactoryUtil;
@@ -124,7 +125,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
     public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE =
             ConfigOptions.key("business-knowledge.indexing.gce-max-chunk-size")
                     .intType()
-                    .defaultValue(4096)
+                    .defaultValue(512)
                     .withDescription("Business knowledge `GCE` indexing method maximum chunk length.");
 
     public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP =
@@ -138,6 +139,41 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                     .stringType()
                     .noDefaultValue()
                     .withDescription("Business knowledge `GCE` indexing method split chunk regular expression. " +
+                            "When it is empty, use the default built-in recursive split method.");
+
+    public static final ConfigOption<BusinessKnowledgeIndexingParentMode> BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MODE =
+            ConfigOptions.key("business-knowledge.indexing.pcce-parent-mode")
+                    .enumType(BusinessKnowledgeIndexingParentMode.class)
+                    .defaultValue(BusinessKnowledgeIndexingParentMode.FULLTEXT)
+                    .withDescription("Business knowledge `PCCE` indexing method parent chunk mode.\n" +
+                            Arrays.stream(BusinessKnowledgeIndexingParentMode.values())
+                                    .map(e -> e.name() + ": " + e.getDescription())
+                                    .collect(Collectors.joining("\n")));
+
+    public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MAX_CHUNK_SIZE =
+            ConfigOptions.key("business-knowledge.indexing.pcce-parent-max-chunk-size")
+                    .intType()
+                    .defaultValue(1024)
+                    .withDescription("Business knowledge `PCCE` indexing method parent maximum chunk length.");
+
+    public static final ConfigOption<String> BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_CHUNK_REGEX =
+            ConfigOptions.key("business-knowledge.indexing.pcce-parent-chunk-regex")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Business knowledge `PCCE` indexing method split parent chunk regular expression. " +
+                            "When it is empty, use the default built-in recursive split method.");
+
+    public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_MAX_CHUNK_SIZE =
+            ConfigOptions.key("business-knowledge.indexing.pcce-child-max-chunk-size")
+                    .intType()
+                    .defaultValue(512)
+                    .withDescription("Business knowledge `PCCE` indexing method child maximum chunk length.");
+
+    public static final ConfigOption<String> BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_CHUNK_REGEX =
+            ConfigOptions.key("business-knowledge.indexing.pcce-child-chunk-regex")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Business knowledge `PCCE` indexing method split child chunk regular expression. " +
                             "When it is empty, use the default built-in recursive split method.");
 
     public static final ConfigOption<Integer> BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS =
@@ -254,6 +290,11 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                 BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE,
                 BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP,
                 BUSINESS_KNOWLEDGE_INDEXING_GCE_CHUNK_REGEX,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MODE,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MAX_CHUNK_SIZE,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_CHUNK_REGEX,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_MAX_CHUNK_SIZE,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_CHUNK_REGEX,
                 BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS,
                 BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE
         ));
@@ -271,6 +312,11 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                 BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE,
                 BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP,
                 BUSINESS_KNOWLEDGE_INDEXING_GCE_CHUNK_REGEX,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MODE,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MAX_CHUNK_SIZE,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_CHUNK_REGEX,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_MAX_CHUNK_SIZE,
+                BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_CHUNK_REGEX,
 
                 // ------------------ Deprecated -------------------
                 SEMANTIC_MODEL_RETRIEVAL_STRATEGY,
@@ -401,6 +447,12 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
             config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE).ifPresent(builder::docGCEMaxChunkSize);
             config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP).ifPresent(builder::docGCEMaxChunkOverlap);
             config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_GCE_CHUNK_REGEX).ifPresent(builder::docGCEChunkRegex);
+        } else if (BusinessKnowledgeIndexingMethod.PCCE == businessKnowledgeIndexingMethod) {
+            config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MODE).ifPresent(builder::docPCCEParentMode);
+            config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MAX_CHUNK_SIZE).ifPresent(builder::docPCCEParentMaxChunkSize);
+            config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_CHUNK_REGEX).ifPresent(builder::docPCCEParentChunkRegex);
+            config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_MAX_CHUNK_SIZE).ifPresent(builder::docPCCEChildMaxChunkSize);
+            config.getOptional(BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_CHUNK_REGEX).ifPresent(builder::docPCCEChildChunkRegex);
         }
         config.getOptional(BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS).ifPresent(builder::docMaxResults);
         config.getOptional(BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE).ifPresent(builder::docMinScore);
@@ -451,10 +503,19 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
         Preconditions.checkArgument(businessKnowledgeGCEMaxChunkSize > 0,
                 "'" + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE.key() + "' value must be greater than 0");
         Preconditions.checkArgument(businessKnowledgeGCEMaxChunkOverlap >= 0,
-                "'" + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP.key() + "' value must be greater than than or equal to 0");
+                "'" + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP.key() + "' value must be greater than or equal to 0");
         Preconditions.checkArgument(businessKnowledgeGCEMaxChunkSize > businessKnowledgeGCEMaxChunkOverlap,
-                "'" + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE.key() + "' value must be less than '"
-                        + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP.key() + "' value");
+                "'" + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_OVERLAP.key() + "' value must be less than '"
+                        + BUSINESS_KNOWLEDGE_INDEXING_GCE_MAX_CHUNK_SIZE.key() + "' value");
+        Integer businessKnowledgePCCEParentMaxChunkSize = config.get(BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MAX_CHUNK_SIZE);
+        Integer businessKnowledgePCCEChildMaxChunkSize = config.get(BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_MAX_CHUNK_SIZE);
+        Preconditions.checkArgument(businessKnowledgePCCEParentMaxChunkSize > 0,
+                "'" + BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MAX_CHUNK_SIZE.key() + "' value must be greater than 0");
+        Preconditions.checkArgument(businessKnowledgePCCEChildMaxChunkSize > 0,
+                "'" + BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_MAX_CHUNK_SIZE.key() + "' value must be greater than 0");
+        Preconditions.checkArgument(businessKnowledgePCCEParentMaxChunkSize > businessKnowledgePCCEChildMaxChunkSize,
+                "'" + BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_MAX_CHUNK_SIZE.key() + "' value must be less than '"
+                        + BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MAX_CHUNK_SIZE.key() + "' value");
         config.getOptional(BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS)
                 .ifPresent(n -> Preconditions.checkArgument(n >= 1 && n <= 100,
                         "'" + BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS.key() + "' value must be between 1 and 100"));
