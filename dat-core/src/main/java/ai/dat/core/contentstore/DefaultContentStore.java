@@ -1,9 +1,6 @@
 package ai.dat.core.contentstore;
 
-import ai.dat.core.contentstore.data.BusinessKnowledgeIndexingMethod;
-import ai.dat.core.contentstore.data.QuestionSqlPair;
-import ai.dat.core.contentstore.data.SemanticModelIndexingMethod;
-import ai.dat.core.contentstore.data.WordSynonymPair;
+import ai.dat.core.contentstore.data.*;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.semantic.view.ElementView;
@@ -99,6 +96,12 @@ public class DefaultContentStore implements ContentStore {
     private final Integer docGCEMaxChunkOverlap;
     private final String docGCEChunkRegex;
 
+    private final BusinessKnowledgeIndexingParentMode docPCCEParentMode;
+    private final Integer docPCCEParentMaxChunkSize;
+    private final String docPCCEParentChunkRegex;
+    private final Integer docPCCEChildMaxChunkSize;
+    private final String docPCCEChildChunkRegex;
+
     private final Integer docMaxResults;
     private final Double docMinScore;
     // -------------------------------------------------------------------------------------------------------------
@@ -122,6 +125,9 @@ public class DefaultContentStore implements ContentStore {
                                BusinessKnowledgeIndexingMethod docIndexingMethod,
                                Integer docGCEMaxChunkSize, Integer docGCEMaxChunkOverlap,
                                String docGCEChunkRegex,
+                               BusinessKnowledgeIndexingParentMode docPCCEParentMode,
+                               Integer docPCCEParentMaxChunkSize, String docPCCEParentChunkRegex,
+                               Integer docPCCEChildMaxChunkSize, String docPCCEChildChunkRegex,
                                Integer docMaxResults, Double docMinScore) {
         this.defaultChatModel = defaultChatModel;
         this.embeddingModel = embeddingModel;
@@ -168,7 +174,7 @@ public class DefaultContentStore implements ContentStore {
         this.docIndexingMethod = Optional.ofNullable(docIndexingMethod)
                 .orElse(BusinessKnowledgeIndexingMethod.FE);
 
-        this.docGCEMaxChunkSize = Optional.ofNullable(docGCEMaxChunkSize).orElse(4096);
+        this.docGCEMaxChunkSize = Optional.ofNullable(docGCEMaxChunkSize).orElse(512);
         Preconditions.checkArgument(this.docGCEMaxChunkSize > 0,
                 "docGCEMaxChunkSize must be greater than 0");
         this.docGCEMaxChunkOverlap = Optional.ofNullable(docGCEMaxChunkOverlap).orElse(0);
@@ -177,6 +183,19 @@ public class DefaultContentStore implements ContentStore {
         Preconditions.checkArgument(this.docGCEMaxChunkSize > this.docGCEMaxChunkOverlap,
                 "docGCEMaxChunkOverlap value must be less than docGCEMaxChunkSize value");
         this.docGCEChunkRegex = docGCEChunkRegex;
+
+        this.docPCCEParentMode = Optional.ofNullable(docPCCEParentMode)
+                .orElse(BusinessKnowledgeIndexingParentMode.FULLTEXT);
+        this.docPCCEParentMaxChunkSize = Optional.ofNullable(docPCCEParentMaxChunkSize).orElse(1024);
+        Preconditions.checkArgument(this.docPCCEParentMaxChunkSize > 0,
+                "docPCCEParentMaxChunkSize must be greater than 0");
+        this.docPCCEChildMaxChunkSize = Optional.ofNullable(docPCCEChildMaxChunkSize).orElse(512);
+        Preconditions.checkArgument(this.docPCCEChildMaxChunkSize > 0,
+                "docPCCEChildMaxChunkSize must be greater than 0");
+        Preconditions.checkArgument(this.docPCCEParentMaxChunkSize > this.docPCCEChildMaxChunkSize,
+                "docPCCEChildMaxChunkSize value must be less than docPCCEParentMaxChunkSize value");
+        this.docPCCEParentChunkRegex = docPCCEParentChunkRegex;
+        this.docPCCEChildChunkRegex = docPCCEChildChunkRegex;
 
         this.docMaxResults = Optional.ofNullable(docMaxResults).orElse(this.maxResults);
         Preconditions.checkArgument(this.docMaxResults <= 100 && this.docMaxResults >= 1,
@@ -198,14 +217,13 @@ public class DefaultContentStore implements ContentStore {
     }
 
     private List<String> addMdlsForHyQE(List<SemanticModel> semanticModels) {
-        return semanticModels.stream()
-                .map(semanticModel -> {
+        return semanticModels.stream().flatMap(semanticModel -> {
                     SemanticModelUtil.validateSemanticModel(semanticModel);
                     String semanticModelViewText = SemanticModelUtil.toSemanticModelViewText(semanticModel);
                     List<String> questions = mdlHyQEAssistant.genHypotheticalQuestions(
                             mdlHyQEInstruction, mdlHyQEQuestions, semanticModelViewText);
                     if (questions == null || questions.isEmpty()) {
-                        return null;
+                        return Stream.empty();
                     }
                     String json;
                     try {
@@ -217,13 +235,9 @@ public class DefaultContentStore implements ContentStore {
                     TextSegment textSegment = TextSegment.from(json, MDL_METADATA);
                     List<TextSegment> embedTextSegments = questions.stream().map(TextSegment::from).toList();
                     List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
-                    List<TextSegment> textSegments = questions.stream()
-                            .map(question -> textSegment)
-                            .collect(Collectors.toList());
-                    return mdlEmbeddingStore.addAll(embeddings, textSegments);
+                    List<TextSegment> textSegments = embeddings.stream().map(o -> textSegment).collect(Collectors.toList());
+                    return mdlEmbeddingStore.addAll(embeddings, textSegments).stream();
                 })
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
 
@@ -236,8 +250,7 @@ public class DefaultContentStore implements ContentStore {
     }
 
     private List<String> addMdlsForCE(List<SemanticModel> semanticModels) {
-        return semanticModels.stream()
-                .map(semanticModel -> {
+        return semanticModels.stream().flatMap(semanticModel -> {
                     SemanticModelUtil.validateSemanticModel(semanticModel);
                     SemanticModelView semanticModelView = SemanticModelUtil.toSemanticModelView(semanticModel);
                     List<String> columnTexts = Stream.of(
@@ -265,13 +278,9 @@ public class DefaultContentStore implements ContentStore {
                     TextSegment textSegment = TextSegment.from(json, MDL_METADATA);
                     List<TextSegment> embedTextSegments = columnTexts.stream().map(TextSegment::from).toList();
                     List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
-                    List<TextSegment> textSegments = columnTexts.stream()
-                            .map(question -> textSegment)
-                            .collect(Collectors.toList());
-                    return mdlEmbeddingStore.addAll(embeddings, textSegments);
+                    List<TextSegment> textSegments = embeddings.stream().map(o -> textSegment).collect(Collectors.toList());
+                    return mdlEmbeddingStore.addAll(embeddings, textSegments).stream();
                 })
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
 
@@ -503,8 +512,40 @@ public class DefaultContentStore implements ContentStore {
     public List<String> addDocs(List<String> docs) {
         if (BusinessKnowledgeIndexingMethod.GCE == docIndexingMethod) {
             return addDocsForGCE(docs);
+        } else if (BusinessKnowledgeIndexingMethod.PCCE == docIndexingMethod) {
+            return addDocsForPCCE(docs);
         }
         return addDocsForFE(docs);
+    }
+
+    private List<String> addDocsForPCCE(List<String> docs) {
+        DocumentSplitter parentSplitter = null;
+        if (BusinessKnowledgeIndexingParentMode.PARAGRAPH == docPCCEParentMode) {
+            parentSplitter = DocumentSplitters.recursive(docPCCEParentMaxChunkSize, 0);
+            if (docPCCEParentChunkRegex != null) {
+                parentSplitter = new DocumentByRegexSplitter(docPCCEParentChunkRegex, "\n\n",
+                        docPCCEParentMaxChunkSize, 0, parentSplitter);
+            }
+        }
+        DocumentSplitter childSplitter = DocumentSplitters.recursive(docPCCEChildMaxChunkSize, 0);
+        if (docPCCEChildChunkRegex != null) {
+            childSplitter = new DocumentByRegexSplitter(docPCCEChildChunkRegex, "\n",
+                    docPCCEChildMaxChunkSize, 0, childSplitter);
+        }
+        DocumentSplitter finalParentSplitter = parentSplitter;
+        DocumentSplitter finalChildSplitter = childSplitter;
+        return docs.stream().flatMap(text -> {
+            List<String> parentTexts = BusinessKnowledgeIndexingParentMode.PARAGRAPH == docPCCEParentMode ?
+                    finalParentSplitter.split(Document.document(text)).stream().map(TextSegment::text).toList() :
+                    Collections.singletonList(text);
+            return parentTexts.stream().flatMap(parentText -> {
+                TextSegment textSegment = TextSegment.from(parentText, DOC_METADATA);
+                List<TextSegment> embedTextSegments = finalChildSplitter.split(Document.document(parentText));
+                List<Embedding> embeddings = embeddingModel.embedAll(embedTextSegments).content();
+                List<TextSegment> textSegments = embeddings.stream().map(o -> textSegment).collect(Collectors.toList());
+                return docEmbeddingStore.addAll(embeddings, textSegments).stream();
+            });
+        }).collect(Collectors.toList());
     }
 
     private List<String> addDocsForGCE(List<String> docs) {
