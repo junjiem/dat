@@ -14,7 +14,10 @@
 
     <modules>
         <module>dat-reranker-onnx-builtin</module>
+        <module>dat-reranker-ms-marco-minilm-l6-v2</module>
         <module>dat-reranker-ms-marco-minilm-l6-v2-q</module>
+        <module>dat-reranker-ms-marco-tinybert-l2-v2</module>
+        <module>dat-reranker-ms-marco-tinybert-l2-v2-q</module>
     </modules>
 
 </project>
