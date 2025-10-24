@@ -623,6 +623,11 @@
                 </dependency>
                 <dependency>
                     <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-onnx-local</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
                     <artifactId>dat-storer-duckdb</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -664,6 +669,11 @@
                 <dependency>
                     <groupId>ai.dat</groupId>
                     <artifactId>dat-embedder-bge-small-zh-v15</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-onnx-local</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
@@ -724,6 +734,11 @@
                 <dependency>
                     <groupId>ai.dat</groupId>
                     <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-onnx-local</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
