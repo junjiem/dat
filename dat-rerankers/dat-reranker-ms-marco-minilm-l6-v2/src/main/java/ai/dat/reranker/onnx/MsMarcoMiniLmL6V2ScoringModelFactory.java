@@ -14,7 +14,7 @@ import java.util.Set;
  */
 public class MsMarcoMiniLmL6V2ScoringModelFactory implements ScoringModelFactory {
 
-    public static final String IDENTIFIER = "ms-marco-MiniLM-L6-v2-q";
+    public static final String IDENTIFIER = "ms-marco-MiniLM-L6-v2";
 
     @Override
     public String factoryIdentifier() {
