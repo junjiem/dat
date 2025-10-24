@@ -376,32 +376,9 @@
         <!-- Windows amd64 -->
         <profile>
             <id>os:windows-amd64</id>
-            <!--            <activation>-->
-            <!--                <os>-->
-            <!--                    <family>windows</family>-->
-            <!--                    <arch>amd64</arch>-->
-            <!--                </os>-->
-            <!--            </activation>-->
             <properties>
                 <finalName.suffix>windows-amd64</finalName.suffix>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-storer-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-adapter-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -453,32 +430,9 @@
         <!-- Linux amd64 -->
         <profile>
             <id>os:linux-amd64</id>
-            <!--            <activation>-->
-            <!--                <os>-->
-            <!--                    <family>linux</family>-->
-            <!--                    <arch>amd64</arch>-->
-            <!--                </os>-->
-            <!--            </activation>-->
             <properties>
                 <finalName.suffix>linux-amd64</finalName.suffix>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-storer-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-adapter-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -530,32 +484,9 @@
         <!-- Linux arm64 -->
         <profile>
             <id>os:linux-arm64</id>
-            <!--            <activation>-->
-            <!--                <os>-->
-            <!--                    <family>linux</family>-->
-            <!--                    <arch>aarch64</arch>-->
-            <!--                </os>-->
-            <!--            </activation>-->
             <properties>
                 <finalName.suffix>linux-arm64</finalName.suffix>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-storer-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-adapter-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -607,32 +538,9 @@
         <!-- MaxOS arm64 -->
         <profile>
             <id>os:macos-arm64</id>
-            <!--            <activation>-->
-            <!--                <os>-->
-            <!--                    <family>mac</family>-->
-            <!--                    <arch>aarch64</arch>-->
-            <!--                </os>-->
-            <!--            </activation>-->
             <properties>
                 <finalName.suffix>macos-arm64</finalName.suffix>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-storer-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>ai.dat</groupId>
-                    <artifactId>dat-adapter-duckdb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -690,7 +598,23 @@
             <properties>
                 <finalName.suffix>full</finalName.suffix>
             </properties>
-            <!-- 支持任意操作系统的【完整版】 -->
+        </profile>
+
+        <!-- Any OS Lite -->
+        <profile>
+            <id>os:any-os-lite</id>
+            <properties>
+                <finalName.suffix>lite</finalName.suffix>
+            </properties>
+        </profile>
+
+        <!-- Built-in module shared dependencies -->
+        <profile>
+            <id>jar:built-in-small</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <!-- 内置模块的依赖 -->
             <dependencies>
                 <dependency>
                     <groupId>ai.dat</groupId>
@@ -732,13 +656,142 @@
             </dependencies>
         </profile>
 
-        <!-- Any OS Lite -->
+        <!-- Built-in module shared dependencies -->
         <profile>
-            <id>os:any-os-lite</id>
-            <properties>
-                <finalName.suffix>lite</finalName.suffix>
-            </properties>
-            <!-- 支持任意操作系统的【精简版】，不添加额外的依赖 -->
+            <id>jar:built-in-large</id>
+            <!-- 内置模块的依赖 -->
+            <dependencies>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-v15</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-storer-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-adapter-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-reranker-ms-marco-minilm-l6-v2</artifactId>
+                    <version>${project.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.microsoft.onnxruntime</groupId>
+                            <artifactId>onnxruntime</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-reranker-onnx-local</artifactId>
+                    <version>${project.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.microsoft.onnxruntime</groupId>
+                            <artifactId>onnxruntime</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Built-in module shared dependencies -->
+        <profile>
+            <id>jar:built-in-full</id>
+            <!-- 内置模块的依赖 -->
+            <dependencies>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-q</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-v15</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-storer-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-adapter-duckdb</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-reranker-ms-marco-minilm-l6-v2</artifactId>
+                    <version>${project.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.microsoft.onnxruntime</groupId>
+                            <artifactId>onnxruntime</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-reranker-ms-marco-minilm-l6-v2-q</artifactId>
+                    <version>${project.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.microsoft.onnxruntime</groupId>
+                            <artifactId>onnxruntime</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-reranker-ms-marco-tinybert-l2-v2</artifactId>
+                    <version>${project.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.microsoft.onnxruntime</groupId>
+                            <artifactId>onnxruntime</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-reranker-ms-marco-tinybert-l2-v2-q</artifactId>
+                    <version>${project.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.microsoft.onnxruntime</groupId>
+                            <artifactId>onnxruntime</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>ai.dat</groupId>
+                    <artifactId>dat-reranker-onnx-local</artifactId>
+                    <version>${project.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.microsoft.onnxruntime</groupId>
+                            <artifactId>onnxruntime</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
         </profile>
 
     </profiles>

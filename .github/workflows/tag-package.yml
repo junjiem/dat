@@ -15,44 +15,44 @@ jobs:
         include:
           # Unbundled variants (without JRE)
           - os: ubuntu-latest
-            maven_profile: os:any-os-full
+            maven_profile: os:any-os-full,jar:built-in-small
             asset_suffix: full
             package_type: unbundled
           - os: ubuntu-latest
-            maven_profile: os:any-os-lite
+            maven_profile: os:any-os-lite,!jar:built-in-small
             asset_suffix: lite
             package_type: unbundled
           - os: windows-latest
-            maven_profile: os:windows-amd64
+            maven_profile: os:windows-amd64,jar:built-in-small
             asset_suffix: windows-amd64
             package_type: unbundled
           - os: macos-latest
-            maven_profile: os:macos-arm64
+            maven_profile: os:macos-arm64,jar:built-in-small
             asset_suffix: macos-arm64
             package_type: unbundled
           - os: ubuntu-latest
-            maven_profile: os:linux-amd64
+            maven_profile: os:linux-amd64,jar:built-in-small
             asset_suffix: linux-amd64
             package_type: unbundled
           - os: ubuntu-latest
-            maven_profile: os:linux-arm64
+            maven_profile: os:linux-arm64,jar:built-in-small
             asset_suffix: linux-arm64
             package_type: unbundled
           # Bundled variants (with JRE)
           - os: windows-latest
-            maven_profile: os:windows-amd64
+            maven_profile: os:windows-amd64,jar:built-in-small
             asset_suffix: windows-amd64
             package_type: bundled
           - os: macos-latest
-            maven_profile: os:macos-arm64
+            maven_profile: os:macos-arm64,jar:built-in-small
             asset_suffix: macos-arm64
             package_type: bundled
           - os: ubuntu-latest
-            maven_profile: os:linux-amd64
+            maven_profile: os:linux-amd64,jar:built-in-small
             asset_suffix: linux-amd64
             package_type: bundled
           - os: ubuntu-latest
-            maven_profile: os:linux-arm64
+            maven_profile: os:linux-arm64,jar:built-in-small
             asset_suffix: linux-arm64
             package_type: bundled
     runs-on: ${{ matrix.os }}
