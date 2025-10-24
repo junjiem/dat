@@ -154,7 +154,7 @@ public class DefaultContentStore implements ContentStore {
 
         // -------------------------------------------- Semantic Model ------------------------------------------
         this.mdlIndexingMethod = Optional.ofNullable(mdlIndexingMethod)
-                .orElse(SemanticModelIndexingMethod.FE);
+                .orElse(SemanticModelIndexingMethod.CE);
         this.mdlHyQEAssistant = AiServices.builder(MdlHyQEAssistant.class)
                 .chatModel(Objects.requireNonNullElse(mdlHyQEChatModel, defaultChatModel))
                 .build();
@@ -172,7 +172,7 @@ public class DefaultContentStore implements ContentStore {
 
         // -------------------------------------------- Business Knowledge -------------------------------------
         this.docIndexingMethod = Optional.ofNullable(docIndexingMethod)
-                .orElse(BusinessKnowledgeIndexingMethod.FE);
+                .orElse(BusinessKnowledgeIndexingMethod.PCCE);
 
         this.docGCEMaxChunkSize = Optional.ofNullable(docGCEMaxChunkSize).orElse(512);
         Preconditions.checkArgument(this.docGCEMaxChunkSize > 0,
@@ -198,8 +198,8 @@ public class DefaultContentStore implements ContentStore {
         this.docPCCEChildChunkRegex = docPCCEChildChunkRegex;
 
         this.docMaxResults = Optional.ofNullable(docMaxResults).orElse(this.maxResults);
-        Preconditions.checkArgument(this.docMaxResults <= 100 && this.docMaxResults >= 1,
-                "docMaxResults must be between 1 and 100");
+        Preconditions.checkArgument(this.docMaxResults <= 200 && this.docMaxResults >= 1,
+                "docMaxResults must be between 1 and 200");
         this.docMinScore = Optional.ofNullable(docMinScore).orElse(this.minScore);
         Preconditions.checkArgument(this.docMinScore >= 0.0 && this.docMinScore <= 1.0,
                 "docMinScore must be between 0.0 and 1.0");

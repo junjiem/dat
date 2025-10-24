@@ -72,7 +72,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
     public static final ConfigOption<SemanticModelIndexingMethod> SEMANTIC_MODEL_INDEXING_METHOD =
             ConfigOptions.key("semantic-model.indexing-method")
                     .enumType(SemanticModelIndexingMethod.class)
-                    .defaultValue(SemanticModelIndexingMethod.FE)
+                    .defaultValue(SemanticModelIndexingMethod.CE)
                     .withDescription("Semantic model indexing method.\n" +
                             Arrays.stream(SemanticModelIndexingMethod.values())
                                     .map(e -> e.name() + ": " + e.getDescription())
@@ -116,7 +116,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
     public static final ConfigOption<BusinessKnowledgeIndexingMethod> BUSINESS_KNOWLEDGE_INDEXING_METHOD =
             ConfigOptions.key("business-knowledge.indexing-method")
                     .enumType(BusinessKnowledgeIndexingMethod.class)
-                    .defaultValue(BusinessKnowledgeIndexingMethod.FE)
+                    .defaultValue(BusinessKnowledgeIndexingMethod.PCCE)
                     .withDescription("Business knowledge indexing method.\n" +
                             Arrays.stream(BusinessKnowledgeIndexingMethod.values())
                                     .map(e -> e.name() + ": " + e.getDescription())
@@ -180,7 +180,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
             ConfigOptions.key("business-knowledge.retrieval.max-results")
                     .intType()
                     .noDefaultValue()
-                    .withDescription("Business knowledge retrieve TopK maximum value, must be between 1 and 100. " +
+                    .withDescription("Business knowledge retrieve TopK maximum value, must be between 1 and 200. " +
                             "If not set, use the max-results.");
 
     public static final ConfigOption<Double> BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE =
@@ -517,8 +517,8 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                 "'" + BUSINESS_KNOWLEDGE_INDEXING_PCCE_CHILD_MAX_CHUNK_SIZE.key() + "' value must be less than '"
                         + BUSINESS_KNOWLEDGE_INDEXING_PCCE_PARENT_MAX_CHUNK_SIZE.key() + "' value");
         config.getOptional(BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS)
-                .ifPresent(n -> Preconditions.checkArgument(n >= 1 && n <= 100,
-                        "'" + BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS.key() + "' value must be between 1 and 100"));
+                .ifPresent(n -> Preconditions.checkArgument(n >= 1 && n <= 200,
+                        "'" + BUSINESS_KNOWLEDGE_RETRIEVAL_MAX_RESULTS.key() + "' value must be between 1 and 200"));
         config.getOptional(BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE)
                 .ifPresent(n -> Preconditions.checkArgument(n >= 0.0 && n <= 1.0,
                         "'" + BUSINESS_KNOWLEDGE_RETRIEVAL_MIN_SCORE.key() + "' value must be between 0.0 and 1.0"));
