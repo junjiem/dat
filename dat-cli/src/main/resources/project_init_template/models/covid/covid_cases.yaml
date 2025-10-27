@@ -4,17 +4,6 @@ semantic_models:
   - name: covid_cases
     description: 各国的covid病例。
     model: |
-      -- 这是一个 MySQL 方言的示例查询SQL
-      select
-        CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
-        cases,
-        deaths,
-        geo_id
-      from covid_cases
-      {% if start_date -%}
-      where CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) > '{{ start_date }}'
-      {% endif %}
-      /*
       -- 这是一个 DuckDB 方言的示例查询SQL
       select
         CAST(strptime(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
@@ -24,6 +13,17 @@ semantic_models:
       from covid_cases
       {% if start_date -%}
       where CAST(strptime(date_rep, '%d/%m/%Y') AS DATE) > '{{ start_date }}'
+      {% endif %}
+      /*
+      -- 这是一个 MySQL 方言的示例查询SQL
+      select
+        CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) as date_rep,
+        cases,
+        deaths,
+        geo_id
+      from covid_cases
+      {% if start_date -%}
+      where CAST(STR_TO_DATE(date_rep, '%d/%m/%Y') AS DATE) > '{{ start_date }}'
       {% endif %}
       */
     defaults:
