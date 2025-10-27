@@ -78,15 +78,20 @@ check_supports_workspace_path() {
 # Get first parameter as command
 COMMAND="$1"
 
+# Build arguments array
+ARGS=("$@")
+
 # Extract project path from arguments for logging
 PROJECT_PATH="$(cd "$USER_PWD" 2>/dev/null && pwd || echo "$USER_PWD")"
-for i in "${!@}"; do
-    if [[ "${!i}" == "-p" ]] || [[ "${!i}" == "--project-path" ]]; then
+for i in "${!ARGS[@]}"; do
+    if [[ "${ARGS[i]}" == "-p" ]] || [[ "${ARGS[i]}" == "--project-path" ]]; then
         next_index=$((i + 1))
-        if [[ $next_index -le $# ]]; then
-            PROJECT_PATH="${!next_index}"
+        if [[ $next_index -lt ${#ARGS[@]} ]]; then
+            PROJECT_PATH="${ARGS[next_index]}"
             # Convert to absolute path
-            PROJECT_PATH="$(cd "$PROJECT_PATH" 2>/dev/null && pwd || echo "$PROJECT_PATH")"
+            if cd "$USER_PWD" 2>/dev/null; then
+                PROJECT_PATH="$(cd "$PROJECT_PATH" 2>/dev/null && pwd || echo "$PROJECT_PATH")"
+            fi
         fi
         break
     fi
@@ -94,20 +99,19 @@ done
 
 # Extract workspace path from arguments for logging
 WORKSPACE_PATH="$(cd "$USER_PWD" 2>/dev/null && pwd || echo "$USER_PWD")"
-for i in "${!@}"; do
-    if [[ "${!i}" == "-w" ]] || [[ "${!i}" == "--workspace-path" ]]; then
+for i in "${!ARGS[@]}"; do
+    if [[ "${ARGS[i]}" == "-w" ]] || [[ "${ARGS[i]}" == "--workspace-path" ]]; then
         next_index=$((i + 1))
-        if [[ $next_index -le $# ]]; then
-            WORKSPACE_PATH="${!next_index}"
+        if [[ $next_index -lt ${#ARGS[@]} ]]; then
+            WORKSPACE_PATH="${ARGS[next_index]}"
             # Convert to absolute path
-            WORKSPACE_PATH="$(cd "$WORKSPACE_PATH" 2>/dev/null && pwd || echo "$WORKSPACE_PATH")"
+            if cd "$USER_PWD" 2>/dev/null; then
+                WORKSPACE_PATH="$(cd "$WORKSPACE_PATH" 2>/dev/null && pwd || echo "$WORKSPACE_PATH")"
+            fi
         fi
         break
     fi
 done
-
-# Build arguments array
-ARGS=("$@")
 
 # Check if need to add project path parameter
 if [[ ! " $* " =~ " -p " ]] && [[ ! " $* " =~ " --project-path " ]] && check_supports_project_path "$COMMAND"; then
