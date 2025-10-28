@@ -239,7 +239,9 @@ class PreBuildValidator {
                             return null;
                         }
                         return "Dimension '" + d.getName()
-                                + "' -> Enum values contain values that do not exist in the database";
+                                + "' -> Enum values contain values that do not exist in the database. " +
+                                "\n  \t\tvalues: [" + String.join(", ", values) + "], " +
+                                "\n  \t\tenum_values: [" + String.join(", ", enumValues) + "]";
                     } catch (SQLException e) {
                         return "Dimension '" + d.getName() + "' -> " + e.getMessage();
                     }
