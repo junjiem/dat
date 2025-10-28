@@ -40,8 +40,8 @@ semantic_models:
     model: 详见model配置示例          ## 可选
     alias: 语义模型别名                 ## 可选
     tags: [标签列表]                   ## 可选
-    defaults:                         ## 必填
-      agg_time_dimension: 维度名称      ## 如果包含度量则必填
+    defaults:                         ## 可选
+      agg_time_dimension: 维度名称
     entities:                         ## 必填
       - 详见实体配置章节
     dimensions:                       ## 必填  
@@ -59,7 +59,7 @@ semantic_models:
 | **[model](#model配置示例)**   | 使用`ref`函数指定数据模型、设置`查询SQL语句`或配置`库表名`，不填默认将`语义模型名直接映射为数据模型名` | 可选 | String |
 | **alias**                 | 语义模型的别名                                              | 可选 | String |
 | **tags**                  | 语义模型的标签，用于分类和检索的标签数组                                 | 可选 | Array  |
-| **defaults**              | 模型的默认配置，目前仅支持agg_time_dimension                      | 必填 | Object |
+| **defaults**              | 模型的默认配置，目前仅支持agg_time_dimension                      | 可选 | Object |
 | **[entities](#实体配置)**     | 作为连接键的列，指示其类型为primary、foreign或unique                 | 必填 | List   |
 | **[dimensions](#维度配置)** | 对度量进行分组或切片的不同方式，可以是时间或分类                             | 必填 | List   |
 | **[measures](#度量配置)**     | 应用于数据模型中列的聚合。可以是最终度量或复杂度量的构建块                        | 可选 | List   |
@@ -230,7 +230,7 @@ entities:
 |------|------|------|--------|
 | **name** | 维度名称，在同一语义模型内必须唯一 | 必填 | String |
 | **type** | 维度类型：categorical或time | 必填 | String |
-| **type_params** | 特定类型参数，如时间粒度 | 必填 | Object |
+| **type_params** | 特定类型参数，如时间粒度 | 可选 | Object |
 | **description** | 维度的清晰描述 | 可选 | String |
 | **alias** | 维度的别名 | 可选 | String |
 | **expr** | 定义底层列或SQL查询 | 可选 | String |
@@ -255,7 +255,6 @@ dimensions:
         label: "已发货"
       - value: "delivered"
         label: "已送达"
-    type_params: {}
 
   - name: product_category
     type: categorical
@@ -268,7 +267,6 @@ dimensions:
         label: "服装"
       - value: "books"
         label: "图书"
-    type_params: {}
 ```
 
 #### 时间维度示例
@@ -440,7 +438,6 @@ semantic_models:
             label: "已送达"
           - value: "cancelled"
             label: "已取消"
-        type_params: {}
       
       - name: payment_method
         type: categorical
@@ -455,7 +452,6 @@ semantic_models:
             label: "PayPal"
           - value: "cash"
             label: "现金"
-        type_params: {}
     
     measures:
       - name: total_amount
@@ -522,7 +518,6 @@ semantic_models:
             label: "普通客户"
           - value: "new"
             label: "新客户"
-        type_params: {}
       
       - name: age_group
         type: categorical
@@ -540,7 +535,6 @@ semantic_models:
             label: "中年客户(25-45岁)"
           - value: "senior"
             label: "中老年客户(45岁以上)"
-        type_params: {}
     
     measures:
       - name: customer_count
