@@ -27,6 +27,7 @@ public class DatProject {
     @NonNull
     private ReadableConfig configuration = new Configuration();
 
+    @JsonProperty("configuration")
     public void setConfiguration(Map<String, Object> configs) {
         this.configuration = Configuration.fromMap(configs);
     }
