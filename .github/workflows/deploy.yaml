@@ -27,4 +27,5 @@ jobs:
       - name: Deploy to Maven Central
         env:
           MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
-        run: mvn -B clean deploy -P release --file pom.xml -s settings-template.xml -D gpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: mvn -B clean deploy -P release --file pom.xml -s settings-template.xml
