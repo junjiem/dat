@@ -99,13 +99,6 @@
                         </configuration>
                     </plugin>
                     <!-- GPG插件 -->
-                    <!--
-                    ====================================================================================
-                    # https://github.com/keybase/keybase-issues/issues/2798
-                    export GPG_TTY=$(tty)
-                    mvn clean deploy -P release -D gpg.passphrase=xxxxxx
-                    ====================================================================================
-                    -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
@@ -120,7 +113,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <keyname>junjiem</keyname>
+                            <!-- 让 GPG 2.1+ 支持无交互口令输入 -->
                             <gpgArguments>
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
@@ -131,10 +124,14 @@
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>0.7.0</version>
+                        <version>0.9.0</version>
                         <extensions>true</extensions>
                         <configuration>
+                            <!-- 和 settings.xml / setup-java 里的 server-id 对应 -->
                             <publishingServerId>central</publishingServerId>
+                            <!-- CI 中建议自动发布并等待到已发布状态 -->
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
                         </configuration>
                     </plugin>
                 </plugins>
