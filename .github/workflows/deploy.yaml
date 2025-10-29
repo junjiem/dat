@@ -19,12 +19,14 @@ jobs:
           cache: maven
           # 让 setup-java 生成一个包含 <server id="central"> 的 settings.xml
           server-id: central
-          server-username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          server-password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          server-username: MAVEN_CENTRAL_USERNAME
+          server-password: MAVEN_CENTRAL_PASSWORD
           # 直接导入 ASCII 装甲的私钥，免自己写 gpg --import
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY  }}
-          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
       - name: Deploy to Maven Central
         run: mvn -B clean deploy -P release
         env:
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
