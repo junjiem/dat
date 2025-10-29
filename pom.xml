@@ -35,7 +35,7 @@
 
     <!-- 版本控制仓库地址 -->
     <scm>
-        <connection>https://github.com/junjiem/dat.git</connection>
+        <connection>scm:git:https://github.com/junjiem/dat.git</connection>
         <developerConnection>scm:git:ssh://git@github.com:junjiem/dat.git</developerConnection>
         <url>https://github.com/junjiem/dat</url>
     </scm>
@@ -120,6 +120,7 @@
                             </execution>
                         </executions>
                         <configuration>
+                            <keyname>junjiem</keyname>
                             <gpgArguments>
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>

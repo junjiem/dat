@@ -11,8 +11,6 @@ jobs:
     name: deploy
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
       - name: GPG Setup
         env:
           GPG_KEY_BASE64: ${{ secrets.GPG_KEY_BASE64 }}
