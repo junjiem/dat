@@ -120,7 +120,6 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <keyname>72BA22A2D723B831</keyname>
                             <gpgArguments>
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
