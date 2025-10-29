@@ -120,7 +120,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <keyname>118170653@qq.com</keyname>
+                            <keyname>72BA22A2D723B831</keyname>
                             <gpgArguments>
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
