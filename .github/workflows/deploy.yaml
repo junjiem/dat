@@ -26,3 +26,5 @@ jobs:
           gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - name: Deploy to Maven Central
         run: mvn -B clean deploy -P release
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
