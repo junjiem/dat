@@ -11,19 +11,18 @@ jobs:
     name: deploy
     steps:
       - uses: actions/checkout@v4
-      - name: GPG Setup
-        env:
-          GPG_KEY_BASE64: ${{ secrets.GPG_KEY_BASE64 }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: bash ./gpg-setup.sh
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'liberica'
+          distribution: temurin
           java-version: '17'
-          java-package: jdk
+          cache: maven
+          # 让 setup-java 生成一个包含 <server id="central"> 的 settings.xml
+          server-id: central
+          server-username: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          server-password: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          # 直接导入 ASCII 装甲的私钥，免自己写 gpg --import
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY  }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - name: Deploy to Maven Central
-        env:
-          MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn -B clean deploy -P release --file pom.xml -s settings-template.xml
+        run: mvn -B clean deploy -P release
