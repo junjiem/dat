@@ -17,7 +17,7 @@ jobs:
         env:
           GPG_KEY_BASE64: ${{ secrets.GPG_KEY_BASE64 }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: ./gpg-setup.sh
+        run: bash ./gpg-setup.sh
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
