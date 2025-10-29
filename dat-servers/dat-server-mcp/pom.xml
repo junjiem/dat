@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>ai.dat</groupId>
+        <groupId>cn.datask</groupId>
         <artifactId>dat-servers</artifactId>
         <version>${revision}</version>
     </parent>
@@ -24,7 +24,7 @@
         </dependency>
 
         <dependency>
-            <groupId>ai.dat</groupId>
+            <groupId>cn.datask</groupId>
             <artifactId>dat-sdk</artifactId>
             <version>${project.version}</version>
         </dependency>
