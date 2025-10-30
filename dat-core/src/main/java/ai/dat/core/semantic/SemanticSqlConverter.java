@@ -84,16 +84,9 @@ public class SemanticSqlConverter {
         SqlNode sqlNode = ansiSqlParser.parseQuery(semanticSql);
         if (sqlNode == null) {
             throw new IllegalArgumentException("SQL node cannot be null");
-        } else if (sqlNode instanceof SqlSelect select) {
-            return convertSelect(select);
-        } else if (sqlNode instanceof SqlOrderBy orderBy) {
-            // Apache Calcite新版本将ORDER BY作为单独的节点
-            if (orderBy.query instanceof SqlSelect select) {
-                return convertSelect(select) + " ORDER BY " + sqlNode2Sql(orderBy.orderList);
-            } else {
-                throw new IllegalArgumentException("Unsupported ORDER BY query class: "
-                        + orderBy.query.getClass().getSimpleName());
-            }
+        } else if (sqlNode instanceof SqlSelect
+                || sqlNode instanceof SqlOrderBy) { // Apache Calcite新版本将ORDER BY作为单独的节点
+            return convertSelectOrOrderBy(sqlNode);
         } else if (sqlNode instanceof SqlWith sqlWith) {
             return convertWith(sqlWith);
         } else {
@@ -102,21 +95,21 @@ public class SemanticSqlConverter {
         }
     }
 
-    private String convertSelect(SqlSelect select) throws SqlParseException {
-        Map<String, String> semanticModelSqls = getSemanticModelSqls(select);
+    private String convertSelectOrOrderBy(SqlNode sqlNode) throws SqlParseException {
+        Map<String, String> semanticModelSqls = getSemanticModelSqls(sqlNode);
         return "WITH " + semanticModelSqls.entrySet().stream()
                 .map(e -> e.getKey() + " AS (" + e.getValue() + ")")
                 .collect(Collectors.joining(",")) +
-                " " + sqlNode2Sql(select);
+                " " + sqlNode2Sql(sqlNode);
     }
 
     private String convertWith(SqlWith sqlWith) throws SqlParseException {
         // CTE部分
         List<SqlNode> withSqlNodes = sqlWith.withList.getList();
-        List<SqlSelect> withSqlSelects = withSqlNodes.stream()
+        List<SqlNode> withSqlSelects = withSqlNodes.stream()
                 .map(node -> (SqlWithItem) node)
-                .filter(item -> item.query instanceof SqlSelect)
-                .map(item -> (SqlSelect) item.query)
+                .filter(item -> item.query instanceof SqlSelect || item.query instanceof SqlOrderBy)
+                .map(item -> item.query)
                 .collect(Collectors.toList());
         Map<String, String> semanticModelSqls = getSemanticModelSqls(withSqlSelects);
         Map<String, String> withSqls = withSqlNodes.stream()
@@ -131,8 +124,18 @@ public class SemanticSqlConverter {
                 " " + sqlNode2Sql(sqlWith.body);
     }
 
-    private Set<String> extractReferencedTables(SqlSelect select) {
+    private Set<String> extractReferencedTables(SqlNode sqlNode) {
         Set<String> tables = new HashSet<>();
+
+        SqlSelect select;
+        if (sqlNode instanceof SqlSelect) {
+            select = (SqlSelect) sqlNode;
+        } else if (sqlNode instanceof SqlOrderBy orderBy
+                && orderBy.query instanceof SqlSelect) {
+            select = (SqlSelect) orderBy.query;
+        } else {
+            return tables;
+        }
 
         // 从FROM子句中提取表名
         if (select.getFrom() != null) {
@@ -160,9 +163,9 @@ public class SemanticSqlConverter {
     }
 
     private void extractTablesFromCondition(SqlNode condition, Set<String> tables) {
-        if (condition instanceof SqlSelect select) {
+        if (condition instanceof SqlSelect || condition instanceof SqlOrderBy) {
             // 处理子查询
-            tables.addAll(extractReferencedTables(select));
+            tables.addAll(extractReferencedTables(condition));
         } else if (condition instanceof SqlBasicCall call) {
             // 递归处理操作数
             for (SqlNode operand : call.getOperandList()) {
@@ -172,16 +175,16 @@ public class SemanticSqlConverter {
         // 对于其他类型的节点，可能不包含表引用，暂时忽略
     }
 
-    private void extractTablesFromNode(SqlNode node, Set<String> tables) {
-        if (node instanceof SqlIdentifier identifier) {
+    private void extractTablesFromNode(SqlNode sqlNode, Set<String> tables) {
+        if (sqlNode instanceof SqlIdentifier identifier) {
             if (identifier.isSimple()) {
                 tables.add(identifier.getSimple());
             }
-        } else if (node instanceof SqlJoin join) {
+        } else if (sqlNode instanceof SqlJoin join) {
             // 处理JOIN节点
             extractTablesFromNode(join.getLeft(), tables);
             extractTablesFromNode(join.getRight(), tables);
-        } else if (node instanceof SqlBasicCall call) {
+        } else if (sqlNode instanceof SqlBasicCall call) {
             String operatorName = call.getOperator().getName().toUpperCase();
             // 处理JOIN操作
             if (operatorName.contains("JOIN")) {
@@ -208,17 +211,17 @@ public class SemanticSqlConverter {
                     extractTablesFromNode(operand, tables);
                 }
             }
-        } else if (node instanceof SqlSelect select) {
+        } else if (sqlNode instanceof SqlSelect || sqlNode instanceof SqlOrderBy) {
             // 处理嵌套子查询
-            tables.addAll(extractReferencedTables(select));
+            tables.addAll(extractReferencedTables(sqlNode));
         }
         // 可以根据需要添加更多的节点类型处理
     }
 
-    private Map<String, String> getSemanticModelSqls(List<SqlSelect> selects) throws SqlParseException {
+    private Map<String, String> getSemanticModelSqls(List<SqlNode> sqlNodes) throws SqlParseException {
         // 提取所有SQL中引用的表名
-        Set<String> referencedTables = selects.stream()
-                .flatMap(select -> extractReferencedTables(select).stream())
+        Set<String> referencedTables = sqlNodes.stream()
+                .flatMap(sqlNode -> extractReferencedTables(sqlNode).stream())
                 .collect(Collectors.toSet());
         // 找到使用的语义模型
         Set<SemanticModel> usedModels = findUsedSemanticModels(referencedTables);
@@ -228,8 +231,8 @@ public class SemanticSqlConverter {
         return getSemanticModelSqls(usedModels);
     }
 
-    private Map<String, String> getSemanticModelSqls(SqlSelect select) throws SqlParseException {
-        return getSemanticModelSqls(Collections.singletonList(select));
+    private Map<String, String> getSemanticModelSqls(SqlNode sqlNode) throws SqlParseException {
+        return getSemanticModelSqls(Collections.singletonList(sqlNode));
     }
 
     private Set<SemanticModel> findUsedSemanticModels(Set<String> referencedTables) {
