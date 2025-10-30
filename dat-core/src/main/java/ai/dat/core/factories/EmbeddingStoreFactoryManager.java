@@ -3,8 +3,7 @@ package ai.dat.core.factories;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/6/30
+ *
  */
 public class EmbeddingStoreFactoryManager {
     private static final FactoryManager<EmbeddingStoreFactory> factoryManager;

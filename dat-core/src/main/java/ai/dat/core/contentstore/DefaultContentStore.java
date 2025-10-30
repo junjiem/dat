@@ -45,9 +45,6 @@ import java.util.stream.Stream;
 
 /**
  * 默认实现的内存存储器类
- *
- * @Author JunjieM
- * @Date 2025/6/25
  */
 public class DefaultContentStore implements ContentStore {
 

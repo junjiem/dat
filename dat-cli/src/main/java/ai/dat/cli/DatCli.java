@@ -18,9 +18,6 @@ import java.util.concurrent.Callable;
 
 /**
  * DAT CLI 主类
- *
- * @Author JunjieM
- * @Date 2025/7/22
  */
 @Slf4j
 @Command(

@@ -26,8 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/12
+ * Handles loading seed configurations and populating database tables for DAT projects.
  */
 @Slf4j
 public class ProjectSeeder {
@@ -37,16 +36,30 @@ public class ProjectSeeder {
 
     private DatProject project;
 
+    /**
+     * Creates a seeder for the project located at the provided path.
+     *
+     * @param projectPath the root directory of the project
+     */
     public ProjectSeeder(@NonNull Path projectPath) {
         this.projectPath = projectPath;
         this.seedsPath = projectPath.resolve(ProjectUtil.SEEDS_DIR_NAME);
     }
 
+    /**
+     * Creates a seeder with a preloaded project definition.
+     *
+     * @param projectPath the root directory of the project
+     * @param project the project definition used to access configuration
+     */
     public ProjectSeeder(@NonNull Path projectPath, @NonNull DatProject project) {
         this(projectPath);
         this.project = project;
     }
 
+    /**
+     * Seeds all datasets defined under the project's seeds directory.
+     */
     public void seedAll() {
         Map<Path, DatSchema> schemas = ProjectUtil.loadAllSchema(seedsPath);
         Map<Path, DatSeed> seeds = ProjectUtil.loadAllSeed(seedsPath);
@@ -55,6 +68,11 @@ public class ProjectSeeder {
         seed(schemas, list);
     }
 
+    /**
+     * Seeds only the datasets whose names are contained in the supplied list.
+     *
+     * @param selects the list of seed names to include
+     */
     public void seedSelect(List<String> selects) {
         Map<Path, DatSchema> schemas = ProjectUtil.loadAllSchema(seedsPath);
         Map<Path, DatSeed> seeds = ProjectUtil.loadAllSeed(seedsPath);
@@ -66,6 +84,11 @@ public class ProjectSeeder {
         seed(schemas, list);
     }
 
+    /**
+     * Seeds all datasets except those whose names are in the supplied list.
+     *
+     * @param excludes the list of seed names to exclude
+     */
     public void seedExclude(List<String> excludes) {
         Map<Path, DatSchema> schemas = ProjectUtil.loadAllSchema(seedsPath);
         Map<Path, DatSeed> seeds = ProjectUtil.loadAllSeed(seedsPath);
@@ -74,6 +97,12 @@ public class ProjectSeeder {
         seed(schemas, list);
     }
 
+    /**
+     * Seeds the provided datasets into the project database.
+     *
+     * @param schemas the schema definitions grouped by file path
+     * @param seeds the datasets to load into the database
+     */
     private void seed(Map<Path, DatSchema> schemas, List<DatSeed> seeds) {
         if (project == null) {
             project = ProjectUtil.loadProject(projectPath);
@@ -108,7 +137,7 @@ public class ProjectSeeder {
             ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
             scheduler.scheduleAtFixedRate(() -> {
                 if (!isCompleted.get()) System.out.print("█");
-            }, 0, 3, TimeUnit.SECONDS); // 3秒打印一次进度条
+            }, 0, 3, TimeUnit.SECONDS); // Print progress indicator every 3 seconds
             try {
                 SeedSpec seedSpec = seedSpecs.get(name);
                 SeedData seedData = seedSpec != null ? parseCsvWithSpec(seed, seedSpec) : parseCsvWithoutSpec(seed);
@@ -130,6 +159,12 @@ public class ProjectSeeder {
         });
     }
 
+    /**
+     * Validates that all seed definitions referenced in schema files have corresponding CSV files.
+     *
+     * @param schemas the schema definitions grouped by file path
+     * @param seeds the loaded seed datasets grouped by file path
+     */
     private void validate(Map<Path, DatSchema> schemas, Map<Path, DatSeed> seeds) {
         List<String> seedNames = seeds.values().stream().map(DatSeed::getName).toList();
         Map<Path, List<String>> missingNames = schemas.entrySet().stream()
@@ -157,6 +192,12 @@ public class ProjectSeeder {
         }
     }
 
+    /**
+     * Validates that the CSV headers satisfy the constraints defined in the seed specification.
+     *
+     * @param seed the seed data to validate
+     * @param seedSpec the seed specification containing schema constraints
+     */
     private void validateCsvWithSpec(DatSeed seed, SeedSpec seedSpec) {
         String name = seed.getName();
         String delimiter = seedSpec.getConfig().getDelimiter();
@@ -178,7 +219,11 @@ public class ProjectSeeder {
     }
 
     /**
-     * 使用SeedSpec配置解析CSV数据
+     * Parses CSV content using metadata defined in the seed specification.
+     *
+     * @param seed the seed data being ingested
+     * @param seedSpec the seed specification describing the schema
+     * @return parsed seed data ready for insertion
      */
     private SeedData parseCsvWithSpec(DatSeed seed, SeedSpec seedSpec) {
         String name = seed.getName();
@@ -202,9 +247,15 @@ public class ProjectSeeder {
         return new SeedData(new Table(name, columns), data);
     }
 
+    /**
+     * Parses CSV content when no seed specification is provided.
+     *
+     * @param seed the seed data being ingested
+     * @return parsed seed data with inferred column definitions
+     */
     private SeedData parseCsvWithoutSpec(DatSeed seed) {
         String name = seed.getName();
-        String delimiter = ","; // 默认使用逗号分隔符
+        String delimiter = ","; // Use comma as the default delimiter
         String[] lines = seed.getContent().split("\\r?\\n");
         Preconditions.checkArgument(lines.length > 0,
                 "CSV content is empty for seed: " + name);
@@ -218,6 +269,13 @@ public class ProjectSeeder {
         return new SeedData(new Table(name, columns), data);
     }
 
+    /**
+     * Parses the CSV data rows using the supplied delimiter.
+     *
+     * @param lines the raw CSV lines
+     * @param delimiter the delimiter separating fields
+     * @return parsed data rows represented as lists of values
+     */
     private List<List<String>> parseCsvData(String[] lines, String delimiter) {
         List<List<String>> data = new ArrayList<>();
         for (int i = 1; i < lines.length; i++) {
@@ -230,6 +288,12 @@ public class ProjectSeeder {
         return data;
     }
 
+    /**
+     * Formats a duration in milliseconds into a human-readable string.
+     *
+     * @param durationMs the duration in milliseconds
+     * @return the formatted duration string
+     */
     private String formatDuration(long durationMs) {
         if (durationMs < 1000) {
             return durationMs + "ms";

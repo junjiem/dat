@@ -6,10 +6,6 @@ import picocli.CommandLine.IVersionProvider;
 import java.io.InputStream;
 import java.util.Properties;
 
-/**
- * @Author JunjieM
- * @Date 2025/8/26
- */
 @Slf4j
 public class VersionProvider implements IVersionProvider {
 

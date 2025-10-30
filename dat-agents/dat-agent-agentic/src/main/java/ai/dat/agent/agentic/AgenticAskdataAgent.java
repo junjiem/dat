@@ -52,10 +52,6 @@ import java.util.stream.Collectors;
 import static ai.dat.agent.agentic.AgenticEventOptions.*;
 import static ai.dat.agent.agentic.Text2SqlContentInjector.HISTORIES_CONTENT_TYPE;
 
-/**
- * @Author JunjieM
- * @Date 2025/8/11
- */
 @Slf4j
 class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
 

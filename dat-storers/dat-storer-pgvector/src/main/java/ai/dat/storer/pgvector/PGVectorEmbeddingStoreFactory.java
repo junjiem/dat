@@ -14,10 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @Author JunjieM
- * @Date 2025/9/28
- */
 public class PGVectorEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     public static final String IDENTIFIER = "pgvector";

@@ -7,8 +7,7 @@ import javax.sql.DataSource;
 import java.sql.Types;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/16
+ *
  */
 public class DuckDBDatabaseAdapter extends GenericSqlDatabaseAdapter {
 

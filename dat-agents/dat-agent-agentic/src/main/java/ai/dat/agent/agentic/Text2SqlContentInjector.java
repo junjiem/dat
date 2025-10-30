@@ -28,8 +28,7 @@ import java.util.stream.Collectors;
 import static ai.dat.core.contentstore.DefaultContentStore.METADATA_CONTENT_TYPE;
 
 /**
- * @Author JunjieM
- * @Date 2025/8/11
+ *
  */
 class Text2SqlContentInjector implements ContentInjector {
 

@@ -3,8 +3,7 @@ package ai.dat.core.factories;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/7/4
+ *
  */
 public class DatabaseAdapterFactoryManager {
     private static final FactoryManager<DatabaseAdapterFactory> factoryManager;

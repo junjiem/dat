@@ -13,9 +13,6 @@ import java.util.concurrent.Callable;
 
 /**
  * Clean project commands
- *
- * @Author JunjieM
- * @Date 2025/7/22
  */
 @Command(
         name = "clean",

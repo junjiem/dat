@@ -11,9 +11,6 @@ import java.util.Set;
 
 /**
  * 问数Agent接口类
- *
- * @Author JunjieM
- * @Date 2025/6/25
  */
 public interface AskdataAgent {
 

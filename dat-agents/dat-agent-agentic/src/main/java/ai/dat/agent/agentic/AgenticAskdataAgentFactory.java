@@ -20,10 +20,6 @@ import lombok.NonNull;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * @Author JunjieM
- * @Date 2025/8/11
- */
 public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
 
     public static final String IDENTIFIER = "agentic";

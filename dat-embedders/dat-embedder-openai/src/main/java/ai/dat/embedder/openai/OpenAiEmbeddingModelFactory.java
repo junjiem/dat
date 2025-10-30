@@ -16,10 +16,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @Author JunjieM
- * @Date 2025/7/1
- */
 public class OpenAiEmbeddingModelFactory implements EmbeddingModelFactory {
 
     public static final String IDENTIFIER = "openai";

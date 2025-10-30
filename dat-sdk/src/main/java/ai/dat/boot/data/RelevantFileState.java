@@ -6,8 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @Author JunjieM
- * @Date 2025/7/21
+ * Represents the persisted state of a project file that is relevant to build operations.
  */
 @Data
 @NoArgsConstructor
@@ -15,17 +14,17 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RelevantFileState {
     /**
-     * 文件相对路径
+     * Relative path of the file within the project.
      */
     private String relativePath;
 
     /**
-     * 文件最后修改时间（毫秒时间戳）
+     * Last modification timestamp of the file, in milliseconds.
      */
     private long lastModified;
 
     /**
-     * 文件的MD5哈希值
+     * MD5 hash of the file contents.
      */
     private String md5Hash;
 }

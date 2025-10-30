@@ -5,8 +5,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * @Author JunjieM
- * @Date 2025/8/8
+ *
  */
 @Getter
 public class FactoryDescriptor {

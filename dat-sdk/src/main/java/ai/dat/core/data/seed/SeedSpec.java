@@ -11,24 +11,41 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/12
+ * Describes the metadata, configuration, and schema for a seed dataset used to bootstrap a project.
  */
 @Setter
 @Getter
 public class SeedSpec {
+    /**
+     * Logical name of the seed dataset.
+     */
     @NonNull
     private String name;
 
+    /**
+     * Human-readable description for the seed dataset.
+     */
     @NonNull
     private String description;
 
+    /**
+     * Configuration that determines how the seed data should be processed.
+     */
     @NonNull
     private SeedConfig config = new SeedConfig();
 
+    /**
+     * Column definitions that compose the seed dataset schema.
+     */
     @NonNull
     private List<SeedColumn> columns = List.of();
 
+    /**
+     * Configures the seed columns while ensuring column names remain unique.
+     *
+     * @param columns the column definitions to apply
+     * @throws IllegalArgumentException if duplicate column names are detected
+     */
     public void setColumns(@NonNull List<SeedColumn> columns) {
         Set<String> names = new HashSet<>();
         for (SeedColumn column : columns) {

@@ -38,9 +38,6 @@ import java.util.stream.Stream;
 
 /**
  * Initialization project commands
- *
- * @Author JunjieM
- * @Date 2025/7/23
  */
 @Command(
         name = "init",

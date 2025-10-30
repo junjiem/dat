@@ -13,9 +13,6 @@ import java.util.List;
 
 /**
  * 内容存储接口类
- *
- * @Author JunjieM
- * @Date 2025/6/25
  */
 public interface ContentStore {
     // ---------------语义模型-------------------

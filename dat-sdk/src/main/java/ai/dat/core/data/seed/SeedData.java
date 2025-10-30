@@ -6,8 +6,10 @@ import lombok.NonNull;
 import java.util.List;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/12
+ * Bundles a table definition with its corresponding seed rows for ingestion.
+ *
+ * @param table the table metadata that describes the seed dataset
+ * @param data the tabular data rows, each represented as a list of strings
  */
 public record SeedData(@NonNull Table table, @NonNull List<List<String>> data) {
 }

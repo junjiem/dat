@@ -14,10 +14,6 @@ import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import java.time.Duration;
 import java.util.*;
 
-/**
- * @Author JunjieM
- * @Date 2025/8/12
- */
 public class McpTransportFactory {
 
     private static final ConfigOption<McpTransportType> TRANSPORT =

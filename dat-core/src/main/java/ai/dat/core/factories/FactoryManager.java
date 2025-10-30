@@ -10,8 +10,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * @Author JunjieM
- * @Date 2025/10/21
+ *
  */
 public class FactoryManager<T extends Factory> {
 

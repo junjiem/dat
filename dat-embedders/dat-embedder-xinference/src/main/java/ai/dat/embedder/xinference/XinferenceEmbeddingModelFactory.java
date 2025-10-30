@@ -16,8 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/10/16
+ *
  */
 public class XinferenceEmbeddingModelFactory implements EmbeddingModelFactory {
 

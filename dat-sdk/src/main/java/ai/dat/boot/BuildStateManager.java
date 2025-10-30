@@ -17,10 +17,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 
 /**
- * 构建状态管理器
- *
- * @Author JunjieM
- * @Date 2025/7/17
+ * Manages persistence of build state snapshots used for incremental project builds.
  */
 @Slf4j
 class BuildStateManager {
@@ -33,13 +30,22 @@ class BuildStateManager {
     private final Path datDir;
     private final ReentrantReadWriteLock lock;
 
+    /**
+     * Creates a state manager rooted at the project's directory.
+     *
+     * @param projectPath the root directory of the project
+     */
     public BuildStateManager(@NonNull Path projectPath) {
         this.datDir = projectPath.resolve(ProjectUtil.DAT_DIR_NAME);
         this.lock = new ReentrantReadWriteLock();
     }
 
     /**
-     * 加载指定配置的构建状态
+     * Loads the build state associated with the given identifier.
+     *
+     * @param stateId the identifier of the state snapshot
+     * @return the list of schema file states or an empty list if no snapshot exists
+     * @throws IOException if read access fails
      */
     public List<SchemaFileState> loadBuildState(@NonNull String stateId) throws IOException {
         return withReadLock(() -> {
@@ -58,7 +64,11 @@ class BuildStateManager {
     }
 
     /**
-     * 保存指定配置的构建状态
+     * Saves the supplied build state under the given identifier.
+     *
+     * @param stateId the identifier of the state snapshot
+     * @param fileStates the schema file states to persist
+     * @throws IOException if write access fails
      */
     public void saveBuildState(@NonNull String stateId,
                                @NonNull List<SchemaFileState> fileStates) throws IOException {
@@ -71,7 +81,10 @@ class BuildStateManager {
     }
 
     /**
-     * 清理指定配置的状态
+     * Deletes the build state associated with the given identifier if it exists.
+     *
+     * @param stateId the identifier of the state snapshot
+     * @throws IOException if file deletion fails
      */
     public void cleanState(@NonNull String stateId) throws IOException {
         withWriteLock(() -> {
@@ -85,7 +98,9 @@ class BuildStateManager {
     }
 
     /**
-     * 清理所有状态文件
+     * Deletes all persisted build state and associated embedding files.
+     *
+     * @throws IOException if file deletion fails
      */
     public void cleanAllState() throws IOException {
         withWriteLock(() -> {
@@ -103,7 +118,10 @@ class BuildStateManager {
     }
 
     /**
-     * 清理过期的状态文件（保留最近N个配置的状态）
+     * Deletes outdated state and embedding files while retaining the newest entries.
+     *
+     * @param keepCount the number of most recent state snapshots to keep
+     * @throws IOException if file deletion fails
      */
     public void cleanOldStates(int keepCount) throws IOException {
         Preconditions.checkArgument(keepCount > 0, "keepCount must be greater than 0");
@@ -134,16 +152,25 @@ class BuildStateManager {
         });
     }
 
+    /**
+     * Resolves the path to the state file corresponding to the identifier.
+     */
     private Path getStateFile(String stateId) {
         return datDir.resolve(STATE_FILE_PREFIX + stateId + STATE_FILE_SUFFIX);
     }
 
+    /**
+     * Ensures that the directory used to store state files exists.
+     */
     private void ensureDatDirectory() throws IOException {
         if (!Files.exists(datDir)) {
             Files.createDirectories(datDir);
         }
     }
 
+    /**
+     * Lists all build state and embedding files stored in the project directory.
+     */
     private List<Path> listStateFiles() throws IOException {
         try (Stream<Path> files = Files.list(datDir)) {
             return files.filter(path -> {
@@ -155,6 +182,9 @@ class BuildStateManager {
         }
     }
 
+    /**
+     * Lists build state files ordered by most recent modification time.
+     */
     private List<Path> listStateFilesByModifiedTime() throws IOException {
         try (Stream<Path> files = Files.list(datDir)) {
             return files.filter(path -> {
@@ -173,6 +203,9 @@ class BuildStateManager {
         }
     }
 
+    /**
+     * Lists embedding files ordered by most recent modification time.
+     */
     private List<Path> listEmbeddingFilesByModifiedTime() throws IOException {
         try (Stream<Path> files = Files.list(datDir)) {
             return files.filter(path -> {
@@ -191,7 +224,7 @@ class BuildStateManager {
         }
     }
 
-    // 锁操作辅助方法
+    // Helper methods for lock-protected operations
     private <T> T withReadLock(IOSupplier<T> supplier) throws IOException {
         lock.readLock().lock();
         try {
@@ -210,6 +243,9 @@ class BuildStateManager {
         }
     }
 
+    /**
+     * Functional interface mirroring {@link java.util.function.Supplier} but allowing {@link IOException}.
+     */
     @FunctionalInterface
     private interface IOSupplier<T> {
         T get() throws IOException;

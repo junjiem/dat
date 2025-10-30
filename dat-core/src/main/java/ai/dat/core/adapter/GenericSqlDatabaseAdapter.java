@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Author JunjieM
- * @Date 2025/7/2
+ *
  */
 @Slf4j
 public abstract class GenericSqlDatabaseAdapter implements DatabaseAdapter {

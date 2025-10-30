@@ -4,8 +4,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/12
+ *
  */
 @Getter
 public class Column {

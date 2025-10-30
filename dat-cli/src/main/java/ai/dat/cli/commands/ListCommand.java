@@ -15,9 +15,6 @@ import java.util.concurrent.Callable;
 
 /**
  * List information commands
- *
- * @Author JunjieM
- * @Date 2025/7/22
  */
 @Command(
         name = "list",

@@ -8,8 +8,7 @@ import lombok.Getter;
 import java.util.*;
 
 /**
- * @Author JunjieM
- * @Date 2025/7/17
+ *
  */
 @Getter
 public class EventOption {

@@ -15,10 +15,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * DAT项目配置工具类
- *
- * @Author JunjieM
- * @Date 2025/1/16
+ * Utility methods for loading, validating, and instantiating DAT project definitions.
  */
 public class DatProjectUtil {
 
@@ -39,6 +36,12 @@ public class DatProjectUtil {
         }
     }
 
+    /**
+     * Loads the JSON schema that validates DAT project configuration files.
+     *
+     * @return the compiled {@link JsonSchema} for project validation
+     * @throws IOException if the schema resource is missing or cannot be parsed
+     */
     private static JsonSchema loadProjectSchema() throws IOException {
         try (InputStream stream = DatProjectUtil.class.getClassLoader().getResourceAsStream(SCHEMA_PATH)) {
             if (stream == null) {
@@ -54,9 +57,19 @@ public class DatProjectUtil {
         }
     }
 
+    /**
+     * Prevents instantiation of this utility class.
+     */
     private DatProjectUtil() {
     }
 
+    /**
+     * Validates a DAT project YAML configuration against the project JSON schema.
+     *
+     * @param yamlContent the YAML content to validate
+     * @return the set of validation messages returned by the JSON schema validator
+     * @throws IOException if the YAML payload cannot be parsed
+     */
     public static Set<ValidationMessage> validate(@NonNull String yamlContent) throws IOException {
         Preconditions.checkArgument(!yamlContent.isEmpty(), "yamlContent cannot be empty");
         try {
@@ -67,6 +80,13 @@ public class DatProjectUtil {
         }
     }
 
+    /**
+     * Deserializes the provided YAML content into a {@link DatProject} instance.
+     *
+     * @param yamlContent the YAML configuration of a DAT project
+     * @return a fully populated {@link DatProject}
+     * @throws IOException if the YAML cannot be parsed or mapped to the project model
+     */
     public static DatProject datProject(@NonNull String yamlContent) throws IOException {
         return new DatProjectFactory().create(yamlContent);
     }

@@ -19,9 +19,6 @@ import java.util.concurrent.Callable;
 
 /**
  * Project OpenAPI Server commands
- *
- * @Author JunjieM
- * @Date 2025/8/26
  */
 @Command(
         name = "openapi",

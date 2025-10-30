@@ -15,9 +15,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * DAT OpenAPI Server Spring Boot 应用入口
- *
- * @Author JunjieM
- * @Date 2025/8/22
  */
 @SpringBootApplication
 @ConfigurationPropertiesScan

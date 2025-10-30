@@ -3,8 +3,7 @@ package ai.dat.core.contentstore.data;
 import lombok.Getter;
 
 /**
- * @Author JunjieM
- * @Date 2025/10/20
+ *
  */
 @Getter
 public enum BusinessKnowledgeIndexingMethod {

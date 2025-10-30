@@ -6,9 +6,6 @@ import org.apache.calcite.sql.SqlDialect;
 
 /**
  * 语义适配器接口类
- *
- * @Author JunjieM
- * @Date 2025/7/2
  */
 public interface SemanticAdapter {
 

@@ -7,13 +7,6 @@ import javax.sql.DataSource;
 import java.sql.Timestamp;
 import java.sql.Types;
 
-/**
- * MySQL数据库适配器
- * 处理MySQL特定的数据类型转换和映射
- *
- * @Author JunjieM
- * @Date 2025/7/1
- */
 public class MySqlDatabaseAdapter extends GenericSqlDatabaseAdapter {
 
     public MySqlDatabaseAdapter(DataSource dataSource) {

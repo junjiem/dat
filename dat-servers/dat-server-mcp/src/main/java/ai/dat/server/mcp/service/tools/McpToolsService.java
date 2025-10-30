@@ -19,10 +19,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * @Author JunjieM
- * @Date 2025/9/8
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -65,8 +61,8 @@ public class McpToolsService {
         StringBuilder result = new StringBuilder();
 
         String sql = NOT_GENERATE;
-        String lastEvent = "";
-        boolean lastIncremental = false;
+        String previousEvent = "";
+        boolean previousIncremental = false;
         boolean isAccurateSql = false;
         for (StreamEvent event : action) {
             if (event == null) break;
@@ -77,16 +73,16 @@ public class McpToolsService {
             if (event.getQueryData().isPresent()) {
                 isAccurateSql = true;
             }
-            if (!lastEvent.equals(eventName)) {
-                if (lastIncremental) result.append("\n");
-                lastEvent = eventName;
-                lastIncremental = event.getIncrementalContent().isPresent();
+            if (!previousEvent.equals(eventName)) {
+                if (previousIncremental) result.append("\n");
+                previousEvent = eventName;
+                previousIncremental = event.getIncrementalContent().isPresent();
                 result.append("--------------------- ").append(eventName).append(" ---------------------\n");
             }
             append(event, result);
         }
 
-        if (lastIncremental) result.append("\n");
+        if (previousIncremental) result.append("\n");
         if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
             sql = "/* Incorrect SQL */ " + sql;
         }

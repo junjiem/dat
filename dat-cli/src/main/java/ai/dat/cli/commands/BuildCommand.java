@@ -14,9 +14,6 @@ import java.util.concurrent.Callable;
 
 /**
  * Build project commands
- *
- * @Author JunjieM
- * @Date 2025/7/22
  */
 @Command(
         name = "build",

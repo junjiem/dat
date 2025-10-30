@@ -18,9 +18,6 @@ import java.util.concurrent.Callable;
 
 /**
  * Seed project commands
- *
- * @Author JunjieM
- * @Date 2025/9/12
  */
 @Command(
         name = "seed",

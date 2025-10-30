@@ -14,8 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/10/21
+ *
  */
 public class OnnxScoringModelFactory implements ScoringModelFactory {
 

@@ -5,12 +5,14 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/12
+ * Configuration options that control how seed data files are parsed.
  */
 @Setter
 @Getter
 public class SeedConfig {
+    /**
+     * Delimiter used to split columns within the seed CSV.
+     */
     @NonNull
     private String delimiter = ",";
 }

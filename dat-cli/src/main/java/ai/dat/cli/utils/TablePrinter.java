@@ -15,9 +15,6 @@ import java.util.Map;
 /**
  * 表格打印工具类
  * 用于将查询数据以数据库CLI风格的表格格式显示
- *
- * @Author JunjieM
- * @Date 2025/7/29
  */
 @Slf4j
 public class TablePrinter {

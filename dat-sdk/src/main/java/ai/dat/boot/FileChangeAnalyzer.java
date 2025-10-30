@@ -26,10 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * 文件变化分析器
- *
- * @Author JunjieM
- * @Date 2025/7/17
+ * Analyzes schema and model files to detect additions, deletions, and modifications for incremental builds.
  */
 @Slf4j
 class FileChangeAnalyzer {
@@ -42,6 +39,12 @@ class FileChangeAnalyzer {
     private final List<Path> sqlFilePaths;
     private final List<String> sqlFileRelativePaths;
 
+    /**
+     * Creates a file change analyzer for the given project and root path.
+     *
+     * @param project the project definition containing model references
+     * @param projectPath the root directory containing project files
+     */
     public FileChangeAnalyzer(DatProject project,
                               Path projectPath) {
         this.project = project;
@@ -53,6 +56,12 @@ class FileChangeAnalyzer {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Analyzes schema files and determines which ones are new, modified, unchanged, or deleted.
+     *
+     * @param fileStates previously persisted schema file states
+     * @return a collection describing detected file changes
+     */
     public FileChanges analyzeChanges(List<SchemaFileState> fileStates) {
         ChangeSemanticModelsCacheUtil.remove(project.getName());
 
@@ -63,12 +72,12 @@ class FileChangeAnalyzer {
         List<SchemaFileState> modifiedFiles = new ArrayList<>();
         List<SchemaFileState> unchangedFiles = new ArrayList<>();
 
-        // 分析当前存在的文件
+        // Analyze existing files
         for (Path filePath : yamlFilePaths) {
             String relativePath = modelsPath.relativize(filePath).toString();
             SchemaFileState fileState = fileStateMap.get(relativePath);
             if (fileState == null) {
-                // 新YAML文件
+                // New YAML file
                 long lastModified = FileUtil.lastModified(filePath);
                 String md5Hash = FileUtil.md5(filePath);
                 DatSchema schema = ProjectUtil.loadSchema(filePath, modelsPath);
@@ -76,7 +85,7 @@ class FileChangeAnalyzer {
                 newFiles.add(createSchemaFileState(
                         relativePath, lastModified, md5Hash, schema, modelFileStates));
             } else {
-                // 已存在的YAML文件，检查是否发生变化
+                // Existing YAML file, check for changes
                 boolean hasChanged = false;
                 String md5Hash = null;
                 long lastModified = FileUtil.lastModified(filePath);
@@ -95,20 +104,20 @@ class FileChangeAnalyzer {
                     hasChanged = hasChanged || hasModelFileChanged(modelFileStates, fileState.getModelFileStates());
                 }
                 if (hasChanged) {
-                    // YAML文件已修改
+                    // YAML file modified
                     modifiedFiles.add(createSchemaFileState(
                             relativePath, lastModified, md5Hash, schema, modelFileStates));
                 } else {
-                    // YAML文件未变化，保留之前的元数据
+                    // YAML file unchanged; retain previous metadata
                     unchangedFiles.add(fileState);
                 }
             }
         }
 
-        // 检查语义模型名称是否有重复
+        // Verify that semantic model names do not conflict
         validateSemanticModelNames(newFiles, modifiedFiles, unchangedFiles);
 
-        // 查找已删除的YAML文件 - 直接内联处理逻辑
+        // Identify deleted YAML files
         List<String> relativePaths = yamlFilePaths.stream()
                 .map(p -> modelsPath.relativize(p).toString()).toList();
         List<SchemaFileState> deletedFiles = fileStates.stream()
@@ -118,6 +127,16 @@ class FileChangeAnalyzer {
         return new FileChanges(newFiles, modifiedFiles, unchangedFiles, deletedFiles);
     }
 
+    /**
+     * Builds a {@link SchemaFileState} for the specified schema file and caches related artifacts.
+     *
+     * @param relativePath the schema file path relative to the models directory
+     * @param lastModified the last modified timestamp of the file
+     * @param md5Hash the MD5 hash of the file contents
+     * @param schema the parsed schema definition
+     * @param modelFileStates metadata about SQL model files referenced by the schema
+     * @return a populated {@link SchemaFileState}
+     */
     private SchemaFileState createSchemaFileState(String relativePath, long lastModified, String md5Hash,
                                                   DatSchema schema, List<RelevantFileState> modelFileStates) {
         ChangeSemanticModelsCacheUtil.add(project.getName(), relativePath,
@@ -143,10 +162,16 @@ class FileChangeAnalyzer {
                 .build();
     }
 
+    /**
+     * Ensures that semantic model names remain unique across all schema files.
+     *
+     * @param newFiles newly detected schema files
+     * @param modifiedFiles schema files that have been modified
+     * @param unchangedFiles schema files whose metadata remained unchanged
+     */
     private void validateSemanticModelNames(List<SchemaFileState> newFiles,
                                             List<SchemaFileState> modifiedFiles,
                                             List<SchemaFileState> unchangedFiles) {
-        // 校验语义模型名称是否重复
         Map<String, List<String>> nameToRelativePaths = Stream.of(newFiles, modifiedFiles, unchangedFiles)
                 .flatMap(List::stream)
                 .filter(s -> s.getSemanticModelNames() != null && !s.getSemanticModelNames().isEmpty())
@@ -170,6 +195,13 @@ class FileChangeAnalyzer {
         }
     }
 
+    /**
+     * Resolves metadata for SQL model files referenced by the schema.
+     *
+     * @param relativePath the schema file path relative to the models directory
+     * @param schema the parsed schema definition
+     * @return a list of metadata for referenced model files
+     */
     private List<RelevantFileState> resolveModelFileStates(String relativePath, DatSchema schema) {
         return DatSchemaUtil.getModelName(schema).stream()
                 .map(modelName -> {
@@ -181,6 +213,12 @@ class FileChangeAnalyzer {
                 }).collect(Collectors.toList());
     }
 
+    /**
+     * Loads DAT models associated with the supplied file metadata.
+     *
+     * @param modelFileStates metadata describing SQL model files
+     * @return loaded DAT models corresponding to the metadata
+     */
     private List<DatModel> getDatModels(List<RelevantFileState> modelFileStates) {
         if (modelFileStates == null || modelFileStates.isEmpty()) {
             return Collections.emptyList();
@@ -191,6 +229,14 @@ class FileChangeAnalyzer {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves metadata for the model file referenced by the semantic model.
+     *
+     * @param relativePath the schema file path relative to the models directory
+     * @param modelName the referenced model name
+     * @return metadata for the corresponding SQL model file
+     * @throws IOException if reading file metadata fails
+     */
     private RelevantFileState getModelFileMetadata(String relativePath, String modelName) throws IOException {
         List<Path> modelFiles = sqlFilePaths.stream()
                 .filter(p -> FileUtil.fileNameWithoutSuffix(p.getFileName().toString()).equals(modelName))
@@ -214,15 +260,22 @@ class FileChangeAnalyzer {
         return new RelevantFileState(modelRelativePath, lastModified, md5Hash);
     }
 
+    /**
+     * Determines whether any referenced SQL model files have changed since the previous build.
+     *
+     * @param currentDeps metadata for current model dependencies
+     * @param previousDeps metadata for previously tracked model dependencies
+     * @return {@code true} if the dependency set has changed, otherwise {@code false}
+     */
     private boolean hasModelFileChanged(List<RelevantFileState> currentDeps,
                                         List<RelevantFileState> previousDeps) {
         if (previousDeps == null || previousDeps.isEmpty()) {
-            return !currentDeps.isEmpty(); // 之前没有依赖，现在有依赖
+            return !currentDeps.isEmpty(); // Previously no dependencies, now present
         }
         if (currentDeps.isEmpty()) {
-            return true; // 之前有依赖，现在没有依赖
+            return true; // Previously had dependencies, now none
         }
-        // 检查依赖文件数量是否变化
+        // Check if the number of dependencies has changed
         if (currentDeps.size() != previousDeps.size()) {
             return true;
         }
@@ -230,7 +283,7 @@ class FileChangeAnalyzer {
                 .collect(Collectors.toMap(RelevantFileState::getRelativePath, d -> d));
         Map<String, RelevantFileState> previousMap = previousDeps.stream()
                 .collect(Collectors.toMap(RelevantFileState::getRelativePath, d -> d));
-        // 检查每个依赖文件是否变化
+        // Verify each dependency for changes
         for (Map.Entry<String, RelevantFileState> entry : currentMap.entrySet()) {
             String relativePath = entry.getKey();
             RelevantFileState current = entry.getValue();
@@ -245,7 +298,7 @@ class FileChangeAnalyzer {
                 return true;
             }
         }
-        // 检查是否有依赖文件被删除
+        // Determine if any dependencies were removed
         return previousMap.keySet().stream().anyMatch(key -> !currentMap.containsKey(key));
     }
 }

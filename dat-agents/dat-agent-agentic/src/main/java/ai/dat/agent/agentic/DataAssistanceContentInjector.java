@@ -21,10 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * @Author JunjieM
- * @Date 2025/8/11
- */
 class DataAssistanceContentInjector implements ContentInjector {
 
     private static final PromptTemplate PROMPT_TEMPLATE;

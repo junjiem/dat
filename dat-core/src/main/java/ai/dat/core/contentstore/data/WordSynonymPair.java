@@ -12,9 +12,6 @@ import java.util.List;
 
 /**
  * 词与其近义词对
- *
- * @Author JunjieM
- * @Date 2025/6/30
  */
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -7,8 +7,7 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.DuckDBSqlDialect;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/16
+ *
  */
 public class DuckDBSemanticAdapter implements SemanticAdapter {
 

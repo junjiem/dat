@@ -7,9 +7,6 @@ import java.sql.Types;
 /**
  * ANSI SQL标准数据类型枚举
  * 用于统一不同数据库方言的字段类型
- *
- * @Author JunjieM
- * @Date 2025/8/7
  */
 @Getter
 public enum AnsiSqlType {

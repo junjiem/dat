@@ -14,8 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Author JunjieM
- * @Date 2025/7/17
+ * Coordinates incremental and full builds for DAT projects, including validation and content store updates.
  */
 @Slf4j
 public class ProjectBuilder {
@@ -26,11 +25,22 @@ public class ProjectBuilder {
 
     private final BuildStateManager stateManager;
 
+    /**
+     * Creates a builder for the project located at the provided path.
+     *
+     * @param projectPath the root directory of the project
+     */
     public ProjectBuilder(@NonNull Path projectPath) {
         this.projectPath = projectPath;
         this.stateManager = new BuildStateManager(projectPath);
     }
 
+    /**
+     * Creates a builder with a preloaded project definition.
+     *
+     * @param projectPath the root directory of the project
+     * @param project the project definition used during the build
+     */
     public ProjectBuilder(@NonNull Path projectPath,
                           @NonNull DatProject project) {
         this(projectPath);
@@ -38,9 +48,11 @@ public class ProjectBuilder {
     }
 
     /**
-     * 构建项目
+     * Executes an incremental build of the project. The build validates the project definition and updates
+     * the content store only when changes are detected.
      *
-     * @throws IOException
+     * @param variables optional template variables used during the build
+     * @throws IOException if the build state cannot be read or written
      */
     public void build(Map<String, Object> variables) throws IOException {
         log.info("Start incremental build project ...");
@@ -56,9 +68,9 @@ public class ProjectBuilder {
         FileChanges changes = fileChangeAnalyzer.analyzeChanges(fileStates);
 
         if (changes.hasChanges()) {
-            // 校验
+            // Perform validations
             new PreBuildValidator(project, projectPath, variables).validate();
-            // 更新状态
+            // Update persistent state
             ContentStoreManager storeManager = new ContentStoreManager(project, projectPath, fingerprint);
             storeManager.updateStore(fileStates, changes);
         }
@@ -66,9 +78,9 @@ public class ProjectBuilder {
     }
 
     /**
-     * 构建项目
+     * Executes an incremental build without additional variables. Prefer {@link #build(Map)}.
      *
-     * @throws IOException
+     * @throws IOException if the build state cannot be read or written
      */
     @Deprecated
     public void build() throws IOException {
@@ -76,9 +88,10 @@ public class ProjectBuilder {
     }
 
     /**
-     * 强制重建项目
+     * Forces a full rebuild of the project by clearing the current state before building.
      *
-     * @throws IOException
+     * @param variables optional template variables used during the build
+     * @throws IOException if the build state cannot be cleaned or updated
      */
     public void forceRebuild(@NonNull Map<String, Object> variables) throws IOException {
         log.info("Start force rebuild project ...");
@@ -87,9 +100,9 @@ public class ProjectBuilder {
     }
 
     /**
-     * 强制重建项目
+     * Forces a full rebuild without additional variables. Prefer {@link #forceRebuild(Map)}.
      *
-     * @throws IOException
+     * @throws IOException if the build state cannot be cleaned or updated
      */
     @Deprecated
     public void forceRebuild() throws IOException {
@@ -97,7 +110,9 @@ public class ProjectBuilder {
     }
 
     /**
-     * 清理当前状态文件
+     * Removes the stored state for the current project fingerprint.
+     *
+     * @throws IOException if state cleanup fails
      */
     public void cleanState() throws IOException {
         log.info("Start clean current states ...");
@@ -109,7 +124,9 @@ public class ProjectBuilder {
     }
 
     /**
-     * 清理所有状态文件
+     * Removes all stored build state snapshots for the project.
+     *
+     * @throws IOException if state cleanup fails
      */
     public void cleanAllStates() throws IOException {
         log.info("Start clean all states ...");
@@ -117,7 +134,10 @@ public class ProjectBuilder {
     }
 
     /**
-     * 清理过期的状态文件
+     * Removes outdated build state snapshots while retaining a specified number of the most recent entries.
+     *
+     * @param keepCount the number of recent state snapshots to retain
+     * @throws IOException if state cleanup fails
      */
     public void cleanOldStates(int keepCount) throws IOException {
         log.info("Start clean the expired states ..., keep count: {}", keepCount);

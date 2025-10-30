@@ -9,8 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/7/17
+ *
  */
 public class DefaultEventOptions {
 

@@ -10,9 +10,6 @@ import java.util.Map;
 
 /**
  * Jinja提示词模板工厂类
- *
- * @Author JunjieM
- * @Date 2025/6/26
  */
 public class JinjaPromptTemplateFactory implements PromptTemplateFactory {
 

@@ -11,8 +11,7 @@ import org.apache.calcite.sql.fun.SqlBetweenOperator;
 import org.apache.calcite.sql.parser.SqlParseException;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/11
+ *
  */
 public class DatMysqlSqlDialect extends MysqlSqlDialect {
 

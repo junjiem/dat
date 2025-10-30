@@ -6,6 +6,7 @@ import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.factories.ChatModelFactory;
 import ai.dat.core.utils.FactoryUtil;
 import com.google.common.base.Preconditions;
+import dev.langchain4j.http.client.jdk.JdkHttpClient;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -13,7 +14,6 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.openai.internal.OpenAiUtils;
-import dev.langchain4j.http.client.jdk.JdkHttpClient;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
@@ -24,10 +24,6 @@ import java.util.Set;
 
 import static dev.langchain4j.model.chat.Capability.RESPONSE_FORMAT_JSON_SCHEMA;
 
-/**
- * @Author JunjieM
- * @Date 2025/7/1
- */
 public class OpneAiChatModelFactory implements ChatModelFactory {
 
     public static final String IDENTIFIER = "openai";
@@ -182,7 +178,7 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
                             HTTP protocol version.
                             `HTTP_1_1`: HTTP version 1.1
                             `HTTP_2`: HTTP version 2
-                            
+                                                        
                             Note: LMStudio and vLLM as for now does not support HTTP2, hence we need to enforce the use of HTTP1.1.
                             """);
 

@@ -3,8 +3,7 @@ package ai.dat.core.contentstore.data;
 import lombok.Getter;
 
 /**
- * @Author JunjieM
- * @Date 2025/10/23
+ *
  */
 @Getter
 public enum BusinessKnowledgeIndexingParentMode {

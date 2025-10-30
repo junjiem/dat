@@ -4,23 +4,26 @@ import lombok.NonNull;
 
 import java.util.List;
 
+/**
+ * Aggregates schema file changes detected during an incremental build.
+ */
 public record FileChanges(@NonNull List<SchemaFileState> newFiles,
                           @NonNull List<SchemaFileState> modifiedFiles,
                           @NonNull List<SchemaFileState> unchangedFiles,
                           @NonNull List<SchemaFileState> deletedFiles) {
     /**
-     * 检查是否有文件变化
+     * Indicates whether any files were added, modified, or deleted.
      *
-     * @return 是否存在文件变化（新增、修改或删除）
+     * @return {@code true} if changes exist, otherwise {@code false}
      */
     public boolean hasChanges() {
         return !newFiles.isEmpty() || !modifiedFiles.isEmpty() || !deletedFiles.isEmpty();
     }
 
     /**
-     * 获取总变化文件数量
+     * Calculates the total number of changed files.
      *
-     * @return 变化文件总数
+     * @return the total number of new, modified, and deleted files
      */
     public int getTotalChanges() {
         return newFiles.size() + modifiedFiles.size() + deletedFiles.size();

@@ -8,8 +8,6 @@ import org.apache.calcite.sql.SqlDialect;
 /**
  * MySQL数据库语义适配器
  *
- * @Author JunjieM
- * @Date 2025/7/3
  */
 public class MySqlSemanticAdapter implements SemanticAdapter {
 

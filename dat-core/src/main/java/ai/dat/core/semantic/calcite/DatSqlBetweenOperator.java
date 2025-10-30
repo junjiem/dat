@@ -10,8 +10,7 @@ import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.util.Util;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/11
+ *
  */
 public class DatSqlBetweenOperator extends SqlBetweenOperator {
 

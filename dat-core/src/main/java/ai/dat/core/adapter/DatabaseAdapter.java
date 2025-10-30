@@ -11,9 +11,6 @@ import java.util.Map;
 
 /**
  * 数据库适配器接口类
- *
- * @Author JunjieM
- * @Date 2025/6/25
  */
 public interface DatabaseAdapter {
     // -------------------------------------- semantic ------------------------------------------

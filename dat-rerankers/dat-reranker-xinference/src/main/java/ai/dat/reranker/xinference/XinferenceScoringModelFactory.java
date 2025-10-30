@@ -16,8 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/10/21
+ *
  */
 public class XinferenceScoringModelFactory implements ScoringModelFactory {
 

@@ -13,8 +13,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * @Author JunjieM
- * @Date 2025/6/25
+ *
  */
 public class StreamEvent {
 

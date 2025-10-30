@@ -22,8 +22,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * @Author JunjieM
- * @Date 2025/7/15
+ *
  */
 public class SemanticModelUtil {
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();

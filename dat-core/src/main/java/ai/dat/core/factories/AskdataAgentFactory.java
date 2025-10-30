@@ -13,9 +13,6 @@ import java.util.Map;
 
 /**
  * 问数Agent工厂接口类
- *
- * @Author JunjieM
- * @Date 2025/6/30
  */
 public interface AskdataAgentFactory extends Factory {
     String factoryDescription();

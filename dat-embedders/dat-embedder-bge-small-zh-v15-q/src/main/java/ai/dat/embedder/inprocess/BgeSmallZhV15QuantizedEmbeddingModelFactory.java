@@ -9,10 +9,6 @@ import dev.langchain4j.model.embedding.onnx.bgesmallzhv15q.BgeSmallZhV15Quantize
 import java.util.Collections;
 import java.util.Set;
 
-/**
- * @Author JunjieM
- * @Date 2025/7/1
- */
 public class BgeSmallZhV15QuantizedEmbeddingModelFactory implements EmbeddingModelFactory {
 
     public static final String IDENTIFIER = "bge-small-zh-v15-q";

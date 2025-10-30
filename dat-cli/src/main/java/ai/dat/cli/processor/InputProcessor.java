@@ -23,9 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * JLine 3 交互式输入处理器
  * 提供基本的命令行交互功能，包括历史记录等
- *
- * @Author JunjieM
- * @Date 2025/7/23
  */
 @Slf4j
 public class InputProcessor implements AutoCloseable {

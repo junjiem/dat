@@ -8,10 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @Author JunjieM
- * @Date 2025/8/11
- */
 public class AgenticEventOptions {
 
     public static final ConfigOption<String> CONTENT =

@@ -15,9 +15,6 @@ import java.util.Properties;
 /**
  * 邮件发送工具类
  * 基于Jakarta Mail API实现的邮件发送功能
- *
- * @Author JunjieM
- * @Date 2025/1/26
  */
 @Slf4j
 @Data

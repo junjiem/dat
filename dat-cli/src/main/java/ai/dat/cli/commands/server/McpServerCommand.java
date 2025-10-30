@@ -19,9 +19,6 @@ import java.util.concurrent.Callable;
 
 /**
  * Project MCP Server commands
- *
- * @Author JunjieM
- * @Date 2025/9/8
  */
 @Command(
         name = "mcp",

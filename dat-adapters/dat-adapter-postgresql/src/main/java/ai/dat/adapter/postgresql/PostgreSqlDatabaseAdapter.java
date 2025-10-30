@@ -11,8 +11,6 @@ import java.sql.Types;
  * PostgreSQL数据库适配器
  * 处理PostgreSQL特定的数据类型转换和映射
  *
- * @Author JunjieM
- * @Date 2025/7/2
  */
 public class PostgreSqlDatabaseAdapter extends GenericSqlDatabaseAdapter {
     public PostgreSqlDatabaseAdapter(DataSource dataSource) {

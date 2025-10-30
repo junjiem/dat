@@ -3,8 +3,7 @@ package ai.dat.core.factories;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/10/21
+ *
  */
 public class ScoringModelFactoryManager {
     private static final FactoryManager<ScoringModelFactory> factoryManager;

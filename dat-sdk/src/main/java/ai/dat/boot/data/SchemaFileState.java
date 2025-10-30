@@ -10,8 +10,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * @Author JunjieM
- * @Date 2025/7/16
+ * Represents the persisted state for a schema YAML file and its related artifacts.
  */
 @Data
 @Builder
@@ -20,55 +19,55 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SchemaFileState {
     /**
-     * 文件相对路径
+     * Relative path of the schema file within the models directory.
      */
     private String relativePath;
 
     /**
-     * 文件最后修改时间（毫秒时间戳）
+     * Last modification timestamp of the schema file, in milliseconds.
      */
     private long lastModified;
 
     /**
-     * 文件的MD5哈希值
+     * MD5 hash of the schema file contents.
      */
     private String md5Hash;
 
     /**
-     * 语义模型名称列表
+     * Names of semantic models defined in the schema file.
      */
     private List<String> semanticModelNames = List.of();
 
     /**
-     * 语义模型的向量存储ID列表
+     * Vector identifiers in the content store for semantic models.
      * <p>
-     * 由于之前参数名为vectorIds，为了考虑兼容性这里设置@JsonProperty("vectorIds")
+     * The legacy field name was {@code vectorIds}; {@link JsonProperty} is retained for compatibility.
      */
     @JsonProperty("vectorIds")
     private List<String> semanticModelVectorIds = List.of();
 
     /**
-     * 模型的文件信息列表
+     * Metadata about SQL model files referenced by the schema.
      * <p>
-     * 由于之前参数名为dependencies，为了考虑兼容性这里设置@JsonProperty("dependencies")
+     * The legacy field name was {@code dependencies}; {@link JsonProperty} is retained for compatibility.
      */
     @JsonProperty("dependencies")
     private List<RelevantFileState> modelFileStates = List.of();
 
     /**
-     * 问答SQL对的向量存储ID列表
+     * Vector identifiers for question-SQL pairs stored in the content store.
      */
     @JsonProperty("sqlPairVectorIds")
     private List<String> questionSqlPairVectorIds = List.of();
 
     /**
-     * 同义词对的向量存储ID列表
+     * Vector identifiers for synonym pairs stored in the content store.
      */
     @JsonProperty("synonymPairVectorIds")
     private List<String> wordSynonymPairVectorIds = List.of();
 
     /**
-     * 业务知识的向量存储ID列表
+     * Vector identifiers for knowledge documents stored in the content store.
      */
     @JsonProperty("knowledgeVectorIds")
     private List<String> knowledgeVectorIds = List.of();

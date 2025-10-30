@@ -16,8 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/25
+ *
  */
 public class OllamaEmbeddingModelFactory implements EmbeddingModelFactory {
 

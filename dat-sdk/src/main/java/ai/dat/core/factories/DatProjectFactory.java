@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
- * @Author JunjieM
- * @Date 2025/8/7
+ * Factory responsible for creating {@link DatProject} instances from YAML definitions and
+ * providing helper methods to build templated project configurations.
  */
 public class DatProjectFactory {
 
@@ -37,6 +37,12 @@ public class DatProjectFactory {
         PROJECT_YAML_TEMPLATE = loadText("templates/project_yaml_template.jinja");
     }
 
+    /**
+     * Reads a text resource from the classpath using UTF-8 encoding.
+     *
+     * @param fromResource the resource path to load
+     * @return the resource contents as a string
+     */
     private static String loadText(String fromResource) {
         try (InputStream inputStream = DatProjectFactory.class.getClassLoader()
                 .getResourceAsStream(fromResource)) {
@@ -67,10 +73,20 @@ public class DatProjectFactory {
                     .withDescription("Whether to automatically complete the data types of " +
                             "entities, dimensions, measures in the semantic model during building");
 
+    /**
+     * Provides the set of configuration options that are mandatory for a DAT project.
+     *
+     * @return a set containing the required project options
+     */
     public Set<ConfigOption<?>> projectRequiredOptions() {
         return Collections.emptySet();
     }
 
+    /**
+     * Provides optional configuration options that may be applied to a DAT project.
+     *
+     * @return a linked set containing optional project options in display order
+     */
     public Set<ConfigOption<?>> projectOptionalOptions() {
         return new LinkedHashSet<>(List.of(
                 BUILDING_VERIFY_MDL_DIMENSIONS_ENUM_VALUES,
@@ -79,10 +95,21 @@ public class DatProjectFactory {
         ));
     }
 
+    /**
+     * Returns configuration options that affect the project fingerprint.
+     *
+     * @return a set containing fingerprint-related options
+     */
     public static Set<ConfigOption<?>> fingerprintOptions() {
         return Set.of(BUILDING_AUTO_COMPLETE_MDL_DATA_TYPES);
     }
 
+    /**
+     * Extracts fingerprint-relevant configuration values from the supplied configuration.
+     *
+     * @param config the readable configuration source
+     * @return a map of configuration keys to their string values contributing to the fingerprint
+     */
     public Map<String, String> projectFingerprintConfigs(@NonNull ReadableConfig config) {
         List<String> keys = fingerprintOptions().stream()
                 .map(ConfigOption::key)
@@ -92,6 +119,14 @@ public class DatProjectFactory {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    /**
+     * Builds a {@link DatProject} instance from the given YAML string after validating it against the schema.
+     *
+     * @param yamlContent the YAML project definition
+     * @return a deserialized {@link DatProject}
+     * @throws IOException if the YAML cannot be parsed
+     * @throws ValidationException if schema validation fails
+     */
     public DatProject create(@NonNull String yamlContent) throws IOException {
         Set<ValidationMessage> validationErrors = DatProjectUtil.validate(yamlContent);
         if (!validationErrors.isEmpty()) {
@@ -100,6 +135,11 @@ public class DatProjectFactory {
         return YAML_MAPPER.readValue(yamlContent, DatProject.class);
     }
 
+    /**
+     * Renders the project YAML template with the currently supported providers and configurations.
+     *
+     * @return a fully rendered project configuration template
+     */
     public String yamlTemplate() {
         List<SingleItemTemplate> dbs = DatabaseAdapterFactoryManager.getSupports().stream()
                 .map(identifier -> {
@@ -182,27 +222,52 @@ public class DatProjectFactory {
         return JinjaTemplateUtil.render(PROJECT_YAML_TEMPLATE, variables);
     }
 
+    /**
+     * Generates the configuration block for the project itself without provider selections.
+     *
+     * @return the project configuration snippet
+     */
     public String getProjectConfiguration() {
         return YamlTemplateUtil.getConfiguration(projectRequiredOptions(), projectOptionalOptions());
     }
 
+    /**
+     * Generates the configuration snippet for the default agent provider.
+     *
+     * @return YAML configuration for the default agent
+     */
     public String getDefaultAgentConfiguration() {
         return getConfiguration(new DefaultAskdataAgentFactory());
     }
 
+    /**
+     * Delegates to {@link YamlTemplateUtil} to produce configuration values for a provider factory.
+     *
+     * @param factory the factory whose configuration is requested
+     * @return the configuration snippet for the factory
+     */
     private String getConfiguration(Factory factory) {
         return YamlTemplateUtil.getConfiguration(factory);
     }
 
 
+    /**
+     * Template representation for providers that appear at most once in the rendered YAML.
+     */
     private record SingleItemTemplate(@Getter String provider, @Getter boolean display,
                                       @Getter String configuration) {
     }
 
+    /**
+     * Template representation for providers that may appear multiple times with distinct names.
+     */
     private record MultipleItemTemplate(@Getter String name, @Getter String provider, @Getter boolean display,
                                         @Getter String configuration) {
     }
 
+    /**
+     * Template representation for agents that include descriptive comments alongside configuration.
+     */
     private record MultipleItemContainCommentTemplate(@Getter String comment, @Getter String name,
                                                       @Getter String provider, @Getter boolean display,
                                                       @Getter String configuration) {

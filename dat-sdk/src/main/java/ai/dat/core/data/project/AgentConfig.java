@@ -12,6 +12,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Configuration wrapper for an agent definition within a DAT project.
+ */
 @Setter
 @Getter
 public class AgentConfig {
@@ -19,11 +22,20 @@ public class AgentConfig {
     public static final String DEFAULT_NAME = "default";
     public static final String DEFAULT_PROVIDER = "default";
 
+    /**
+     * Logical name assigned to the agent configuration.
+     */
     @NonNull
     private String name = DEFAULT_NAME;
 
+    /**
+     * Free-form description of the agent.
+     */
     private String description;
 
+    /**
+     * Identifier of the agent provider.
+     */
     @NonNull
     private String provider = DEFAULT_PROVIDER;
 
@@ -39,6 +51,11 @@ public class AgentConfig {
     @NonNull
     private ReadableConfig configuration = new Configuration();
 
+    /**
+     * Deserializes configuration properties from YAML into a {@link ReadableConfig} instance.
+     *
+     * @param configs the raw configuration map
+     */
     @JsonProperty("configuration")
     public void setConfiguration(Map<String, Object> configs) {
         this.configuration = Configuration.fromMap(configs);

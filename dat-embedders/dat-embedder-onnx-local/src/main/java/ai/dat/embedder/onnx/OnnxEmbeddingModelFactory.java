@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/10/24
+ *
  */
 public class OnnxEmbeddingModelFactory implements EmbeddingModelFactory {
 

@@ -17,10 +17,6 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * @Author JunjieM
- * @Date 2025/8/5
- */
 public class AnthropicChatModelFactory implements ChatModelFactory {
 
     public static final String IDENTIFIER = "anthropic";

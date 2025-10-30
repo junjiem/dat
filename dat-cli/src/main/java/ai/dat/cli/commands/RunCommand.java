@@ -30,9 +30,6 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Run project commands
- *
- * @Author JunjieM
- * @Date 2025/7/22
  */
 @Command(
         name = "run",

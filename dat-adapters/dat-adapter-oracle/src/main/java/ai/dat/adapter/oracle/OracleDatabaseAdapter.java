@@ -11,9 +11,7 @@ import java.sql.Timestamp;
 /**
  * Oracle数据库适配器
  * 处理Oracle特定的数据类型转换和映射
- * 
- * @Author JunjieM
- * @Date 2025/7/3
+ *
  */
 public class OracleDatabaseAdapter extends GenericSqlDatabaseAdapter {
 

@@ -18,10 +18,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * 内容存储管理器
- *
- * @Author JunjieM
- * @Date 2025/7/17
+ * Manages updates to the content store based on changes detected in schema files.
  */
 @Slf4j
 class ContentStoreManager {
@@ -32,6 +29,13 @@ class ContentStoreManager {
     private final String stateId;
     private final BuildStateManager stateManager;
 
+    /**
+     * Creates a content store manager for the supplied project.
+     *
+     * @param project the project definition containing content store configuration
+     * @param projectPath the root path of the project on disk
+     * @param stateId the identifier used to persist build state snapshots
+     */
     public ContentStoreManager(DatProject project, Path projectPath, String stateId) {
         this.project = project;
         this.stateId = stateId;
@@ -39,25 +43,38 @@ class ContentStoreManager {
         this.stateManager = new BuildStateManager(projectPath);
     }
 
+    /**
+     * Applies detected schema file changes to the content store and persists the new state.
+     *
+     * @param fileStates previously persisted schema file states
+     * @param changes the set of detected changes for the current build cycle
+     * @throws IOException if persisting the build state fails
+     */
     public void updateStore(@NonNull List<SchemaFileState> fileStates,
                             @NonNull FileChanges changes) throws IOException {
         Map<String, SchemaFileState> oldFileStates = fileStates.stream()
                 .collect(Collectors.toMap(SchemaFileState::getRelativePath, f -> f));
-        // 未变化的文件
+        // Files that remain unchanged
         List<SchemaFileState> newFileStates = new ArrayList<>(changes.unchangedFiles());
-        // 处理删除的文件
+        // Handle deleted files
         changes.deletedFiles().forEach(fs -> remove(oldFileStates, fs));
-        // 处理新增的文件
+        // Handle new files
         changes.newFiles().forEach(fs -> add(newFileStates, fs));
-        // 处理修改的文件
+        // Handle modified files
         changes.modifiedFiles().forEach(fs -> {
             remove(oldFileStates, fs);
             add(newFileStates, fs);
         });
-        // 保存状态
+        // Persist the updated state
         stateManager.saveBuildState(stateId, newFileStates);
     }
 
+    /**
+     * Adds a schema file to the content store, indexing newly generated artifacts.
+     *
+     * @param newFileStates the collection that will hold the updated state entries
+     * @param fileState the schema file state describing the new or modified file
+     */
     private void add(List<SchemaFileState> newFileStates, SchemaFileState fileState) {
         String projectId = project.getName();
         String relativePath = fileState.getRelativePath();
@@ -86,6 +103,12 @@ class ContentStoreManager {
         newFileStates.add(builder.build());
     }
 
+    /**
+     * Removes content store artifacts associated with a deleted schema file.
+     *
+     * @param oldFileStates the map of previously known schema file states keyed by relative path
+     * @param fileState the schema file state representing the deleted resource
+     */
     private void remove(Map<String, SchemaFileState> oldFileStates, SchemaFileState fileState) {
         String relativePath = fileState.getRelativePath();
         if (!oldFileStates.containsKey(relativePath)) {

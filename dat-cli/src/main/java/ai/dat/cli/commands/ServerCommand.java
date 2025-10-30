@@ -10,9 +10,6 @@ import java.util.concurrent.Callable;
 
 /**
  * Project Server commands
- *
- * @Author JunjieM
- * @Date 2025/8/26
  */
 @Command(
         name = "server",

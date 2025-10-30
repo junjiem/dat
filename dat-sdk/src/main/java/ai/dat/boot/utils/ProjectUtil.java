@@ -35,6 +35,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
 
+/**
+ * Collection of helper methods for loading project resources, constructing factories, and managing project metadata.
+ */
 @Slf4j
 public class ProjectUtil {
 
@@ -55,14 +58,29 @@ public class ProjectUtil {
 
     private final static ObjectMapper JSON_MAPPER = new ObjectMapper();
 
+    /**
+     * Utility class; prevent instantiation.
+     */
     private ProjectUtil() {
     }
 
+    /**
+     * Computes the content store fingerprint for the project located at the supplied path.
+     *
+     * @param projectPath the project root directory
+     * @return an MD5 fingerprint representing content store relevant configuration
+     */
     public static String contentStoreFingerprint(@NonNull Path projectPath) {
         DatProject project = loadProject(projectPath);
         return contentStoreFingerprint(project);
     }
 
+    /**
+     * Computes the content store fingerprint for the provided project definition.
+     *
+     * @param project the DAT project definition
+     * @return an MD5 fingerprint representing content store relevant configuration
+     */
     public static String contentStoreFingerprint(@NonNull DatProject project) {
         DatProjectFactory projectFactory = new DatProjectFactory();
         Map<String, String> projectFingerprintConfigs = projectFactory
@@ -110,11 +128,24 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Creates a content store instance by loading the project configuration from disk.
+     *
+     * @param projectPath the project root directory
+     * @return an initialized {@link ContentStore}
+     */
     public static ContentStore createContentStore(@NonNull Path projectPath) {
         DatProject project = loadProject(projectPath);
         return createContentStore(project, projectPath);
     }
 
+    /**
+     * Creates a content store instance using the provided project definition.
+     *
+     * @param project the DAT project definition
+     * @param projectPath the project root directory
+     * @return an initialized {@link ContentStore}
+     */
     public static ContentStore createContentStore(@NonNull DatProject project, @NonNull Path projectPath) {
         FactoryDescriptor contentStoreFactoryDescriptor = FactoryDescriptor.from(
                 project.getContentStore().getProvider(), project.getContentStore().getConfiguration());
@@ -137,6 +168,9 @@ public class ProjectUtil {
                 chatModelFactoryDescriptors, rerankingFactoryDescriptor);
     }
 
+    /**
+     * Ensures embedding store configuration points to a valid file when DuckDB is used.
+     */
     private static void adjustEmbeddingStoreConfig(@NonNull DatProject project, @NonNull Path projectPath) {
         EmbeddingStoreConfig embeddingStore = project.getEmbeddingStore();
         if (EmbeddingStoreConfig.DUCKDB_PROVIDER.equals(embeddingStore.getProvider())
@@ -160,11 +194,19 @@ public class ProjectUtil {
 
     private static FactoryDescriptor createEmbeddingStoreFactoryDescriptor(@NonNull DatProject project,
                                                                            @NonNull Path projectPath) {
-        adjustEmbeddingStoreConfig(project, projectPath); // 调整Embedding存储配置
+        adjustEmbeddingStoreConfig(project, projectPath); // Adjust embedding store configuration when needed
         return FactoryDescriptor.from(project.getEmbeddingStore().getProvider(),
                 project.getEmbeddingStore().getConfiguration());
     }
 
+    /**
+     * Creates an {@link AskdataAgent} by loading the project configuration from disk.
+     *
+     * @param projectPath the project root directory
+     * @param agentName the name of the agent to instantiate
+     * @param variables optional variables passed to agent factories
+     * @return a configured {@link AskdataAgent}
+     */
     public static AskdataAgent createAskdataAgent(@NonNull Path projectPath,
                                                   @NonNull String agentName,
                                                   Map<String, Object> variables) {
@@ -172,6 +214,15 @@ public class ProjectUtil {
         return createAskdataAgent(project, agentName, projectPath, variables);
     }
 
+    /**
+     * Creates an {@link AskdataAgent} using the provided project definition.
+     *
+     * @param project the DAT project definition
+     * @param agentName the name of the agent to instantiate
+     * @param projectPath the project root directory
+     * @param variables optional variables passed to agent factories
+     * @return a configured {@link AskdataAgent}
+     */
     public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
                                                   @NonNull String agentName,
                                                   @NonNull Path projectPath,
@@ -213,6 +264,11 @@ public class ProjectUtil {
                 chatModelFactoryDescriptors, databaseAdapterFactoryDescriptor, variables);
     }
 
+    /**
+     * Creates an {@link AskdataAgent} with explicitly supplied semantic models.
+     *
+     * @deprecated prefer letting the content store determine semantic models via {@link #createAskdataAgent(Path, String, Map)}
+     */
     @Deprecated
     public static AskdataAgent createAskdataAgent(@NonNull Path projectPath,
                                                   @NonNull String agentName,
@@ -222,6 +278,11 @@ public class ProjectUtil {
         return createAskdataAgent(project, agentName, semanticModels, projectPath, variables);
     }
 
+    /**
+     * Creates an {@link AskdataAgent} with explicitly supplied semantic models.
+     *
+     * @deprecated prefer letting the content store determine semantic models via {@link #createAskdataAgent(DatProject, String, Path, Map)}
+     */
     @Deprecated
     public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
                                                   @NonNull String agentName,
@@ -260,6 +321,9 @@ public class ProjectUtil {
                 variables);
     }
 
+    /**
+     * @deprecated use {@link #createAskdataAgent(Path, String, Map)}
+     */
     @Deprecated
     public static AskdataAgent createAskdataAgent(@NonNull Path projectPath,
                                                   @NonNull String agentName,
@@ -267,6 +331,9 @@ public class ProjectUtil {
         return createAskdataAgent(projectPath, agentName, semanticModels, null);
     }
 
+    /**
+     * @deprecated use {@link #createAskdataAgent(DatProject, String, Path, Map)}
+     */
     @Deprecated
     public static AskdataAgent createAskdataAgent(@NonNull DatProject project,
                                                   @NonNull String agentName,
@@ -275,10 +342,20 @@ public class ProjectUtil {
         return createAskdataAgent(project, agentName, semanticModels, projectPath, null);
     }
 
+    /**
+     * Creates a database adapter configured for the provided project definition.
+     *
+     * @param project the DAT project definition
+     * @param projectPath the project root directory
+     * @return a configured {@link DatabaseAdapter}
+     */
     public static DatabaseAdapter createDatabaseAdapter(@NonNull DatProject project, @NonNull Path projectPath) {
         return FactoryUtil.createDatabaseAdapter(createDatabaseAdapterFactoryDescriptor(project, projectPath));
     }
 
+    /**
+     * Ensures database configuration points to a valid file when DuckDB is used.
+     */
     private static void adjustDatabaseConfig(@NonNull DatProject project, @NonNull Path projectPath) {
         DatabaseConfig databaseConfig = project.getDb();
         if (DatabaseConfig.DUCKDB_PROVIDER.equals(databaseConfig.getProvider())
@@ -301,10 +378,15 @@ public class ProjectUtil {
 
     private static FactoryDescriptor createDatabaseAdapterFactoryDescriptor(@NonNull DatProject project,
                                                                             @NonNull Path projectPath) {
-        adjustDatabaseConfig(project, projectPath); // 调整数据库配置
+        adjustDatabaseConfig(project, projectPath); // Adjust database configuration when needed
         return FactoryDescriptor.from(project.getDb().getProvider(), project.getDb().getConfiguration());
     }
 
+    /**
+     * Validates that agents reference existing semantic models when provided explicitly.
+     *
+     * @deprecated this method operates on legacy flows that bypass the content store
+     */
     @Deprecated
     private static void validateAgents(@NonNull List<AgentConfig> agents,
                                        @NonNull List<SemanticModel> semanticModels) {
@@ -331,6 +413,9 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Validates that the requested semantic models and tags exist within the content store snapshot.
+     */
     private static void validateAgent(@NonNull AgentConfig agentConfig,
                                       @NonNull List<SemanticModel> semanticModels) {
         Set<String> existingNames = semanticModels.stream()
@@ -365,6 +450,12 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Loads the DAT project configuration from the specified root directory.
+     *
+     * @param projectPath the project root directory
+     * @return the deserialized {@link DatProject}
+     */
     public static DatProject loadProject(@NonNull Path projectPath) {
         Path filePath = findProjectConfigFile(projectPath);
         if (filePath == null) {
@@ -381,6 +472,12 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Locates the project configuration file under the project root.
+     *
+     * @param projectPath the project root directory
+     * @return the path to the configuration file, or {@code null} if not found
+     */
     private static Path findProjectConfigFile(@NonNull Path projectPath) {
         Path projectYaml = projectPath.resolve(PROJECT_CONFIG_FILE_NAME_YAML);
         Path projectYml = projectPath.resolve(PROJECT_CONFIG_FILE_NAME_YML);
@@ -392,6 +489,12 @@ public class ProjectUtil {
         return null;
     }
 
+    /**
+     * Loads all schema definitions under the provided directory.
+     *
+     * @param dirPath the directory containing schema YAML files
+     * @return a map of file paths to parsed schema definitions
+     */
     public static Map<Path, DatSchema> loadAllSchema(@NonNull Path dirPath) {
         Map<Path, DatSchema> schemas = scanYamlFiles(dirPath).stream()
                 .collect(Collectors.toMap(p -> p, p -> loadSchema(p, dirPath)));
@@ -399,6 +502,13 @@ public class ProjectUtil {
         return schemas;
     }
 
+    /**
+     * Loads a single schema definition from the provided path.
+     *
+     * @param filePath the path to the schema file
+     * @param dirPath the root directory used for relative paths in error messages
+     * @return the parsed schema definition
+     */
     public static DatSchema loadSchema(@NonNull Path filePath, @NonNull Path dirPath) {
         try {
             String content = Files.readString(filePath);
@@ -409,10 +519,12 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Validates that schema files define unique seed and semantic model names.
+     */
     private static void validateYamlFiles(@NonNull Path dirPath, @NonNull Map<Path, DatSchema> schemas) {
         Map<String, List<Path>> nameToPaths;
         Map<String, List<Path>> duplicates;
-        // 校验种子名称是否重复
         nameToPaths = schemas.entrySet().stream()
                 .flatMap(entry -> entry.getValue().getSeeds().stream()
                         .map(seed -> Map.entry(seed.getName(), entry.getKey())))
@@ -435,7 +547,6 @@ public class ProjectUtil {
             });
             throw new ValidationException(sb.toString());
         }
-        // 校验语义模型名称是否重复
         nameToPaths = schemas.entrySet().stream()
                 .flatMap(entry -> entry.getValue().getSemanticModels().stream()
                         .map(model -> Map.entry(model.getName(), entry.getKey())))
@@ -460,6 +571,12 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Loads all DAT models from the models directory.
+     *
+     * @param modelsPath the directory containing SQL model files
+     * @return a map of file paths to parsed DAT models
+     */
     public static Map<Path, DatModel> loadAllModel(@NonNull Path modelsPath) {
         Map<Path, DatModel> models = scanSqlFiles(modelsPath).stream()
                 .collect(Collectors.toMap(p -> p, p -> loadModel(p, modelsPath)));
@@ -467,6 +584,13 @@ public class ProjectUtil {
         return models;
     }
 
+    /**
+     * Loads a single DAT model from the provided SQL file.
+     *
+     * @param filePath the path to the SQL file
+     * @param modelsPath the models directory used for relative paths in error messages
+     * @return the parsed DAT model
+     */
     public static DatModel loadModel(@NonNull Path filePath, @NonNull Path modelsPath) {
         try {
             String content = Files.readString(filePath);
@@ -478,6 +602,9 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Validates that model file names resolve to unique DAT model names.
+     */
     private static void validateModelFiles(@NonNull Path modelsPath, @NonNull Map<Path, DatModel> models) {
         Map<String, List<Path>> nameToPaths = models.entrySet().stream()
                 .collect(Collectors.groupingBy(
@@ -501,6 +628,12 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Loads all seed datasets from the seeds directory.
+     *
+     * @param seedsPath the directory containing CSV seed files
+     * @return a map of file paths to parsed seed definitions
+     */
     public static Map<Path, DatSeed> loadAllSeed(@NonNull Path seedsPath) {
         Map<Path, DatSeed> seeds = scanCsvFiles(seedsPath).stream()
                 .collect(Collectors.toMap(p -> p, p -> loadSeed(p, seedsPath)));
@@ -508,6 +641,9 @@ public class ProjectUtil {
         return seeds;
     }
 
+    /**
+     * Loads a single seed dataset from the provided CSV file.
+     */
     private static DatSeed loadSeed(@NonNull Path filePath, @NonNull Path seedsPath) {
         try {
             String content = Files.readString(filePath);
@@ -519,6 +655,9 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Validates that seed file names resolve to unique seed identifiers.
+     */
     private static void validateSeedFiles(@NonNull Path seedsPath, @NonNull Map<Path, DatSeed> seeds) {
         Map<String, List<Path>> nameToPaths = seeds.entrySet().stream()
                 .collect(Collectors.groupingBy(
@@ -542,6 +681,12 @@ public class ProjectUtil {
         }
     }
 
+    /**
+     * Recursively scans the directory for YAML files.
+     *
+     * @param dirPath the directory to scan
+     * @return a list of YAML file paths
+     */
     public static List<Path> scanYamlFiles(@NonNull Path dirPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(dirPath),
@@ -551,7 +696,7 @@ public class ProjectUtil {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     String fileName = file.getFileName().toString();
-                    if (isYamlFile(fileName)) { // 检查是否为YAML文件
+                    if (isYamlFile(fileName)) { // Check for YAML file extension
                         files.add(file);
                     }
                     return FileVisitResult.CONTINUE;
@@ -563,10 +708,19 @@ public class ProjectUtil {
         return files;
     }
 
+    /**
+     * Determines whether the file name corresponds to a YAML file.
+     */
     private static boolean isYamlFile(@NonNull String fileName) {
         return YAML_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }
 
+    /**
+     * Recursively scans the models directory for SQL files.
+     *
+     * @param modelsPath the directory to scan
+     * @return a list of SQL file paths
+     */
     public static List<Path> scanSqlFiles(@NonNull Path modelsPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(modelsPath),
@@ -576,7 +730,7 @@ public class ProjectUtil {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     String fileName = file.getFileName().toString();
-                    if (isSqlFile(fileName)) { // 检查是否为SQL文件
+                    if (isSqlFile(fileName)) { // Check for SQL file extension
                         files.add(file);
                     }
                     return FileVisitResult.CONTINUE;
@@ -588,10 +742,16 @@ public class ProjectUtil {
         return files;
     }
 
+    /**
+     * Determines whether the file name corresponds to an SQL file.
+     */
     private static boolean isSqlFile(@NonNull String fileName) {
         return SQL_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }
 
+    /**
+     * Recursively scans the seeds directory for CSV files.
+     */
     private static List<Path> scanCsvFiles(@NonNull Path seedsPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(seedsPath),
@@ -601,7 +761,7 @@ public class ProjectUtil {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     String fileName = file.getFileName().toString();
-                    if (isCsvFile(fileName)) { // 检查是否为CSV文件
+                    if (isCsvFile(fileName)) { // Check for CSV file extension
                         files.add(file);
                     }
                     return FileVisitResult.CONTINUE;
@@ -613,6 +773,9 @@ public class ProjectUtil {
         return files;
     }
 
+    /**
+     * Determines whether the file name corresponds to a CSV file.
+     */
     private static boolean isCsvFile(@NonNull String fileName) {
         return CSV_EXTENSIONS.stream().anyMatch(fileName::endsWith);
     }

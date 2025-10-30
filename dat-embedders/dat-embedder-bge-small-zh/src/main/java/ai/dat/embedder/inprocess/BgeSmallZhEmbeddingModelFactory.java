@@ -9,10 +9,6 @@ import dev.langchain4j.model.embedding.onnx.bgesmallzh.BgeSmallZhEmbeddingModel;
 import java.util.Collections;
 import java.util.Set;
 
-/**
- * @Author JunjieM
- * @Date 2025/7/1
- */
 public class BgeSmallZhEmbeddingModelFactory implements EmbeddingModelFactory {
 
     public static final String IDENTIFIER = "bge-small-zh";

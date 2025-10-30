@@ -12,9 +12,6 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Human-in-the-loop Askdata Agent
- *
- * @Author JunjieM
- * @Date 2025/8/12
  */
 public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
 

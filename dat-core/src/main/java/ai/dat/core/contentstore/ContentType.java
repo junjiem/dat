@@ -3,8 +3,7 @@ package ai.dat.core.contentstore;
 import lombok.Getter;
 
 /**
- * @Author JunjieM
- * @Date 2025/7/17
+ *
  */
 @Getter
 public enum ContentType {

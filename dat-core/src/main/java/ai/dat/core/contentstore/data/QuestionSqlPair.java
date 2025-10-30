@@ -8,9 +8,6 @@ import lombok.NonNull;
 
 /**
  * 问题与SQL对
- *
- * @Author JunjieM
- * @Date 2025/6/25
  */
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -15,9 +15,6 @@ import java.util.stream.Collectors;
 
 /**
  * Embedding存储工厂接口类
- *
- * @Author JunjieM
- * @Date 2025/7/11
  */
 public interface EmbeddingStoreFactory extends Factory {
     Set<ConfigOption<?>> fingerprintOptions();

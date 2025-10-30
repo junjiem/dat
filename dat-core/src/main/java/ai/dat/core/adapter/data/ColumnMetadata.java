@@ -6,9 +6,6 @@ import lombok.Data;
 /**
  * 统一的列元数据信息
  * 提供标准化的字段信息描述
- *
- * @Author JunjieM
- * @Date 2025/8/7
  */
 @Data
 @Builder

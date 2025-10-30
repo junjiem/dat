@@ -14,8 +14,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * @Author JunjieM
- * @Date 2025/6/30
+ *
  */
 public class DuckDBEmbeddingStoreFactory implements EmbeddingStoreFactory {
 

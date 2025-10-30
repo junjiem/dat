@@ -13,10 +13,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @Author JunjieM
- * @Date 2025/7/4
- */
 public class OracleDatabaseAdapterFactory implements DatabaseAdapterFactory {
 
     public static final String IDENTIFIER = "oracle";

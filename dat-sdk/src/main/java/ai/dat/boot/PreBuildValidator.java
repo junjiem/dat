@@ -32,8 +32,8 @@ import java.util.stream.Stream;
 import static ai.dat.core.factories.DatProjectFactory.*;
 
 /**
- * @Author JunjieM
- * @Date 2025/8/7
+ * Performs validation tasks that must succeed before a DAT project can be built, including
+ * schema verification, SQL validation, and data type checks for semantic models.
  */
 @Slf4j
 class PreBuildValidator {
@@ -44,6 +44,13 @@ class PreBuildValidator {
     private final Path projectPath;
     private final Map<String, Object> variables;
 
+    /**
+     * Creates a validator instance tied to a specific project and source path.
+     *
+     * @param project the DAT project definition to validate
+     * @param projectPath the file system path containing the project
+     * @param variables template variables used when rendering semantic model definitions
+     */
     public PreBuildValidator(@NonNull DatProject project, @NonNull Path projectPath,
                              Map<String, Object> variables) {
         this.project = project;
@@ -51,6 +58,9 @@ class PreBuildValidator {
         this.variables = Optional.ofNullable(variables).orElse(Collections.emptyMap());
     }
 
+    /**
+     * Executes all configured validation steps for the current project.
+     */
     public void validate() {
         ReadableConfig config = project.getConfiguration();
         DatProjectFactory factory = new DatProjectFactory();
@@ -76,8 +86,8 @@ class PreBuildValidator {
                 );
         DatabaseAdapter databaseAdapter = ProjectUtil.createDatabaseAdapter(project, projectPath);
 
-        validateModelSqls(semanticModels, databaseAdapter); // 校验模型SQL
-        validateSemanticModelSqls(semanticModels, databaseAdapter); // 校验语义模型SQL
+        validateModelSqls(semanticModels, databaseAdapter); // Validate raw model SQL
+        validateSemanticModelSqls(semanticModels, databaseAdapter); // Validate generated semantic SQL
 
         if (config.get(BUILDING_VERIFY_MDL_DIMENSIONS_ENUM_VALUES)) {
             validateDimensionsEnumValues(semanticModels, databaseAdapter);
@@ -90,6 +100,12 @@ class PreBuildValidator {
         }
     }
 
+    /**
+     * Validates that the raw model SQL statements compile against the project's database adapter.
+     *
+     * @param semanticModels semantic models grouped by their source file path
+     * @param databaseAdapter the database adapter used to execute validation queries
+     */
     private void validateModelSqls(@NonNull Map<String, List<SemanticModel>> semanticModels,
                                    @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
@@ -115,6 +131,13 @@ class PreBuildValidator {
         }
     }
 
+    /**
+     * Validates a single semantic model's raw SQL by executing a minimal query.
+     *
+     * @param databaseAdapter the database adapter used to run the validation query
+     * @param semanticModel the semantic model whose SQL should be validated
+     * @return a validation message if validation fails, or {@code null} when successful
+     */
     private ValidationMessage validateModelSql(@NonNull DatabaseAdapter databaseAdapter,
                                                @NonNull SemanticModel semanticModel) {
         String sql = "SELECT 1 FROM (" + semanticModel.getModel() + ") AS __dat_model WHERE 1=0";
@@ -127,6 +150,12 @@ class PreBuildValidator {
         return null;
     }
 
+    /**
+     * Validates the SQL generated from semantic models to ensure the semantic adapter can compile them.
+     *
+     * @param semanticModels semantic models grouped by their source file path
+     * @param databaseAdapter the database adapter used to execute validation queries
+     */
     private void validateSemanticModelSqls(@NonNull Map<String, List<SemanticModel>> semanticModels,
                                            @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
@@ -152,6 +181,13 @@ class PreBuildValidator {
         }
     }
 
+    /**
+     * Validates a single semantic model by generating semantic SQL and executing a minimal query.
+     *
+     * @param databaseAdapter the database adapter used to execute the validation query
+     * @param semanticModel the semantic model whose semantic SQL should be validated
+     * @return a validation message if validation fails, or {@code null} when successful
+     */
     private ValidationMessage validateSemanticModelSql(@NonNull DatabaseAdapter databaseAdapter,
                                                        @NonNull SemanticModel semanticModel) {
         SemanticAdapter semanticAdapter = databaseAdapter.semanticAdapter();
@@ -172,6 +208,12 @@ class PreBuildValidator {
         return null;
     }
 
+    /**
+     * Validates that configured dimension enumerations align with actual data values.
+     *
+     * @param semanticModels semantic models grouped by their source file path
+     * @param databaseAdapter the database adapter used to execute validation queries
+     */
     private void validateDimensionsEnumValues(@NonNull Map<String, List<SemanticModel>> semanticModels,
                                               @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
@@ -197,6 +239,13 @@ class PreBuildValidator {
         }
     }
 
+    /**
+     * Validates enum values for a single semantic model dimension set.
+     *
+     * @param databaseAdapter the database adapter used to retrieve distinct values
+     * @param semanticModel the semantic model whose dimensions are validated
+     * @return a validation message if mismatches are found, otherwise {@code null}
+     */
     private ValidationMessage validateDimensionEnumValues(@NonNull DatabaseAdapter databaseAdapter,
                                                           @NonNull SemanticModel semanticModel) {
         List<Dimension> dimensions = semanticModel.getDimensions().stream()
@@ -254,6 +303,15 @@ class PreBuildValidator {
                 new ValidationException(String.join("\n", messages)));
     }
 
+    /**
+     * Counts distinct values for a dimension using the semantic model SQL.
+     *
+     * @param dimension the dimension whose distinct values should be counted
+     * @param databaseAdapter the database adapter executing the query
+     * @param semanticModelSql the semantic SQL representing the semantic model
+     * @return the count of distinct values for the dimension
+     * @throws SQLException if the query execution fails
+     */
     private long dimensionDistinctCount(Dimension dimension,
                                         DatabaseAdapter databaseAdapter,
                                         String semanticModelSql) throws SQLException {
@@ -269,6 +327,12 @@ class PreBuildValidator {
         }
     }
 
+    /**
+     * Validates that semantic model elements annotated with data types match the database schema.
+     *
+     * @param semanticModels semantic models grouped by their source file path
+     * @param databaseAdapter the database adapter used to retrieve column metadata
+     */
     private void validateDataTypes(@NonNull Map<String, List<SemanticModel>> semanticModels,
                                    @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
@@ -294,6 +358,13 @@ class PreBuildValidator {
         }
     }
 
+    /**
+     * Validates data types for a single semantic model.
+     *
+     * @param databaseAdapter the database adapter used to fetch column metadata
+     * @param semanticModel the semantic model whose data types should be validated
+     * @return a validation message if mismatches occur, otherwise {@code null}
+     */
     private ValidationMessage validateDataTypes(@NonNull DatabaseAdapter databaseAdapter,
                                                 @NonNull SemanticModel semanticModel) {
         Map<String, String> dataTypes = Stream.of(
@@ -337,6 +408,12 @@ class PreBuildValidator {
         return null;
     }
 
+    /**
+     * Attempts to populate missing data type information by inspecting database metadata.
+     *
+     * @param semanticModels semantic models grouped by their source file path
+     * @param databaseAdapter the database adapter used to fetch column metadata
+     */
     private void autoCompleteDataTypes(@NonNull Map<String, List<SemanticModel>> semanticModels,
                                        @NonNull DatabaseAdapter databaseAdapter) {
         Map<String, List<ValidationMessage>> validations =
@@ -362,6 +439,13 @@ class PreBuildValidator {
         }
     }
 
+    /**
+     * Populates missing data types for a single semantic model by consulting database metadata.
+     *
+     * @param databaseAdapter the database adapter used to fetch column metadata
+     * @param semanticModel the semantic model whose missing data types should be populated
+     * @return a validation message if the lookup fails, otherwise {@code null}
+     */
     private ValidationMessage autoCompleteDataTypes(@NonNull DatabaseAdapter databaseAdapter,
                                                     @NonNull SemanticModel semanticModel) {
         List<Element> elements = Stream.of(
@@ -396,6 +480,12 @@ class PreBuildValidator {
         return null;
     }
 
+    /**
+     * Captures the outcome of a validation step for a semantic model.
+     *
+     * @param semanticModelName the name of the semantic model being validated
+     * @param exception the exception raised during validation, if any
+     */
     private record ValidationMessage(@NonNull String semanticModelName, @NonNull Exception exception) {
     }
 }

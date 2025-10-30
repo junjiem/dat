@@ -8,8 +8,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * @Author JunjieM
- * @Date 2025/6/25
+ *
  */
 @Getter
 public class StreamAction implements Iterable<StreamEvent> {

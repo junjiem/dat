@@ -10,8 +10,7 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 
 /**
- * @Author JunjieM
- * @Date 2025/9/16
+ *
  */
 public class DuckDBDataSource implements DataSource {
 

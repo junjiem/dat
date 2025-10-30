@@ -12,6 +12,9 @@ import lombok.Setter;
 
 import java.util.Map;
 
+/**
+ * Configuration wrapper for the database adapter used by a DAT project.
+ */
 @Setter
 @Getter
 public class DatabaseConfig {
@@ -25,6 +28,9 @@ public class DatabaseConfig {
 
     public static final String DEFAULT_PROVIDER = "postgresql";
 
+    /**
+     * Identifier of the database provider.
+     */
     @NonNull
     private String provider = DEFAULT_PROVIDER;
 
@@ -32,6 +38,11 @@ public class DatabaseConfig {
     @NonNull
     private ReadableConfig configuration = new Configuration();
 
+    /**
+     * Deserializes configuration properties from YAML into a {@link ReadableConfig} instance.
+     *
+     * @param configs the raw configuration map
+     */
     @JsonProperty("configuration")
     public void setConfiguration(Map<String, Object> configs) {
         this.configuration = Configuration.fromMap(configs);
