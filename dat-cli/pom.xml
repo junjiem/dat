@@ -249,6 +249,15 @@
                         <skip>true</skip> <!-- 跳过部署 -->
                     </configuration>
                 </plugin>
+                <!-- Central Publishing Plugin - 禁用扩展以跳过发布 -->
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <extensions>false</extensions>
+                    <configuration>
+                        <skipPublishing>true</skipPublishing>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
