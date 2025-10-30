@@ -11,9 +11,12 @@ import org.apache.calcite.sql.dialect.OracleSqlDialect;
  */
 public class OracleSemanticAdapter implements SemanticAdapter {
 
+    public static final SqlDialect DEFAULT = new OracleSqlDialect(
+            OracleSqlDialect.DEFAULT_CONTEXT.withIdentifierQuoteString(""));
+
     @Override
     public SqlDialect getSqlDialect() {
-        return OracleSqlDialect.DEFAULT;
+        return DEFAULT;
     }
 
     @Override
@@ -46,8 +49,7 @@ public class OracleSemanticAdapter implements SemanticAdapter {
             case "BINARY_DOUBLE" ->
                 // Oracle的BINARY_DOUBLE映射为DOUBLE
                     AnsiSqlType.DOUBLE;
-            case "FLOAT" ->
-                    AnsiSqlType.FLOAT;
+            case "FLOAT" -> AnsiSqlType.FLOAT;
             case "VARCHAR2", "NVARCHAR2" ->
                 // Oracle的VARCHAR2映射为VARCHAR
                     AnsiSqlType.VARCHAR;

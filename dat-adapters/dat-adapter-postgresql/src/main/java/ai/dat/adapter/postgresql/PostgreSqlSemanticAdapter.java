@@ -14,9 +14,12 @@ import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
  */
 class PostgreSqlSemanticAdapter implements SemanticAdapter {
 
+    public static final SqlDialect DEFAULT = new PostgresqlSqlDialect(
+            PostgresqlSqlDialect.DEFAULT_CONTEXT.withIdentifierQuoteString(""));
+
     @Override
     public SqlDialect getSqlDialect() {
-        return PostgresqlSqlDialect.DEFAULT;
+        return DEFAULT;
     }
 
     @Override
