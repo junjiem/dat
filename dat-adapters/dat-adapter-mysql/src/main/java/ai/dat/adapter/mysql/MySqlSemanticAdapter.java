@@ -13,9 +13,12 @@ import org.apache.calcite.sql.SqlDialect;
  */
 public class MySqlSemanticAdapter implements SemanticAdapter {
 
+    public static final SqlDialect DEFAULT = new DatMysqlSqlDialect(
+            DatMysqlSqlDialect.DEFAULT_CONTEXT.withIdentifierQuoteString(""));
+
     @Override
     public SqlDialect getSqlDialect() {
-        return DatMysqlSqlDialect.DEFAULT;
+        return DEFAULT;
     }
 
     @Override

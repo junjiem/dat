@@ -11,9 +11,13 @@ import org.apache.calcite.sql.dialect.DuckDBSqlDialect;
  * @Date 2025/9/16
  */
 public class DuckDBSemanticAdapter implements SemanticAdapter {
+
+    public static final SqlDialect DEFAULT = new DuckDBSqlDialect(
+            DuckDBSqlDialect.DEFAULT_CONTEXT.withIdentifierQuoteString(""));
+
     @Override
     public SqlDialect getSqlDialect() {
-        return DuckDBSqlDialect.DEFAULT;
+        return DEFAULT;
     }
 
     @Override
