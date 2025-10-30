@@ -30,10 +30,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
@@ -79,6 +77,18 @@ public class AskController {
 
     // 用于定时发送ping事件的线程池
     private final ScheduledExecutorService pingScheduler = Executors.newScheduledThreadPool(1);
+
+    // 用于处理SSE流式响应的线程池
+    private final ExecutorService streamExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
+        private final AtomicInteger threadNumber = new AtomicInteger(1);
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, "sse-stream-processor-" + threadNumber.getAndIncrement());
+            thread.setDaemon(false);
+            return thread;
+        }
+    });
 
     private static final String NOT_GENERATE = "<not generate>";
 
@@ -185,6 +195,9 @@ public class AskController {
 
         SseEmitter emitter = new SseEmitter();
 
+        // 使用 AtomicReference 确保线程安全
+        AtomicReference<ScheduledFuture<?>> pingTaskRef = new AtomicReference<>();
+
         // 启动定时ping任务，每10秒发送一次ping事件
         ScheduledFuture<?> pingTask = pingScheduler.scheduleAtFixedRate(() -> {
             try {
@@ -192,159 +205,227 @@ public class AskController {
                         .name(PING_EVENT)
                         .data(Map.of(TIMESTAMP, System.currentTimeMillis(),
                                 CONVERSATION_ID, conversationId)));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.debug("Failed to send ping event for request [{}]: {}", conversationId, e.getMessage());
-                // ping失败通常表示连接已断开，不需要特殊处理
+                // ping失败通常表示连接已断开，取消任务
+                ScheduledFuture<?> task = pingTaskRef.get();
+                if (task != null) {
+                    task.cancel(false);
+                }
             }
         }, 0, 10, TimeUnit.SECONDS);
 
-        // 异步处理流式响应
-        new Thread(() -> {
-            String sql = NOT_GENERATE;
-            boolean isAccurateSql = false;
+        pingTaskRef.set(pingTask);
 
-            try {
-                StreamAction action = runnerService.ask(conversationId,
-                        request.getAgentName(), request.getQuestion(), histories);
+        // 使用线程池异步处理流式响应
+        streamExecutor.execute(() -> processStreamEvents(emitter, conversationId, request, histories, pingTask));
 
-                String lastEvent = "";
-                boolean lastIncremental = false;
-                String eventId = null;
-                // 处理流式事件
-                for (StreamEvent event : action) {
-                    if (event == null) break;
-
-                    if (event.getSemanticSql().isPresent()) {
-                        sql = event.getSemanticSql().get();
-                    }
-                    if (event.getQueryData().isPresent()) {
-                        isAccurateSql = true;
-                    }
-
-                    String eventName = event.name();
-                    if (!lastEvent.equals(eventName)) {
-                        if (lastIncremental) {
-                            emitter.send(SseEmitter.event()
-                                    .name(AGENT_ANSWER_END_EVENT)
-                                    .data(Map.of(ANSWER_ID, eventId,
-                                            TIMESTAMP, System.currentTimeMillis(),
-                                            CONVERSATION_ID, conversationId)));
-                        }
-                        lastEvent = eventName;
-                        lastIncremental = event.getIncrementalContent().isPresent();
-                        eventId = UUID.randomUUID().toString();
-                    }
-
-                    // 转换并发送事件
-                    String finalEventId = eventId;
-                    AtomicReference<String> reference = new AtomicReference<>(OTHER_EVENT);
-                    Map<String, Object> eventData = new HashMap<>();
-                    eventData.put(CONVERSATION_ID, conversationId);
-                    eventData.put(TIMESTAMP, System.currentTimeMillis());
-                    event.getIncrementalContent().ifPresent(content -> {
-                        reference.set(AGENT_ANSWER_EVENT);
-                        eventData.put(ANSWER_ID, finalEventId);
-                        eventData.put(ANSWER, content);
-                    });
-                    event.getSemanticSql().ifPresent(semanticSql -> {
-                        reference.set(SQL_GENERATE_EVENT);
-                        eventData.put(SEMANTIC_SQL, semanticSql);
-                    });
-                    event.getQuerySql().ifPresent(querySql -> {
-                        reference.set(SEMANTIC_TO_SQL_EVENT);
-                        eventData.put(QUERY_SQL, querySql);
-                    });
-                    event.getQueryData().ifPresent(data -> {
-                        reference.set(SQL_EXECUTE_EVENT);
-                        eventData.put(QUERY_DATA, data);
-                    });
-                    event.getHitlAiRequest().ifPresent(aiRequest -> {
-                        reference.set(HITL_AI_REQUEST_EVENT);
-                        eventData.put(AI_REQUEST, aiRequest);
-                        event.getHitlWaitTimeout().ifPresent(timeout -> eventData.put(WAIT_TIMEOUT, timeout));
-                    });
-                    event.getHitlToolApproval().ifPresent(approval -> {
-                        reference.set(HITL_TOOL_APPROVAL_EVENT);
-                        eventData.put(TOOL_APPROVAL, approval);
-                        event.getHitlWaitTimeout().ifPresent(timeout -> eventData.put(WAIT_TIMEOUT, timeout));
-                    });
-                    Map<String, Object> messages = event.getMessages();
-                    if (OTHER_EVENT.equals(reference.get())) {
-                        eventData.put(SUB_EVENT, event.name());
-                    }
-                    eventData.putAll(messages);
-                    emitter.send(SseEmitter.event().name(reference.get()).data(eventData));
-
-                    // 如果有错误，发送错误事件并结束
-                    if (eventData.containsKey("error") || eventData.containsKey("exception")) {
-                        Object errorMsg = eventData.get("error");
-                        if (errorMsg == null) {
-                            errorMsg = eventData.get("exception");
-                        }
-                        emitter.send(SseEmitter.event()
-                                .name(ERROR_EVENT)
-                                .data(Map.of(ERROR, errorMsg,
-                                        TIMESTAMP, System.currentTimeMillis(),
-                                        CONVERSATION_ID, conversationId))
-                        );
-                        break;
-                    }
-                }
-
-                if (lastIncremental) {
-                    emitter.send(SseEmitter.event()
-                            .name(AGENT_ANSWER_END_EVENT)
-                            .data(Map.of(ANSWER_ID, eventId,
-                                    TIMESTAMP, System.currentTimeMillis(),
-                                    CONVERSATION_ID, conversationId)));
-                }
-
-                // 发送完成事件
-                emitter.send(SseEmitter.event()
-                        .name(FINISHED_EVENT)
-                        .data(Map.of(STATUS, STATUS_SUCCESS,
-                                TIMESTAMP, System.currentTimeMillis(),
-                                CONVERSATION_ID, conversationId))
-                );
-
-                emitter.complete();
-                log.info("Stream ask data request completed [{}]", conversationId);
-            } catch (Exception e) {
-                log.error("Error during stream processing [{}]: {}", conversationId, e.getMessage(), e);
-                try {
-                    emitter.send(SseEmitter.event()
-                            .name(ERROR_EVENT)
-                            .data(Map.of(ERROR, e.getMessage(),
-                                    TIMESTAMP, System.currentTimeMillis(),
-                                    CONVERSATION_ID, conversationId))
-                    );
-                    emitter.send(SseEmitter.event()
-                            .name(FINISHED_EVENT)
-                            .data(Map.of(STATUS, STATUS_FAILURE,
-                                    TIMESTAMP, System.currentTimeMillis(),
-                                    ERROR, e.getMessage(),
-                                    CONVERSATION_ID, conversationId))
-                    );
-                } catch (IOException ex) {
-                    log.error("Error sending error event: {}", ex.getMessage());
-                }
-                emitter.completeWithError(e);
-            } finally {
-                // 取消ping任务
-                pingTask.cancel(false);
-                // 添加历史记录
-                if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
-                    sql = "/* Incorrect SQL */ " + sql;
-                }
-                QuestionSqlPairCacheUtil.add(conversationId, QuestionSqlPair.from(request.getQuestion(), sql));
+        // 回调中也取消 ping 任务（作为额外保障）
+        Runnable cancelPing = () -> {
+            ScheduledFuture<?> task = pingTaskRef.get();
+            if (task != null && !task.isCancelled()) {
+                task.cancel(false);
             }
-        }).start();
+        };
 
-        emitter.onCompletion(() -> pingTask.cancel(false));// 添加完成回调，确保ping任务被取消
-        emitter.onTimeout(() -> pingTask.cancel(false)); // 添加超时回调，确保ping任务被取消
-        emitter.onError((ex) -> pingTask.cancel(false)); // 添加错误回调，确保ping任务被取消
+        emitter.onCompletion(cancelPing); // 添加完成回调，确保ping任务被取消
+        emitter.onTimeout(cancelPing); // 添加超时回调，确保ping任务被取消
+        emitter.onError((ex) -> cancelPing.run()); // 添加错误回调，确保ping任务被取消
 
         return emitter;
+    }
+
+    /**
+     * 处理流式事件
+     */
+    private void processStreamEvents(SseEmitter emitter, String conversationId,
+                                     AskRequest request, List<QuestionSqlPair> histories,
+                                     ScheduledFuture<?> pingTask) {
+        String sql = NOT_GENERATE;
+        boolean isAccurateSql = false;
+        Exception caughtException = null;
+
+        try {
+            StreamAction action = runnerService.ask(conversationId,
+                    request.getAgentName(), request.getQuestion(), histories);
+
+            String previousEvent = "";
+            boolean previousIncremental = false;
+            String eventId = null;
+
+            // 处理流式事件
+            for (StreamEvent event : action) {
+                if (event == null) break;
+
+                if (event.getSemanticSql().isPresent()) {
+                    sql = event.getSemanticSql().get();
+                }
+                if (event.getQueryData().isPresent()) {
+                    isAccurateSql = true;
+                }
+
+                String eventName = event.name();
+                if (!previousEvent.equals(eventName)) {
+                    if (previousIncremental) {
+                        sendAgentAnswerEndEvent(emitter, eventId, conversationId);
+                    }
+                    previousEvent = eventName;
+                    previousIncremental = event.getIncrementalContent().isPresent();
+                    eventId = UUID.randomUUID().toString();
+                }
+
+                // 转换并发送事件
+                sendStreamEvent(emitter, event, eventId, conversationId);
+
+                // 如果有错误，发送错误事件并结束
+                if (hasError(event)) {
+                    sendErrorEvent(emitter, conversationId, getErrorMessage(event));
+                    break;
+                }
+            }
+
+            if (previousIncremental) {
+                sendAgentAnswerEndEvent(emitter, eventId, conversationId);
+            }
+
+            // 发送完成事件
+            sendFinishedEvent(emitter, conversationId, STATUS_SUCCESS, null);
+            log.info("Stream ask data request completed [{}]", conversationId);
+        } catch (Exception e) {
+            caughtException = e;
+            log.error("Error during stream processing [{}]: {}", conversationId, e.getMessage(), e);
+            try {
+                sendErrorEvent(emitter, conversationId, e.getMessage());
+                sendFinishedEvent(emitter, conversationId, STATUS_FAILURE, e.getMessage());
+            } catch (IOException ex) {
+                log.error("Error sending error event: {}", ex.getMessage());
+            }
+        } finally {
+            // 添加历史记录
+            if (!isAccurateSql && !NOT_GENERATE.equals(sql)) {
+                sql = "/* Incorrect SQL */ " + sql;
+            }
+            QuestionSqlPairCacheUtil.add(conversationId, QuestionSqlPair.from(request.getQuestion(), sql));
+
+            // 确保 ping 任务被取消（在 complete 之前，避免竞态条件）
+            if (!pingTask.isCancelled()) {
+                pingTask.cancel(false);
+            }
+
+            // 统一在 finally 中完成 emitter，确保无论如何都会被关闭
+            try {
+                if (caughtException != null) {
+                    emitter.completeWithError(caughtException);
+                } else {
+                    emitter.complete();
+                }
+            } catch (Exception e) {
+                log.error("Error completing emitter for [{}]: {}", conversationId, e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 发送流事件
+     */
+    private void sendStreamEvent(SseEmitter emitter, StreamEvent event,
+                                 String eventId, String conversationId) throws IOException {
+        AtomicReference<String> eventName = new AtomicReference<>(OTHER_EVENT);
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put(CONVERSATION_ID, conversationId);
+        eventData.put(TIMESTAMP, System.currentTimeMillis());
+
+        event.getIncrementalContent().ifPresent(content -> {
+            eventName.set(AGENT_ANSWER_EVENT);
+            eventData.put(ANSWER_ID, eventId);
+            eventData.put(ANSWER, content);
+        });
+        event.getSemanticSql().ifPresent(semanticSql -> {
+            eventName.set(SQL_GENERATE_EVENT);
+            eventData.put(SEMANTIC_SQL, semanticSql);
+        });
+        event.getQuerySql().ifPresent(querySql -> {
+            eventName.set(SEMANTIC_TO_SQL_EVENT);
+            eventData.put(QUERY_SQL, querySql);
+        });
+        event.getQueryData().ifPresent(data -> {
+            eventName.set(SQL_EXECUTE_EVENT);
+            eventData.put(QUERY_DATA, data);
+        });
+        event.getHitlAiRequest().ifPresent(aiRequest -> {
+            eventName.set(HITL_AI_REQUEST_EVENT);
+            eventData.put(AI_REQUEST, aiRequest);
+            event.getHitlWaitTimeout().ifPresent(timeout -> eventData.put(WAIT_TIMEOUT, timeout));
+        });
+        event.getHitlToolApproval().ifPresent(approval -> {
+            eventName.set(HITL_TOOL_APPROVAL_EVENT);
+            eventData.put(TOOL_APPROVAL, approval);
+            event.getHitlWaitTimeout().ifPresent(timeout -> eventData.put(WAIT_TIMEOUT, timeout));
+        });
+
+        Map<String, Object> messages = event.getMessages();
+        if (OTHER_EVENT.equals(eventName.get())) {
+            eventData.put(SUB_EVENT, event.name());
+        }
+        eventData.putAll(messages);
+        emitter.send(SseEmitter.event().name(eventName.get()).data(eventData));
+    }
+
+    /**
+     * 发送代理回答结束事件
+     */
+    private void sendAgentAnswerEndEvent(SseEmitter emitter, String answerId, String conversationId) throws IOException {
+        emitter.send(SseEmitter.event()
+                .name(AGENT_ANSWER_END_EVENT)
+                .data(Map.of(ANSWER_ID, answerId,
+                        TIMESTAMP, System.currentTimeMillis(),
+                        CONVERSATION_ID, conversationId)));
+    }
+
+    /**
+     * 发送错误事件
+     */
+    private void sendErrorEvent(SseEmitter emitter, String conversationId, String errorMsg) throws IOException {
+        emitter.send(SseEmitter.event()
+                .name(ERROR_EVENT)
+                .data(Map.of(ERROR, errorMsg,
+                        TIMESTAMP, System.currentTimeMillis(),
+                        CONVERSATION_ID, conversationId)));
+    }
+
+    /**
+     * 发送完成事件
+     */
+    private void sendFinishedEvent(SseEmitter emitter, String conversationId,
+                                   String status, String error) throws IOException {
+        Map<String, Object> data = new HashMap<>();
+        data.put(STATUS, status);
+        data.put(TIMESTAMP, System.currentTimeMillis());
+        data.put(CONVERSATION_ID, conversationId);
+        if (error != null) {
+            data.put(ERROR, error);
+        }
+        emitter.send(SseEmitter.event().name(FINISHED_EVENT).data(data));
+    }
+
+    /**
+     * 检查事件中是否有错误
+     */
+    private boolean hasError(StreamEvent event) {
+        Map<String, Object> messages = event.getMessages();
+        return messages.containsKey("error") || messages.containsKey("exception");
+    }
+
+    /**
+     * 从事件中获取错误消息
+     */
+    private String getErrorMessage(StreamEvent event) {
+        Map<String, Object> messages = event.getMessages();
+        Object errorMsg = messages.get("error");
+        if (errorMsg == null) {
+            errorMsg = messages.get("exception");
+        }
+        return errorMsg != null ? errorMsg.toString() : "Unknown error";
     }
 
     @Operation(summary = "User response",
