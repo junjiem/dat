@@ -1,7 +1,7 @@
 examples:
-  sql_pairs: # 问答SQL对
+  sql_pairs: # 问答SQL对 （提示：可以从项目下.dat/question_sql_pair_history中查看历史问答SQL对）
     - question: 各个国家的平均病例数 # 问题
-      sql: | # 语义SQL
+      sql: | # 语义SQL （注意：这里必须是ANSI SQL而非数据库方言SQL）
         SELECT country_covid_cases.country, AVG(country_covid_cases.cases_total) AS average_cases 
         FROM country_covid_cases 
         GROUP BY country_covid_cases.country

@@ -104,6 +104,7 @@ public abstract class AbstractAskdataAgent implements AskdataAgent {
         String sql;
         try {
             sql = databaseAdapter.generateSql(semanticSql, renderedSemanticModels);
+            log.info("dialectSql: " + sql);
             action.add(StreamEvent.from(SEMANTIC_TO_SQL_EVENT, SQL, sql));
         } catch (Exception e) {
             action.add(StreamEvent.from(SEMANTIC_TO_SQL_EVENT, ERROR, e.getMessage()));

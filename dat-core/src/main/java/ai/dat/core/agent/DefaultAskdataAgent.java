@@ -201,6 +201,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         // 生成语义SQL
         String semanticSql = generateSql(action, semantics, sqlSamples, synonyms, docs,
                 instruction, histories, questionTime, userQuestion);
+        log.info("semanticSql: " + semanticSql);
 
         // 转换和执行
         try {
