@@ -44,6 +44,11 @@ Now you can edit the `dat_project.yaml` file to describe your Project, here is t
 [Semantic Model Configuration Guide](./MODEL_GUIDE.md)
 
 
+### Examples
+
+[Examples Configuration Guide](./EXAMPLE_GUIDE.md)
+
+
 ### Seeds
 
 [Seed Configuration Guide](./SEED_GUIDE.md)
