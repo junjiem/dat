@@ -84,9 +84,11 @@ public class SemanticSqlConverter {
         SqlNode sqlNode = ansiSqlParser.parseQuery(semanticSql);
         if (sqlNode == null) {
             throw new IllegalArgumentException("SQL node cannot be null");
-        } else if (sqlNode instanceof SqlSelect
-                || sqlNode instanceof SqlOrderBy) { // Apache Calcite新版本将ORDER BY作为单独的节点
-            return convertSelectOrOrderBy(sqlNode);
+        }
+        if (sqlNode instanceof SqlSelect sqlSelect) {
+            return convertSelect(sqlSelect);
+        } else if (sqlNode instanceof SqlOrderBy sqlOrderBy) {
+            return convertOrderBy(sqlOrderBy);
         } else if (sqlNode instanceof SqlWith sqlWith) {
             return convertWith(sqlWith);
         } else {
@@ -95,33 +97,46 @@ public class SemanticSqlConverter {
         }
     }
 
-    private String convertSelectOrOrderBy(SqlNode sqlNode) throws SqlParseException {
-        Map<String, String> semanticModelSqls = getSemanticModelSqls(sqlNode);
-        return "WITH " + semanticModelSqls.entrySet().stream()
+    private String convertSelect(SqlNode sqlNode) throws SqlParseException {
+        return "WITH " + getSemanticModelSqls(sqlNode).entrySet().stream()
                 .map(e -> e.getKey() + " AS (" + e.getValue() + ")")
                 .collect(Collectors.joining(",")) +
                 " " + sqlNode2Sql(sqlNode);
     }
 
-    private String convertWith(SqlWith sqlWith) throws SqlParseException {
-        // CTE部分
-        List<SqlNode> withSqlNodes = sqlWith.withList.getList();
-        List<SqlNode> withSqlSelects = withSqlNodes.stream()
+    private String convertOrderBy(SqlOrderBy sqlOrderBy) throws SqlParseException {
+        SqlNode query = sqlOrderBy.query;
+        if (query instanceof SqlSelect) {
+            return convertSelect(sqlOrderBy);
+        } else if (query instanceof SqlWith) {
+            return convertWith(sqlOrderBy);
+        } else {
+            throw new IllegalArgumentException(
+                    "Unsupported SQL class: " + sqlOrderBy.getClass().getSimpleName());
+        }
+    }
+
+    private String convertWith(SqlNode sqlNode) throws SqlParseException {
+        SqlWith with;
+        if (sqlNode instanceof SqlWith sqlWith) {
+            with = sqlWith;
+        } else if (sqlNode instanceof SqlOrderBy sqlOrderBy
+                && sqlOrderBy.query instanceof SqlWith sqlWith) {
+            with = sqlWith;
+        } else {
+            throw new IllegalArgumentException(
+                    "Unsupported SQL class: " + sqlNode.getClass().getSimpleName());
+        }
+        List<SqlNode> withSqlSelects = with.withList.getList().stream()
+                .filter(Objects::nonNull)
                 .map(node -> (SqlWithItem) node)
                 .filter(item -> item.query instanceof SqlSelect || item.query instanceof SqlOrderBy)
                 .map(item -> item.query)
                 .collect(Collectors.toList());
-        Map<String, String> semanticModelSqls = getSemanticModelSqls(withSqlSelects);
-        Map<String, String> withSqls = withSqlNodes.stream()
-                .map(node -> (SqlWithItem) node)
-                .collect(Collectors.toMap(item -> sqlNode2Sql(item.name), item -> sqlNode2Sql(item.query)));
-        return "WITH " + semanticModelSqls.entrySet().stream()
+        return "WITH " + getSemanticModelSqls(withSqlSelects).entrySet().stream()
                 .map(e -> e.getKey() + " AS (" + e.getValue() + ")")
                 .collect(Collectors.joining(",")) +
-                ", " + withSqls.entrySet().stream()
-                .map(e -> e.getKey() + " AS (" + e.getValue() + ")")
-                .collect(Collectors.joining(",")) +
-                " " + sqlNode2Sql(sqlWith.body);
+                ", " + sqlNode2Sql(sqlNode).trim().substring(5); // 直接截掉开头的"WITH "（5个字符）;
     }
 
     private Set<String> extractReferencedTables(SqlNode sqlNode) {
