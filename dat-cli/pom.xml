@@ -249,20 +249,41 @@
                         <skip>true</skip> <!-- 跳过部署 -->
                     </configuration>
                 </plugin>
-                <!-- Central Publishing Plugin - 禁用扩展以跳过发布 -->
-                <plugin>
-                    <groupId>org.sonatype.central</groupId>
-                    <artifactId>central-publishing-maven-plugin</artifactId>
-                    <extensions>false</extensions>
-                    <configuration>
-                        <skipPublishing>true</skipPublishing>
-                    </configuration>
-                </plugin>
+<!--                &lt;!&ndash; Central Publishing Plugin - 禁用扩展以跳过发布 &ndash;&gt;-->
+<!--                <plugin>-->
+<!--                    <groupId>org.sonatype.central</groupId>-->
+<!--                    <artifactId>central-publishing-maven-plugin</artifactId>-->
+<!--                    <extensions>false</extensions>-->
+<!--                    <configuration>-->
+<!--                        <skipPublishing>true</skipPublishing>-->
+<!--                    </configuration>-->
+<!--                </plugin>-->
             </plugins>
         </pluginManagement>
     </build>
 
     <profiles>
+
+        <!-- central profile - 禁用 central-publishing-maven-plugin -->
+        <profile>
+            <id>central</id>
+            <build>
+                <plugins>
+                    <!-- 明确禁用 central-publishing-maven-plugin 的所有执行 -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.9.0</version>
+                        <executions>
+                            <execution>
+                                <id>injected-central-publishing</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
 
         <profile>
             <id>pkg:unbundled</id>
