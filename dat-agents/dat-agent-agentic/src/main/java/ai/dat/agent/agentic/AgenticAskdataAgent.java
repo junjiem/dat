@@ -445,6 +445,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                           List<SemanticModel> semanticModels, StreamAction action) {
         @Tool("Convert the given ANSI SQL into the dialect SQL of the target database")
         public String ansiSql2dialectSql(@P("The ANSI SQL") String ansiSql) {
+            log.info("semanticSql: " + ansiSql);
             action.add(StreamEvent.from(SQL_GENERATE_EVENT, SQL, ansiSql));
             List<SemanticModel> semanticModels = this.semanticModels;
             if (semanticModels == null || semanticModels.isEmpty()) {
@@ -453,6 +454,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
             }
             try {
                 String dialectSql = databaseAdapter.generateSql(ansiSql, semanticModels);
+                log.info("dialectSql: " + dialectSql);
                 action.add(StreamEvent.from(SEMANTIC_TO_SQL_EVENT, SQL, dialectSql));
                 return dialectSql;
             } catch (Exception e) {
@@ -464,6 +466,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         @Tool("The execute database dialect SQL query return the dataset")
         public List<Map<String, Object>> executeSql(
                 @P("The database dialect SQL") String dialectSql) throws SQLException {
+            log.info("executeSql: " + dialectSql);
             try {
                 List<Map<String, Object>> results = databaseAdapter.executeQuery(dialectSql);
                 action.add(StreamEvent.from(SQL_EXECUTE_EVENT, DATA, results));
