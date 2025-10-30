@@ -117,23 +117,25 @@ public class SemanticSqlConverter {
     }
 
     private String convertWith(SqlNode sqlNode) throws SqlParseException {
-        SqlWith with;
-        if (sqlNode instanceof SqlWith sqlWith) {
-            with = sqlWith;
+        SqlWith sqlWith;
+        if (sqlNode instanceof SqlWith with) {
+            sqlWith = with;
         } else if (sqlNode instanceof SqlOrderBy sqlOrderBy
-                && sqlOrderBy.query instanceof SqlWith sqlWith) {
-            with = sqlWith;
+                && sqlOrderBy.query instanceof SqlWith with) {
+            sqlWith = with;
         } else {
             throw new IllegalArgumentException(
                     "Unsupported SQL class: " + sqlNode.getClass().getSimpleName());
         }
-        List<SqlNode> withSqlSelects = with.withList.getList().stream()
+        List<SqlNode> withSqlNodes = sqlWith.withList.getList().stream()
                 .filter(Objects::nonNull)
                 .map(node -> (SqlWithItem) node)
                 .filter(item -> item.query instanceof SqlSelect || item.query instanceof SqlOrderBy)
                 .map(item -> item.query)
-                .collect(Collectors.toList());
-        return "WITH " + getSemanticModelSqls(withSqlSelects).entrySet().stream()
+                .toList();
+        List<SqlNode> sqlNodes = new ArrayList<>(withSqlNodes);
+        sqlNodes.add(sqlWith.body);
+        return "WITH " + getSemanticModelSqls(sqlNodes).entrySet().stream()
                 .map(e -> e.getKey() + " AS (" + e.getValue() + ")")
                 .collect(Collectors.joining(",")) +
                 ", " + sqlNode2Sql(sqlNode).trim().substring(5); // 直接截掉开头的"WITH "（5个字符）;
