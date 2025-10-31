@@ -241,16 +241,20 @@
                         <outputDirectory>${project.build.directory}</outputDirectory>
                     </configuration>
                 </plugin>
-                <!-- Deploy Plugin -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <configuration>
-                        <skip>true</skip> <!-- 跳过部署 -->
-                    </configuration>
-                </plugin>
+
             </plugins>
         </pluginManagement>
+
+        <plugins>
+            <!-- Deploy Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip> <!-- 跳过部署 -->
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>

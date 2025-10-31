@@ -74,6 +74,17 @@
     </properties>
 
     <build>
+       <pluginManagement>
+           <plugins>
+               <!-- Deploy Plugin -->
+               <plugin>
+                   <groupId>org.apache.maven.plugins</groupId>
+                   <artifactId>maven-deploy-plugin</artifactId>
+                   <version>3.1.4</version>
+               </plugin>
+           </plugins>
+       </pluginManagement>
+
         <plugins>
             <!-- 打包时跳过测试 -->
             <plugin>
