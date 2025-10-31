@@ -241,29 +241,22 @@
                         <outputDirectory>${project.build.directory}</outputDirectory>
                     </configuration>
                 </plugin>
-                <!-- Deploy Plugin -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <configuration>
-                        <skip>true</skip> <!-- 跳过部署 -->
-                    </configuration>
-                </plugin>
-<!--                &lt;!&ndash; Central Publishing Plugin - 禁用扩展以跳过发布 &ndash;&gt;-->
-<!--                <plugin>-->
-<!--                    <groupId>org.sonatype.central</groupId>-->
-<!--                    <artifactId>central-publishing-maven-plugin</artifactId>-->
-<!--                    <extensions>false</extensions>-->
-<!--                    <configuration>-->
-<!--                        <skipPublishing>true</skipPublishing>-->
-<!--                    </configuration>-->
-<!--                </plugin>-->
             </plugins>
         </pluginManagement>
+
+        <plugins>
+            <!-- Deploy Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip> <!-- 跳过部署 -->
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>
-
         <!-- central profile - 禁用 central-publishing-maven-plugin -->
         <profile>
             <id>central</id>
