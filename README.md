@@ -440,6 +440,225 @@ cd dat
 mvn clean install -DskipTests
 ```
 
+### 🚀 二次开发指南
+
+DAT提供了 `dat-sdk` 开发工具包，方便开发者在自己的Java应用中集成DAT的智能问数能力。您可以基于SDK开发自定义的Web UI、API服务或集成到现有系统中。
+
+#### Maven依赖配置
+
+在您的项目 `pom.xml` 中添加以下依赖：
+
+```xml
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-sdk</artifactId>
+    <version>0.6.3</version>
+</dependency>
+```
+
+#### 快速开始示例
+
+```java
+import ai.dat.boot.ProjectRunner;
+import ai.dat.core.agent.data.StreamAction;
+import ai.dat.core.agent.data.StreamEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Map;
+
+public class DatProjectRunnerExample {
+
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
+    public static void main(String[] args) {
+        // 初始化项目运行器
+        Path projectPath = Paths.get("/path/to/your/dat-project").toAbsolutePath();
+        String agentName = "default";
+        Map<String, Object> variables = Collections.emptyMap();
+        ProjectRunner runner = new ProjectRunner(projectPath, agentName, variables);
+
+        // 问数
+        StreamAction action = runner.ask("每个国家病历总数");
+
+        // 处理各种流式事件
+        for (StreamEvent event : action) {
+            System.out.println("-------------------" + event.name() + "-------------------");
+            event.getIncrementalContent().ifPresent(content -> System.out.println(content));
+            event.getSemanticSql().ifPresent(content -> System.out.println(content));
+            event.getQuerySql().ifPresent(content -> System.out.println(content));
+            event.getQueryData().ifPresent(data -> {
+                try {
+                    System.out.println(JSON_MAPPER.writeValueAsString(data));
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            event.getHitlAiRequest().ifPresent(request -> System.out.println(request));
+            event.getHitlToolApproval().ifPresent(request -> System.out.println(request));
+            event.getMessages().forEach((k, v) -> {
+                try {
+                    System.out.println(k + ": " + JSON_MAPPER.writeValueAsString(v));
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+    }
+}
+```
+
+推荐使用`ai.dat.boot.ProjectRunner`、`ai.dat.boot.ProjectBuilder`、`ai.dat.boot.ProjectSeeder`等高级类。
+
+更多SDK使用示例和最佳实践，请参考：
+- [示例1: OpenAPI Server](./dat-servers/dat-server-openapi)
+- [示例2: MCP Server](./dat-servers/dat-server-mcp)
+
+按需添加需要的其他已实现的模块，如：
+```xml
+<!-- DAT Embedding Store -->
+<dependency>
+   <groupId>cn.datask</groupId>
+   <artifactId>dat-storer-duckdb</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-storer-weaviate</artifactId>
+    <version>${project.version}</version>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-storer-pgvector</artifactId>
+    <version>${project.version}</version>
+</dependency>
+
+<!-- DAT Embedding Model -->
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-bge-small-zh</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-bge-small-zh-q</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-bge-small-zh-v15</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-onnx-local</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-openai</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-ollama</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-jina</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-xinference</artifactId>
+</dependency>
+
+<!-- DAT Reranking Model -->
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-reranker-ms-marco-minilm-l6-v2</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-reranker-ms-marco-minilm-l6-v2-q</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-reranker-ms-marco-tinybert-l2-v2</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-reranker-ms-marco-tinybert-l2-v2-q</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-reranker-onnx-local</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-reranker-jina</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-reranker-xinference</artifactId>
+</dependency>
+
+<!-- DAT Chat Model -->
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-llm-openai</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-llm-anthropic</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-llm-ollama</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-llm-gemini</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-llm-xinference</artifactId>
+</dependency>
+
+<!-- DAT Database Adapter -->
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-adapter-duckdb</artifactId> <!-- In-process -->
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-adapter-mysql</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-adapter-oracle</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-adapter-postgresql</artifactId>
+</dependency>
+
+<!-- DAT Askdata Agent -->
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-agent-agentic</artifactId>
+</dependency>
+```
+
+也可在 `dat-core` 之上自行开发对应的接口类实现。
+
+```xml
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-core</artifactId>
+</dependency>
+```
+
 ---
 
 ## 🤝 贡献指南
