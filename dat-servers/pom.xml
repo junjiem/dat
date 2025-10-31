@@ -17,4 +17,40 @@
         <module>dat-server-mcp</module>
     </modules>
 
+    <build>
+        <plugins>
+            <!-- Deploy Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip> <!-- 跳过部署 -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- central profile - 禁用 central-publishing-maven-plugin -->
+        <profile>
+            <id>central</id>
+            <build>
+                <plugins>
+                    <!-- 明确禁用 central-publishing-maven-plugin 的所有执行 -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.9.0</version>
+                        <executions>
+                            <execution>
+                                <id>injected-central-publishing</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
