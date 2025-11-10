@@ -71,6 +71,12 @@ public class AgenticEventOptions {
 
     // ----------------------------- before_tool_execution --------------------------
 
+    public static final ConfigOption<String> TOOL_ID =
+            ConfigOptions.key("id")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("tool execution request id");
+
     public static final ConfigOption<String> TOOL_NAME =
             ConfigOptions.key("name")
                     .stringType()
@@ -85,7 +91,10 @@ public class AgenticEventOptions {
 
     public static final EventOption BEFORE_TOOL_EXECUTION = EventOption.builder()
             .name("before_tool_execution")
-            .dataOptions(Set.of(TOOL_NAME, TOOL_ARGS))
+            .toolExecutionIdOption(TOOL_ID)
+            .toolExecutionNameOption(TOOL_NAME)
+            .toolExecutionArgumentsOption(TOOL_ARGS)
+            .dataOptions(Set.of(TOOL_ID, TOOL_NAME, TOOL_ARGS))
             .build();
 
     // ----------------------------- tool_execution --------------------------
@@ -98,7 +107,11 @@ public class AgenticEventOptions {
 
     public static final EventOption TOOL_EXECUTION = EventOption.builder()
             .name("tool_execution")
-            .dataOptions(Set.of(TOOL_NAME, TOOL_ARGS, TOOL_RESULT))
+            .toolExecutionIdOption(TOOL_ID)
+            .toolExecutionNameOption(TOOL_NAME)
+            .toolExecutionArgumentsOption(TOOL_ARGS)
+            .toolExecutionResultOption(TOOL_RESULT)
+            .dataOptions(Set.of(TOOL_ID, TOOL_NAME, TOOL_ARGS, TOOL_RESULT))
             .build();
 
     // ----------------------------- agent_answer --------------------------

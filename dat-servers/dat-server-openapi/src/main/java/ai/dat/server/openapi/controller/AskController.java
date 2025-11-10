@@ -48,6 +48,8 @@ public class AskController {
     private static final String SQL_EXECUTE_EVENT = "sql_execute";
     private static final String AGENT_ANSWER_EVENT = "agent_answer";
     private static final String AGENT_ANSWER_END_EVENT = "agent_answer_end";
+    private static final String BEFORE_TOOL_EXECUTION_EVENT = "before_tool_execution";
+    private static final String TOOL_EXECUTION_EVENT = "tool_execution";
     private static final String HITL_AI_REQUEST_EVENT = "hitl_ai_request";
     private static final String HITL_TOOL_APPROVAL_EVENT = "hitl_tool_approval";
     private static final String OTHER_EVENT = "other";
@@ -62,6 +64,10 @@ public class AskController {
     private static final String QUERY_DATA = "query_data";
     private static final String ANSWER = "answer";
     private static final String ANSWER_ID = "answer_id";
+    private static final String TOOL_ID = "tool_id";
+    private static final String TOOL_NAME = "tool_name";
+    private static final String TOOL_ARGUMENTS = "tool_arguments";
+    private static final String TOOL_RESULT = "tool_result";
     private static final String AI_REQUEST = "ai_request";
     private static final String TOOL_APPROVAL = "tool_approval";
     private static final String WAIT_TIMEOUT = "wait_timeout";
@@ -141,6 +147,25 @@ public class AskController {
                                                     + TIMESTAMP + "\":1756051200000,\""
                                                     + ANSWER_ID + "\":\"<id>\",\""
                                                     + ANSWER + "\":\"We are analyzing the data for you ...\"}\n\n"),
+                                    @ExampleObject(name = BEFORE_TOOL_EXECUTION_EVENT,
+                                            summary = "Before tool execution event",
+                                            description = "Before tool execution request",
+                                            value = "event: " + BEFORE_TOOL_EXECUTION_EVENT + "\n" +
+                                                    "data: {\"" + CONVERSATION_ID + "\":\"<id>\",\""
+                                                    + TIMESTAMP + "\":1756051200000,\""
+                                                    + TOOL_ID + "\":\"<id>\",\""
+                                                    + TOOL_NAME + "\":\"<name>\",\""
+                                                    + TOOL_ARGUMENTS + "\":\"<arguments>\"}\n\n"),
+                                    @ExampleObject(name = TOOL_EXECUTION_EVENT,
+                                            summary = "Tool execution event",
+                                            description = "Tool execution request and result",
+                                            value = "event: " + TOOL_EXECUTION_EVENT + "\n" +
+                                                    "data: {\"" + CONVERSATION_ID + "\":\"<id>\",\""
+                                                    + TIMESTAMP + "\":1756051200000,\""
+                                                    + TOOL_ID + "\":\"<id>\",\""
+                                                    + TOOL_NAME + "\":\"<name>\",\""
+                                                    + TOOL_ARGUMENTS + "\":\"<arguments>\",\""
+                                                    + TOOL_RESULT + "\":\"<result>\"}\n\n"),
                                     @ExampleObject(name = HITL_AI_REQUEST_EVENT,
                                             summary = "Human-in-the-loop AI request event",
                                             description = "Requests that require additional input from the user (" + AI_REQUEST + "). " +
@@ -352,6 +377,23 @@ public class AskController {
             eventName.set(SQL_EXECUTE_EVENT);
             eventData.put(QUERY_DATA, data);
         });
+        if (event.getToolExecutionResult().isEmpty()) {
+            event.getToolExecutionRequest().ifPresent(request -> {
+                eventName.set(BEFORE_TOOL_EXECUTION_EVENT);
+                eventData.put(TOOL_ID, request.id());
+                eventData.put(TOOL_NAME, request.name());
+                eventData.put(TOOL_ARGUMENTS, request.arguments());
+            });
+        }
+        event.getToolExecutionResult().ifPresent(result -> {
+            eventName.set(TOOL_EXECUTION_EVENT);
+            event.getToolExecutionRequest().ifPresent(request -> {
+                eventData.put(TOOL_ID, request.id());
+                eventData.put(TOOL_NAME, request.name());
+                eventData.put(TOOL_ARGUMENTS, request.arguments());
+            });
+            eventData.put(TOOL_RESULT, result);
+        });
         event.getHitlAiRequest().ifPresent(aiRequest -> {
             eventName.set(HITL_AI_REQUEST_EVENT);
             eventData.put(AI_REQUEST, aiRequest);
@@ -368,6 +410,7 @@ public class AskController {
             eventData.put(SUB_EVENT, event.name());
         }
         eventData.putAll(messages);
+
         emitter.send(SseEmitter.event().name(eventName.get()).data(eventData));
     }
 

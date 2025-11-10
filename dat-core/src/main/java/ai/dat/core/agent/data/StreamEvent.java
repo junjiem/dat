@@ -4,6 +4,7 @@ import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.Configuration;
 import ai.dat.core.configuration.description.Description;
 import com.google.common.base.Preconditions;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import lombok.NonNull;
 
 import java.util.ArrayList;
@@ -53,6 +54,22 @@ public class StreamEvent {
         return eventOption.getQueryDataOption().flatMap(data::getOptional);
     }
 
+    public Optional<ToolExecutionRequest> getToolExecutionRequest() {
+        ToolExecutionRequest toolExecutionRequest = null;
+        ToolExecutionRequest.Builder builder = ToolExecutionRequest.builder();
+        eventOption.getToolExecutionIdOption().flatMap(data::getOptional).ifPresent(builder::id);
+        eventOption.getToolExecutionArgumentsOption().flatMap(data::getOptional).ifPresent(builder::arguments);
+        Optional<String> nameOptional = eventOption.getToolExecutionNameOption().flatMap(data::getOptional);
+        if (nameOptional.isPresent()) {
+            toolExecutionRequest = builder.name(nameOptional.get()).build();
+        }
+        return Optional.ofNullable(toolExecutionRequest);
+    }
+
+    public Optional<String> getToolExecutionResult() {
+        return eventOption.getToolExecutionResultOption().flatMap(data::getOptional);
+    }
+
     public Optional<String> getHitlAiRequest() {
         return eventOption.getHitlAiRequestOption().flatMap(data::getOptional);
     }
@@ -71,6 +88,10 @@ public class StreamEvent {
         eventOption.getSemanticSqlOption().ifPresent(o -> exclusions.add(o.key()));
         eventOption.getQuerySqlOption().ifPresent(o -> exclusions.add(o.key()));
         eventOption.getQueryDataOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getToolExecutionIdOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getToolExecutionNameOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getToolExecutionArgumentsOption().ifPresent(o -> exclusions.add(o.key()));
+        eventOption.getToolExecutionResultOption().ifPresent(o -> exclusions.add(o.key()));
         eventOption.getHitlAiRequestOption().ifPresent(o -> exclusions.add(o.key()));
         eventOption.getHitlToolApprovalOption().ifPresent(o -> exclusions.add(o.key()));
         eventOption.getHitlWaitTimeoutOption().ifPresent(o -> exclusions.add(o.key()));
