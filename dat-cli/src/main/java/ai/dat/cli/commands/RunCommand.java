@@ -193,6 +193,11 @@ public class RunCommand implements Callable<Integer> {
             System.out.println(AnsiUtil.string("@|fg(cyan) 📊 Query Results:|@"));
             TablePrinter.printTable(data);
         });
+        event.getToolExecutionRequest().ifPresent(request ->
+                System.out.println(AnsiUtil.string("@|fg(blue) id: " + request.id()
+                        + "\nname: " + request.name() + "\narguments: " + request.arguments() + "|@")));
+        event.getToolExecutionResult().ifPresent(result ->
+                System.out.println(AnsiUtil.string("@|fg(blue) result: " + result + "|@")));
         event.getHitlAiRequest().ifPresent(request ->
                 printHitlAiRequest(request, processor, runner, event.getHitlWaitTimeout().orElse(null)));
         event.getHitlToolApproval().ifPresent(request ->

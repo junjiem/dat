@@ -166,6 +166,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         String toolArgs = beforeToolExecution.request().arguments();
         if (!humanInTheLoop || !ASK_USER_TOOL_NAME.equals(toolName)) {
             action.add(StreamEvent.from(BEFORE_TOOL_EXECUTION, TOOL_NAME, toolName)
+                    .set(TOOL_ID, beforeToolExecution.request().id())
                     .set(TOOL_ARGS, toolArgs));
         }
         if (!humanInTheLoop) {
@@ -197,6 +198,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         String toolName = toolExecution.request().name();
         if (!humanInTheLoop || !humanInTheLoopAskUser || !ASK_USER_TOOL_NAME.equals(toolName)) {
             action.add(StreamEvent.from(TOOL_EXECUTION, TOOL_NAME, toolName)
+                            .set(TOOL_ID, toolExecution.request().id())
                     .set(TOOL_ARGS, toolExecution.request().arguments())
                     .set(TOOL_RESULT, toolExecution.result()));
         }

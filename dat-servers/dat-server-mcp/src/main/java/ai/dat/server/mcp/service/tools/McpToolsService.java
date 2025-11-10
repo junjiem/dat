@@ -116,6 +116,12 @@ public class McpToolsService {
                         .append(e.getMessage()).append("\n");
             }
         });
+        event.getToolExecutionRequest().ifPresent(request ->
+                result.append("id: ").append(request.id())
+                        .append("\nname: ").append(request.name())
+                        .append("\narguments: ").append(request.arguments()).append("\n"));
+        event.getToolExecutionResult().ifPresent(toolResult ->
+                result.append("result: ").append(toolResult).append("\n"));
         Map<String, Object> messages = event.getMessages();
         if (messages != null && !messages.isEmpty()) {
             try {

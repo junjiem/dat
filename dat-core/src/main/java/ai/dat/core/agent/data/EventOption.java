@@ -46,6 +46,26 @@ public class EventOption {
     private final Optional<ConfigOption<List<Map<String, Object>>>> queryDataOption;
 
     /**
+     * Tool execution request id Option
+     */
+    private final Optional<ConfigOption<String>> toolExecutionIdOption;
+
+    /**
+     * Tool execution request name Option
+     */
+    private final Optional<ConfigOption<String>> toolExecutionNameOption;
+
+    /**
+     * Tool execution request arguments Option
+     */
+    private final Optional<ConfigOption<String>> toolExecutionArgumentsOption;
+
+    /**
+     * Tool execution Result Option
+     */
+    private final Optional<ConfigOption<String>> toolExecutionResultOption;
+
+    /**
      * Human-in-the-loop AI request Option
      */
     private final Optional<ConfigOption<String>> hitlAiRequestOption;
@@ -68,6 +88,10 @@ public class EventOption {
                        ConfigOption<String> semanticSqlOption,
                        ConfigOption<String> querySqlOption,
                        ConfigOption<List<Map<String, Object>>> queryDataOption,
+                       ConfigOption<String> toolExecutionIdOption,
+                       ConfigOption<String> toolExecutionNameOption,
+                       ConfigOption<String> toolExecutionArgumentsOption,
+                       ConfigOption<String> toolExecutionResultOption,
                        ConfigOption<String> hitlAiRequestOption,
                        ConfigOption<String> hitlToolApprovalOption,
                        ConfigOption<Long> hitlWaitTimeoutOption,
@@ -78,6 +102,10 @@ public class EventOption {
         this.semanticSqlOption = Optional.ofNullable(semanticSqlOption);
         this.querySqlOption = Optional.ofNullable(querySqlOption);
         this.queryDataOption = Optional.ofNullable(queryDataOption);
+        this.toolExecutionIdOption = Optional.ofNullable(toolExecutionIdOption);
+        this.toolExecutionNameOption = Optional.ofNullable(toolExecutionNameOption);
+        this.toolExecutionArgumentsOption = Optional.ofNullable(toolExecutionArgumentsOption);
+        this.toolExecutionResultOption = Optional.ofNullable(toolExecutionResultOption);
         this.hitlAiRequestOption = Optional.ofNullable(hitlAiRequestOption);
         this.hitlToolApprovalOption = Optional.ofNullable(hitlToolApprovalOption);
         this.hitlWaitTimeoutOption = Optional.ofNullable(hitlWaitTimeoutOption);
