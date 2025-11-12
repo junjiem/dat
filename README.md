@@ -82,8 +82,12 @@ DAT 的核心驱动力，并非完全源于大语言模型自身的又一次智�
 ```
 
 - 1、DAT CLI 用于本地开发、单元测试、调试使用，它可以在本地通过IDE（vscode、idea或eclipse中）开发dat智能问数项目，`将提示（上下文）工程转变成数据工程`。
+正因如此，DAT Project 的开发模式天然契合 AI Coding 工具（如 Cursor、Claude Code 等），助力实现更智能、自动化的智能问数开发流程。
+
 - 2、DAT 它不是一个 platform ，而是一个 `framework`；二次开发者可以基于 `dat-sdk` 开发自己的Web UI，可以是web ide、拖拉拽的workflow、列表等交互方式；或将其对外提供 `OpenAPI` 或 `MCP` 的服务。
+
 - 3、这种模式`让数据工程师或数据分析师可以借鉴软件工程师开发应用一般来开发智能问数应用`。
+
 
 ---
 
@@ -497,6 +501,9 @@ public class DatProjectRunnerExample {
                     throw new RuntimeException(e);
                 }
             });
+            event.getToolExecutionRequest().ifPresent(request -> System.out.println("id: " + request.id()
+                   + "\nname: " + request.name() + "\narguments: " + request.arguments()));
+            event.getToolExecutionResult().ifPresent(result -> System.out.println("result: " + result));
             event.getHitlAiRequest().ifPresent(request -> System.out.println(request));
             event.getHitlToolApproval().ifPresent(request -> System.out.println(request));
             event.getMessages().forEach((k, v) -> {
