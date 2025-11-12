@@ -30,6 +30,8 @@ public interface DatabaseAdapter {
         return AnsiSqlType.fromColumnType(columnType);
     }
 
+    String limitClause(int limit);
+
     // -------------------------------------- seed ------------------------------------------
 
     void initTable(Table table, List<List<String>> data) throws SQLException;

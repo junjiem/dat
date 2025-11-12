@@ -5,11 +5,15 @@ import ai.dat.core.agent.data.EventOption;
 import ai.dat.core.agent.data.StreamAction;
 import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.ContentStore;
-import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.semantic.data.SemanticModel;
+import ai.dat.core.utils.JinjaTemplateUtil;
+import ai.dat.core.utils.MarkdownUtil;
 import ai.dat.core.utils.SemanticModelUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -17,6 +21,7 @@ import dev.langchain4j.model.output.structured.Description;
 import dev.langchain4j.service.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.calcite.sql.parser.SqlParseException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +43,7 @@ import static ai.dat.core.agent.DefaultEventOptions.*;
 @Slf4j
 public class DefaultAskdataAgent extends AbstractAskdataAgent {
 
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final String TEXT_TO_SQL_RULES;
 
     static {
@@ -64,6 +70,8 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
     private final Integer maxHistories;
     private final String instruction;
 
+    private final Integer semanticModelDataPreviewLimit;
+
     private final Assistant streamingAssistant;
 
     private final Assistant intentClassificationAssistant;
@@ -85,7 +93,8 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                 ChatModel sqlGenerationModel,
                                 String textToSqlRules,
                                 Integer maxHistories,
-                                String instruction) {
+                                String instruction,
+                                Integer semanticModelDataPreviewLimit) {
         super(contentStore, databaseAdapter, variables);
         SemanticModelUtil.validateSemanticModels(semanticModels);
         this.semanticModels = semanticModels;
@@ -97,6 +106,9 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         Preconditions.checkArgument(this.maxHistories > 0,
                 "maxHistories must be greater than 0");
         this.instruction = Optional.ofNullable(instruction).orElse("");
+        this.semanticModelDataPreviewLimit = Optional.ofNullable(semanticModelDataPreviewLimit).orElse(0);
+        Preconditions.checkArgument(this.semanticModelDataPreviewLimit >= 0 && this.semanticModelDataPreviewLimit <= 20,
+                "semanticModelDataPreviewLimit must be between 0 and 20");
 
         this.streamingAssistant = AiServices.builder(Assistant.class)
                 .streamingChatModel(defaultStreamingModel)
@@ -198,14 +210,48 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
             }
         }
 
+        List<SemanticModel> renderedSemanticModels = semanticModels.stream().map(m -> {
+            try {
+                SemanticModel semanticModel = JSON_MAPPER.readValue(
+                        JSON_MAPPER.writeValueAsString(m), SemanticModel.class);
+                semanticModel.setModel(JinjaTemplateUtil.render(semanticModel.getModel(), variables));
+                return semanticModel;
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException(ex);
+            }
+        }).collect(Collectors.toList());
+
+        List<String> dataSamples = Collections.emptyList();
+        if (semanticModelDataPreviewLimit > 0) {
+            dataSamples = renderedSemanticModels.stream().map(semanticModel -> {
+                String semanticModelSql;
+                try {
+                    semanticModelSql = SemanticModelUtil.semanticModelSql(databaseAdapter.semanticAdapter(), semanticModel);
+                } catch (SqlParseException e) {
+                    log.warn("Semantic model sql parse exception, Model SQL: " + semanticModel.getModel(), e);
+                    throw new RuntimeException(e);
+                }
+                String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model "
+                        + databaseAdapter.limitClause(semanticModelDataPreviewLimit);
+                List<Map<String, Object>> data;
+                try {
+                    data = databaseAdapter.executeQuery(sql);
+                } catch (SQLException e) {
+                    log.warn("SQL: " + sql + "\nException: " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
+                return "#### " + semanticModel.getName() + "\n\n" + MarkdownUtil.toTable(data) + "\n";
+            }).collect(Collectors.toList());
+        }
+
         // 生成语义SQL
-        String semanticSql = generateSql(action, semantics, sqlSamples, synonyms, docs,
+        String semanticSql = generateSql(action, semantics, dataSamples, sqlSamples, synonyms, docs,
                 instruction, histories, questionTime, userQuestion);
         log.info("semanticSql: " + semanticSql);
 
         // 转换和执行
         try {
-            executeQuery(semanticSql, semanticModels);
+            executeQuery(semanticSql, renderedSemanticModels);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -229,6 +275,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
 
     private String generateSql(StreamAction action,
                                List<String> semanticContexts,
+                               List<String> dataSamples,
                                List<QuestionSqlPair> sqlSamples,
                                List<WordSynonymPair> synonyms,
                                List<String> docs,
@@ -241,11 +288,11 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
             TokenStream tokenStream;
             if (histories.isEmpty()) {
                 tokenStream = sqlGenerationReasoningAssistant.sqlGenerateReasoning(
-                        semanticContexts, sqlSamples, synonyms, docs, instruction,
+                        semanticContexts, dataSamples, sqlSamples, synonyms, docs, instruction,
                         questionTime, question, language);
             } else {
                 tokenStream = sqlGenerationReasoningAssistant.followupSqlGenerateReasoning(
-                        semanticContexts, sqlSamples, synonyms, docs, instruction,
+                        semanticContexts, dataSamples, sqlSamples, synonyms, docs, instruction,
                         histories, questionTime, question, language);
             }
             CompletableFuture<Void> future = new CompletableFuture<>();
@@ -265,10 +312,10 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         GenSql genSql;
         if (histories.isEmpty()) {
             genSql = sqlGenerationAssistant.sqlGenerate(textToSqlRules, semanticContexts,
-                    sqlSamples, synonyms, docs, instruction, questionTime, question, sqlGenerateReasoning.get());
+                    dataSamples, sqlSamples, synonyms, docs, instruction, questionTime, question, sqlGenerateReasoning.get());
         } else {
             genSql = sqlGenerationAssistant.followupSqlGenerate(textToSqlRules, semanticContexts,
-                    sqlSamples, synonyms, docs, instruction, histories, questionTime, question,
+                    dataSamples, sqlSamples, synonyms, docs, instruction, histories, questionTime, question,
                     sqlGenerateReasoning.get());
         }
 
@@ -338,6 +385,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         @SystemMessage(fromResource = "prompts/default/sql_generation_reasoning_system_prompt.txt")
         @UserMessage(fromResource = "prompts/default/sql_generation_reasoning_user_prompt_template.txt")
         TokenStream sqlGenerateReasoning(@V("semantic_models") List<String> semanticModels,
+                                         @V("data_samples") List<String> dataSamples,
                                          @V("sql_samples") List<QuestionSqlPair> sqlSamples,
                                          @V("synonyms") List<WordSynonymPair> synonyms,
                                          @V("docs") List<String> docs,
@@ -349,6 +397,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         @SystemMessage(fromResource = "prompts/default/sql_generation_reasoning_system_prompt.txt")
         @UserMessage(fromResource = "prompts/default/sql_generation_reasoning_with_followup_user_prompt_template.txt")
         TokenStream followupSqlGenerateReasoning(@V("semantic_models") List<String> semanticModels,
+                                                 @V("data_samples") List<String> dataSamples,
                                                  @V("sql_samples") List<QuestionSqlPair> sqlSamples,
                                                  @V("synonyms") List<WordSynonymPair> synonyms,
                                                  @V("docs") List<String> docs,
@@ -362,6 +411,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         @UserMessage(fromResource = "prompts/default/sql_generation_user_prompt_template.txt")
         GenSql sqlGenerate(@V("text_to_sql_rules") String textToSqlRules,
                            @V("semantic_models") List<String> semanticModels,
+                           @V("data_samples") List<String> dataSamples,
                            @V("sql_samples") List<QuestionSqlPair> sqlSamples,
                            @V("synonyms") List<WordSynonymPair> synonyms,
                            @V("docs") List<String> docs,
@@ -374,6 +424,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
         @UserMessage(fromResource = "prompts/default/sql_generation_with_followup_user_prompt_template.txt")
         GenSql followupSqlGenerate(@V("text_to_sql_rules") String textToSqlRules,
                                    @V("semantic_models") List<String> semanticModels,
+                                   @V("data_samples") List<String> dataSamples,
                                    @V("sql_samples") List<QuestionSqlPair> sqlSamples,
                                    @V("synonyms") List<WordSynonymPair> synonyms,
                                    @V("docs") List<String> docs,
@@ -383,5 +434,4 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                                    @V("query") String query,
                                    @V("sql_generation_reasoning") String sqlGenerationReasoning);
     }
-
 }

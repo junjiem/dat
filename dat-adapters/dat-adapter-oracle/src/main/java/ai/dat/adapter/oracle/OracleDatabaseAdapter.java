@@ -195,4 +195,9 @@ public class OracleDatabaseAdapter extends GenericSqlDatabaseAdapter {
         return String.format("BEGIN EXECUTE IMMEDIATE 'DROP TABLE %s'; EXCEPTION WHEN OTHERS THEN NULL; END;", 
                            quoteIdentifier(tableName));
     }
+
+    @Override
+    public String limitClause(int limit) {
+        return "FETCH FIRST " + limit + " ROWS ONLY";
+    }
 }

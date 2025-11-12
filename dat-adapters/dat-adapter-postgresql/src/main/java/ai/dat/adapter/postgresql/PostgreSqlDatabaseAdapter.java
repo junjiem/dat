@@ -357,4 +357,9 @@ public class PostgreSqlDatabaseAdapter extends GenericSqlDatabaseAdapter {
     protected String getDropTableSqlIfExists(String tableName) {
         return String.format("DROP TABLE IF EXISTS %s CASCADE", quoteIdentifier(tableName));
     }
+
+    @Override
+    public String limitClause(int limit) {
+        return "LIMIT " + limit;
+    }
 }
