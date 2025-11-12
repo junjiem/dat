@@ -10,6 +10,7 @@ import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.DefaultContentStore;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.semantic.data.SemanticModel;
+import ai.dat.core.utils.JinjaTemplateUtil;
 import ai.dat.core.utils.SemanticModelUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -198,7 +199,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         String toolName = toolExecution.request().name();
         if (!humanInTheLoop || !humanInTheLoopAskUser || !ASK_USER_TOOL_NAME.equals(toolName)) {
             action.add(StreamEvent.from(TOOL_EXECUTION, TOOL_NAME, toolName)
-                            .set(TOOL_ID, toolExecution.request().id())
+                    .set(TOOL_ID, toolExecution.request().id())
                     .set(TOOL_ARGS, toolExecution.request().arguments())
                     .set(TOOL_RESULT, toolExecution.result()));
         }
@@ -212,7 +213,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                         createMisleadingAssistanceAgent(),
                         createDataAssistanceAgent(),
                         createText2SqlAgent(),
-                        new Toolbox(contentStore, databaseAdapter, semanticModels, action)
+                        new Toolbox(contentStore, databaseAdapter, variables, semanticModels, action)
                 )
                 .inputGuardrails()
                 .chatMemoryProvider(memoryId -> chatMemory);
@@ -443,7 +444,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         String text2Sql(@P("The question") @V("query") String query);
     }
 
-    public record Toolbox(ContentStore contentStore, DatabaseAdapter databaseAdapter,
+    public record Toolbox(ContentStore contentStore, DatabaseAdapter databaseAdapter, Map<String, Object> variables,
                           List<SemanticModel> semanticModels, StreamAction action) {
         @Tool("Convert the given ANSI SQL into the dialect SQL of the target database")
         public String ansiSql2dialectSql(@P("The ANSI SQL") String ansiSql) {
@@ -454,8 +455,18 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                 semanticModels = contentStore.allMdls();
                 Preconditions.checkArgument(!semanticModels.isEmpty(), "Semantic models is empty");
             }
+            List<SemanticModel> renderedSemanticModels = semanticModels.stream().map(m -> {
+                try {
+                    SemanticModel semanticModel = JSON_MAPPER.readValue(
+                            JSON_MAPPER.writeValueAsString(m), SemanticModel.class);
+                    semanticModel.setModel(JinjaTemplateUtil.render(semanticModel.getModel(), variables));
+                    return semanticModel;
+                } catch (JsonProcessingException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }).collect(Collectors.toList());
             try {
-                String dialectSql = databaseAdapter.generateSql(ansiSql, semanticModels);
+                String dialectSql = databaseAdapter.generateSql(ansiSql, renderedSemanticModels);
                 log.info("dialectSql: " + dialectSql);
                 action.add(StreamEvent.from(SEMANTIC_TO_SQL_EVENT, SQL, dialectSql));
                 return dialectSql;
