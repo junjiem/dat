@@ -8,4 +8,4 @@ Current time: {{ query_time }}
 User's question: {{ query }}
 Language: {{ language }}
 
-Please think step by step
+Please think step by step.

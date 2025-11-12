@@ -34,8 +34,8 @@ Noun: {{ item.noun }} Synonyms: {{ item.synonyms|join(', ') }}
 {% if docs %}
 ### BUSINESS KNOWLEDGE ###
 {% for item in docs %}
----
 {{ item }}
+{% if not loop.last -%}{{ "\n---\n" }}{% endif -%}
 {% endfor %}
 {% endif %}
 

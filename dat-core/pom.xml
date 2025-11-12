@@ -35,12 +35,6 @@
             <version>2.8.1</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.blinkfox</groupId>
-            <artifactId>mini-table</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-
         <!-- Apache Calcite for SQL parsing and conversion -->
         <dependency>
             <groupId>org.apache.calcite</groupId>

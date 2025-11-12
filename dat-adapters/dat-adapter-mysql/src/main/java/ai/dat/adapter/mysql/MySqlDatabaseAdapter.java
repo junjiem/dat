@@ -143,4 +143,9 @@ public class MySqlDatabaseAdapter extends GenericSqlDatabaseAdapter {
         }
         return dataType.substring(0, parenIndex).trim();
     }
+
+    @Override
+    public String limitClause(int limit) {
+        return "LIMIT " + limit;
+    }
 }

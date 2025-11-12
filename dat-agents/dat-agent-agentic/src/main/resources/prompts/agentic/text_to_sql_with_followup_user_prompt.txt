@@ -17,16 +17,14 @@ generate one SQL query to best answer user's question.
 
 ### SEMANTIC MODELS ###
 {% for semantic_model in semantic_models %}
-    {{ semantic_model }}
+{{ semantic_model }}
 {% endfor %}
 
 {% if sql_samples %}
 ### SQL SAMPLES ###
 {% for item in sql_samples %}
-Question:
-{{ item.question }}
-SQL:
-{{ item.sql }}
+Question: {{ item.question }}
+SQL: {{ item.sql }}
 {% endfor %}
 {% endif %}
 
@@ -40,8 +38,8 @@ Noun: {{ item.noun }} Synonyms: {{ item.synonyms|join(', ') }}
 {% if docs %}
 ### BUSINESS KNOWLEDGE ###
 {% for item in docs %}
----
 {{ item }}
+{% if not loop.last -%}{{ "\n---\n" }}{% endif -%}
 {% endfor %}
 {% endif %}
 

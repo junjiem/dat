@@ -3,6 +3,13 @@
 {{ semantic_model }}
 {% endfor %}
 
+{% if data_samples %}
+### DATA SAMPLES ###
+{% for item in data_samples %}
+{{ item }}
+{% endfor %}
+{% endif %}
+
 {% if sql_samples %}
 ### SQL SAMPLES ###
 {% for item in sql_samples %}
@@ -21,8 +28,8 @@ Word: {{ item.noun }} Synonyms: {{ item.synonyms|join(', ') }}
 {% if docs %}
 ### BUSINESS KNOWLEDGE ###
 {% for item in docs %}
----
 {{ item }}
+{% if not loop.last -%}{{ "\n---\n" }}{% endif -%}
 {% endfor %}
 {% endif %}
 
@@ -39,4 +46,4 @@ Current time: {{ query_time }}
 User's current question: {{ query }}
 Output Language: {{ language }}
 
-Let's think step by step
+Let's think step by step.

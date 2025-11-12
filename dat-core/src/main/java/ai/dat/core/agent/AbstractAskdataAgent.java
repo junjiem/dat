@@ -6,19 +6,18 @@ import ai.dat.core.agent.data.StreamEvent;
 import ai.dat.core.contentstore.ContentStore;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.semantic.data.SemanticModel;
-import ai.dat.core.utils.JinjaTemplateUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static ai.dat.core.agent.DefaultEventOptions.*;
 
@@ -28,8 +27,6 @@ import static ai.dat.core.agent.DefaultEventOptions.*;
  */
 @Slf4j
 public abstract class AbstractAskdataAgent implements AskdataAgent {
-
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private static final ExecutorService executor = Executors.newCachedThreadPool(new ThreadFactory() {
         private final AtomicInteger id = new AtomicInteger(0);
@@ -91,19 +88,9 @@ public abstract class AbstractAskdataAgent implements AskdataAgent {
 
     protected List<Map<String, Object>> executeQuery(@NonNull String semanticSql,
                                                      @NonNull List<SemanticModel> semanticModels) throws SQLException {
-        List<SemanticModel> renderedSemanticModels = semanticModels.stream().map(m -> {
-            try {
-                SemanticModel semanticModel = JSON_MAPPER.readValue(
-                        JSON_MAPPER.writeValueAsString(m), SemanticModel.class);
-                semanticModel.setModel(JinjaTemplateUtil.render(semanticModel.getModel(), variables));
-                return semanticModel;
-            } catch (JsonProcessingException ex) {
-                throw new RuntimeException(ex);
-            }
-        }).collect(Collectors.toList());
         String sql;
         try {
-            sql = databaseAdapter.generateSql(semanticSql, renderedSemanticModels);
+            sql = databaseAdapter.generateSql(semanticSql, semanticModels);
             log.info("dialectSql: " + sql);
             action.add(StreamEvent.from(SEMANTIC_TO_SQL_EVENT, SQL, sql));
         } catch (Exception e) {

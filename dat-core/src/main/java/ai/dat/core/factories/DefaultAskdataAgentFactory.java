@@ -77,6 +77,20 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
                     .defaultValue(20)
                     .withDescription("Maximum number of histories");
 
+    public static final ConfigOption<Boolean> DATA_PREVIEW =
+            ConfigOptions.key("data-preview")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Attach samples of database records to give the LLM a better understanding " +
+                            "of your data structure.");
+
+    public static final ConfigOption<Integer> DATA_PREVIEW_LIMIT =
+            ConfigOptions.key("data-preview-limit")
+                    .intType()
+                    .defaultValue(3)
+                    .withDescription("The maximum number of sample records to fetch from the database and show to the LLM. " +
+                            "Value must be between 1 and 20");
+
     public static final ConfigOption<String> TEXT_TO_SQL_RULES =
             ConfigOptions.key("text-to-sql-rules")
                     .stringType()
@@ -100,7 +114,8 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
         return new LinkedHashSet<>(List.of(
                 DEFAULT_LLM, LANGUAGE, INTENT_CLASSIFICATION, INTENT_CLASSIFICATION_LLM,
                 SQL_GENERATION_REASONING, SQL_GENERATION_REASONING_LLM,
-                SQL_GENERATION_LLM, MAX_HISTORIES, TEXT_TO_SQL_RULES, INSTRUCTION
+                SQL_GENERATION_LLM, MAX_HISTORIES, DATA_PREVIEW, DATA_PREVIEW_LIMIT,
+                TEXT_TO_SQL_RULES, INSTRUCTION
         ));
     }
 
@@ -141,6 +156,7 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
         boolean intentClassification = config.get(INTENT_CLASSIFICATION);
         boolean sqlGenerationReasoning = config.get(SQL_GENERATION_REASONING);
         Integer maxHistories = config.get(MAX_HISTORIES);
+        boolean dataPreview = config.get(DATA_PREVIEW);
 
         DefaultAskdataAgent.DefaultAskdataAgentBuilder builder = DefaultAskdataAgent.builder()
                 .contentStore(contentStore)
@@ -164,6 +180,9 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
         if (variables != null && !variables.isEmpty()) {
             builder.variables(variables);
         }
+        if (dataPreview) {
+            builder.semanticModelDataPreviewLimit(config.get(DATA_PREVIEW_LIMIT));
+        }
 
         return builder.build();
     }
@@ -172,6 +191,9 @@ public class DefaultAskdataAgentFactory implements AskdataAgentFactory {
         config.getOptional(MAX_HISTORIES)
                 .ifPresent(n -> Preconditions.checkArgument(n > 0,
                         "'" + MAX_HISTORIES.key() + "' value must be greater than 0"));
+        config.getOptional(DATA_PREVIEW_LIMIT)
+                .ifPresent(n -> Preconditions.checkArgument(n >= 1 && n <= 20,
+                        "'" + DATA_PREVIEW_LIMIT.key() + "' value must be between 1 and 20"));
         String llmNames = String.join(", ", instances.keySet());
         String errorMessageFormat = "'%s' value must be one of [%s]";
         config.getOptional(DEFAULT_LLM)
