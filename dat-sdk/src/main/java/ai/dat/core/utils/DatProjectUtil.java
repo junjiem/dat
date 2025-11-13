@@ -7,12 +7,14 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.base.Preconditions;
 import com.networknt.schema.*;
+import com.networknt.schema.Error;
+import com.networknt.schema.dialect.Dialects;
 import lombok.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 /**
  * DAT项目配置工具类
@@ -23,30 +25,33 @@ import java.util.Set;
 public class DatProjectUtil {
 
     private static final YAMLMapper YAML_MAPPER = new YAMLMapper();
-    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory
-            .getInstance(SpecVersion.VersionFlag.V202012);
-    private static final SchemaValidatorsConfig SCHEMA_CONFIG =
-            SchemaValidatorsConfig.builder().locale(Locale.ENGLISH).build();
+    private static final JsonMapper JSON_MAPPER = new JsonMapper();
+
+    private static final SchemaRegistryConfig SCHEMA_CONFIG =
+            SchemaRegistryConfig.builder().locale(Locale.ENGLISH).build();
+    private static final SchemaRegistry SCHEMA_REGISTRY = SchemaRegistry
+            .withDefaultDialect(SpecificationVersion.DRAFT_2020_12,
+                    builder -> builder.schemaRegistryConfig(SCHEMA_CONFIG));
     private static final String SCHEMA_PATH = "schemas/project_schema.json";
 
-    private static final JsonSchema JSON_SCHEMA;
+    private static final Schema SCHEMA;
 
     static {
         try {
-            JSON_SCHEMA = loadProjectSchema();
+            SCHEMA = loadProjectSchema();
         } catch (IOException e) {
             throw new ExceptionInInitializerError("Failed to load project schema file: " + e.getMessage());
         }
     }
 
-    private static JsonSchema loadProjectSchema() throws IOException {
+    private static Schema loadProjectSchema() throws IOException {
         try (InputStream stream = DatProjectUtil.class.getClassLoader().getResourceAsStream(SCHEMA_PATH)) {
             if (stream == null) {
                 throw new IOException("Project schema file not found in classpath: " + SCHEMA_PATH);
             }
             try {
-                JsonNode schemaNode = new JsonMapper().readTree(stream);
-                return SCHEMA_FACTORY.getSchema(schemaNode, SCHEMA_CONFIG);
+                JsonNode schemaNode = JSON_MAPPER.readTree(stream);
+                return SCHEMA_REGISTRY.getSchema(schemaNode);
             } catch (IOException e) {
                 throw new IOException("Failed to parse project schema file: " + SCHEMA_PATH
                         + " - " + e.getMessage(), e);
@@ -57,11 +62,11 @@ public class DatProjectUtil {
     private DatProjectUtil() {
     }
 
-    public static Set<ValidationMessage> validate(@NonNull String yamlContent) throws IOException {
+    public static List<Error> validate(@NonNull String yamlContent) throws IOException {
         Preconditions.checkArgument(!yamlContent.isEmpty(), "yamlContent cannot be empty");
         try {
             JsonNode jsonNode = YAML_MAPPER.readTree(yamlContent);
-            return JSON_SCHEMA.validate(jsonNode);
+            return SCHEMA.validate(jsonNode);
         } catch (IOException e) {
             throw new IOException("Failed to parse YAML content: " + e.getMessage(), e);
         }
