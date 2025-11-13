@@ -16,6 +16,13 @@ Given user's question, database schema, etc., you should think deeply and carefu
 {{ semantic_model }}
 {% endfor %}
 
+{% if data_samples %}
+### DATA SAMPLES ###
+{% for item in data_samples %}
+{{ item }}
+{% endfor %}
+{% endif %}
+
 {% if sql_samples %}
 ### SQL SAMPLES ###
 {% for item in sql_samples %}

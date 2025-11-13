@@ -20,6 +20,13 @@ generate one SQL query to best answer user's question.
 {{ semantic_model }}
 {% endfor %}
 
+{% if data_samples %}
+### DATA SAMPLES ###
+{% for item in data_samples %}
+{{ item }}
+{% endfor %}
+{% endif %}
+
 {% if sql_samples %}
 ### SQL SAMPLES ###
 {% for item in sql_samples %}

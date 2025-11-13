@@ -24,7 +24,7 @@ public abstract class AbstractHitlAskdataAgent extends AbstractAskdataAgent {
     public AbstractHitlAskdataAgent(@NonNull ContentStore contentStore,
                                     @NonNull DatabaseAdapter databaseAdapter,
                                     Map<String, Object> variables) {
-        super(contentStore, databaseAdapter);
+        super(contentStore, databaseAdapter, variables);
     }
 
     @Deprecated
