@@ -83,9 +83,9 @@ class Text2SqlContentInjector implements ContentInjector {
         this.contentStore = contentStore;
         this.databaseAdapter = databaseAdapter;
         this.semanticModels = semanticModels;
-        this.variables = variables;
+        this.variables = Optional.ofNullable(variables).orElse(Collections.emptyMap());
         this.textToSqlRules = Optional.ofNullable(textToSqlRules).orElse(TEXT_TO_SQL_RULES);
-        this.semanticModelDataPreviewLimit = semanticModelDataPreviewLimit;
+        this.semanticModelDataPreviewLimit = Optional.ofNullable(semanticModelDataPreviewLimit).orElse(0);
     }
 
     @Override
