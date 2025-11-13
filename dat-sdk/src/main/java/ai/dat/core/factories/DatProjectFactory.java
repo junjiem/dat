@@ -9,7 +9,7 @@ import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.JinjaTemplateUtil;
 import ai.dat.core.utils.YamlTemplateUtil;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -93,9 +93,9 @@ public class DatProjectFactory {
     }
 
     public DatProject create(@NonNull String yamlContent) throws IOException {
-        Set<ValidationMessage> validationErrors = DatProjectUtil.validate(yamlContent);
-        if (!validationErrors.isEmpty()) {
-            throw new ValidationException("The YAML verification not pass: \n" + validationErrors);
+        List<Error> errors = DatProjectUtil.validate(yamlContent);
+        if (!errors.isEmpty()) {
+            throw new ValidationException("The YAML verification not pass: \n" + errors);
         }
         return YAML_MAPPER.readValue(yamlContent, DatProject.class);
     }

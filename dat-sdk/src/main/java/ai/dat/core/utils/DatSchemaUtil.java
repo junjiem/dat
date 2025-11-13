@@ -7,13 +7,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.base.Preconditions;
+import com.networknt.schema.Error;
 import com.networknt.schema.*;
 import jinjava.org.jsoup.helper.ValidationException;
 import lombok.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -22,10 +26,13 @@ import java.util.stream.Collectors;
 public class DatSchemaUtil {
 
     private static final YAMLMapper YAML_MAPPER = new YAMLMapper();
-    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory
-            .getInstance(SpecVersion.VersionFlag.V202012);
-    private static final SchemaValidatorsConfig SCHEMA_CONFIG =
-            SchemaValidatorsConfig.builder().locale(Locale.ENGLISH).build();
+    private static final JsonMapper JSON_MAPPER = new JsonMapper();
+
+    private static final SchemaRegistryConfig SCHEMA_CONFIG =
+            SchemaRegistryConfig.builder().locale(Locale.ENGLISH).build();
+    private static final SchemaRegistry SCHEMA_REGISTRY = SchemaRegistry
+            .withDefaultDialect(SpecificationVersion.DRAFT_2020_12,
+                    builder -> builder.schemaRegistryConfig(SCHEMA_CONFIG));
     private static final String SCHEMA_PATH = "schemas/schema.json";
 
     private static final Pattern MODEL_REF_PATTERN = Pattern.compile("ref\\(['\"]([^'\"]+)['\"]\\)");
@@ -34,24 +41,24 @@ public class DatSchemaUtil {
     private static final Pattern QUALIFIED_TABLE_NAME_PATTERN = Pattern.compile(
             "^" + NAME_PART + "\\." + NAME_PART + "$");
 
-    private static final JsonSchema JSON_SCHEMA;
+    private static final Schema SCHEMA;
 
     static {
         try {
-            JSON_SCHEMA = loadSchema();
+            SCHEMA = loadSchema();
         } catch (IOException e) {
             throw new ExceptionInInitializerError("Failed to load schema: " + e.getMessage());
         }
     }
 
-    private static JsonSchema loadSchema() throws IOException {
+    private static Schema loadSchema() throws IOException {
         try (InputStream schemaStream = DatSchemaUtil.class.getClassLoader().getResourceAsStream(SCHEMA_PATH)) {
             if (schemaStream == null) {
                 throw new IOException("Schema file not found in classpath: " + SCHEMA_PATH);
             }
             try {
-                JsonNode schemaNode = new JsonMapper().readTree(schemaStream);
-                return SCHEMA_FACTORY.getSchema(schemaNode, SCHEMA_CONFIG);
+                JsonNode schemaNode = JSON_MAPPER.readTree(schemaStream);
+                return SCHEMA_REGISTRY.getSchema(schemaNode);
             } catch (IOException e) {
                 throw new IOException("Failed to parse schema file: " + SCHEMA_PATH + " - " + e.getMessage(), e);
             }
@@ -61,16 +68,16 @@ public class DatSchemaUtil {
     private DatSchemaUtil() {
     }
 
-    public static Set<ValidationMessage> validate(@NonNull String yamlContent) throws IOException {
+    public static List<Error> validate(@NonNull String yamlContent) throws IOException {
         Preconditions.checkArgument(!yamlContent.isEmpty(), "yamlContent cannot be empty");
         JsonNode jsonNode = YAML_MAPPER.readTree(yamlContent);
-        return JSON_SCHEMA.validate(jsonNode);
+        return SCHEMA.validate(jsonNode);
     }
 
     public static DatSchema datSchema(@NonNull String yamlContent) throws IOException {
-        Set<ValidationMessage> validationErrors = validate(yamlContent);
-        if (!validationErrors.isEmpty()) {
-            throw new ValidationException("The YAML verification not pass: \n" + validationErrors);
+        List<Error> errors = validate(yamlContent);
+        if (!errors.isEmpty()) {
+            throw new ValidationException("The YAML verification not pass: \n" + errors);
         }
         return YAML_MAPPER.readValue(yamlContent, DatSchema.class);
     }
