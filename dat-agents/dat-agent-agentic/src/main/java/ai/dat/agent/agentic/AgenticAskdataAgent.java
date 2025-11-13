@@ -491,9 +491,13 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         }
 
         @Tool("Search semantic models by keywords or question to find relevant data schema")
-        public List<SemanticModel> searchSemanticModels(
+        public List<String> searchSemanticModels(
                 @P("Keywords or question to search for semantic models") String query) {
-            return contentStore.retrieveMdl(query);
+            List<SemanticModel> semanticModels = contentStore.retrieveMdl(query);
+            return semanticModels.stream()
+                    .map(semanticModel -> SemanticModelUtil.toSemanticModelViewText(
+                            semanticModel, databaseAdapter.semanticAdapter()))
+                    .collect(Collectors.toList());
         }
     }
 
