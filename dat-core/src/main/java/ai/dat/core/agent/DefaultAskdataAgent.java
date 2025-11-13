@@ -222,25 +222,29 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
 
         List<String> dataSamples = Collections.emptyList();
         if (semanticModelDataPreviewLimit > 0) {
-            dataSamples = renderedSemanticModels.stream().map(semanticModel -> {
-                String semanticModelSql;
-                try {
-                    semanticModelSql = SemanticModelUtil.semanticModelSql(databaseAdapter.semanticAdapter(), semanticModel);
-                } catch (SqlParseException e) {
-                    log.warn("Semantic model sql parse exception, Model SQL: " + semanticModel.getModel(), e);
-                    throw new RuntimeException(e);
-                }
-                String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model "
-                        + databaseAdapter.limitClause(semanticModelDataPreviewLimit);
-                List<Map<String, Object>> data;
-                try {
-                    data = databaseAdapter.executeQuery(sql);
-                } catch (SQLException e) {
-                    log.warn("SQL: " + sql + "\nException: " + e.getMessage());
-                    throw new RuntimeException(e);
-                }
-                return "#### " + semanticModel.getName() + "\n\n" + MarkdownUtil.toTable(data);
-            }).collect(Collectors.toList());
+            dataSamples = renderedSemanticModels.stream().map(m -> {
+                        String semanticModelSql;
+                        try {
+                            semanticModelSql = SemanticModelUtil.semanticModelSql(databaseAdapter.semanticAdapter(), m);
+                        } catch (SqlParseException e) {
+                            log.warn("Skip data preview for semantic model {} due to parse error. SQL template: {}",
+                                    m.getName(), m.getModel(), e);
+                            return null;
+                        }
+                        String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model "
+                                + databaseAdapter.limitClause(semanticModelDataPreviewLimit);
+                        List<Map<String, Object>> data;
+                        try {
+                            data = databaseAdapter.executeQuery(sql);
+                        } catch (SQLException e) {
+                            log.warn("Skip data preview for semantic model {} due to SQL error. SQL: {}",
+                                    m.getName(), sql, e);
+                            return null;
+                        }
+                        return "#### " + m.getName() + "\n\n" + MarkdownUtil.toTable(data);
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
         }
 
         // 生成语义SQL

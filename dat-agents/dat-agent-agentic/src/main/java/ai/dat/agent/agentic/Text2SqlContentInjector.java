@@ -2,8 +2,8 @@ package ai.dat.agent.agentic;
 
 import ai.dat.core.adapter.DatabaseAdapter;
 import ai.dat.core.contentstore.ContentStore;
-import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
+import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
 import ai.dat.core.utils.JinjaTemplateUtil;
@@ -119,35 +119,38 @@ class Text2SqlContentInjector implements ContentInjector {
 
             List<String> dataSamples = Collections.emptyList();
             if (semanticModelDataPreviewLimit > 0) {
-                List<SemanticModel> renderedSemanticModels = semanticModels.stream().map(m -> {
-                    try {
-                        SemanticModel semanticModel = JSON_MAPPER.readValue(
-                                JSON_MAPPER.writeValueAsString(m), SemanticModel.class);
-                        semanticModel.setModel(JinjaTemplateUtil.render(semanticModel.getModel(), variables));
-                        return semanticModel;
-                    } catch (JsonProcessingException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }).collect(Collectors.toList());
-                dataSamples = renderedSemanticModels.stream().map(semanticModel -> {
-                    String semanticModelSql;
-                    try {
-                        semanticModelSql = SemanticModelUtil.semanticModelSql(databaseAdapter.semanticAdapter(), semanticModel);
-                    } catch (SqlParseException e) {
-                        log.warn("Semantic model sql parse exception, Model SQL: " + semanticModel.getModel(), e);
-                        throw new RuntimeException(e);
-                    }
-                    String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model "
-                            + databaseAdapter.limitClause(semanticModelDataPreviewLimit);
-                    List<Map<String, Object>> data;
-                    try {
-                        data = databaseAdapter.executeQuery(sql);
-                    } catch (SQLException e) {
-                        log.warn("SQL: " + sql + "\nException: " + e.getMessage());
-                        throw new RuntimeException(e);
-                    }
-                    return "#### " + semanticModel.getName() + "\n\n" + MarkdownUtil.toTable(data);
-                }).collect(Collectors.toList());
+                dataSamples = semanticModels.stream().map(m -> {
+                            try {
+                                SemanticModel semanticModel = JSON_MAPPER.readValue(
+                                        JSON_MAPPER.writeValueAsString(m), SemanticModel.class);
+                                semanticModel.setModel(JinjaTemplateUtil.render(semanticModel.getModel(), variables));
+                                return semanticModel;
+                            } catch (JsonProcessingException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        }).map(m -> {
+                            String semanticModelSql;
+                            try {
+                                semanticModelSql = SemanticModelUtil.semanticModelSql(databaseAdapter.semanticAdapter(), m);
+                            } catch (SqlParseException e) {
+                                log.warn("Skip data preview for semantic model {} due to parse error. SQL template: {}",
+                                        m.getName(), m.getModel(), e);
+                                return null;
+                            }
+                            String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model "
+                                    + databaseAdapter.limitClause(semanticModelDataPreviewLimit);
+                            List<Map<String, Object>> data;
+                            try {
+                                data = databaseAdapter.executeQuery(sql);
+                            } catch (SQLException e) {
+                                log.warn("Skip data preview for semantic model {} due to SQL error. SQL: {}",
+                                        m.getName(), sql, e);
+                                return null;
+                            }
+                            return "#### " + m.getName() + "\n\n" + MarkdownUtil.toTable(data);
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
             }
 
             Map<String, Object> variables = new HashMap<>();
