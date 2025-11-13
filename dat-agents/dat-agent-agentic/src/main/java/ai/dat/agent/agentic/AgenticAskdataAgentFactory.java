@@ -63,6 +63,20 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
                     .withDescription("Maximum number of user's Q&A SQL pair history. " +
                             "Value must be greater than or equal to 0.");
 
+    public static final ConfigOption<Boolean> DATA_PREVIEW =
+            ConfigOptions.key("data-preview")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Attach samples of database records to give the LLM a better understanding " +
+                            "of your data structure.");
+
+    public static final ConfigOption<Integer> DATA_PREVIEW_LIMIT =
+            ConfigOptions.key("data-preview-limit")
+                    .intType()
+                    .defaultValue(3)
+                    .withDescription("The maximum number of sample records to fetch from the database and show to the LLM. " +
+                            "Value must be between 1 and 20");
+
     public static final ConfigOption<String> TEXT_TO_SQL_RULES =
             ConfigOptions.key("text-to-sql-rules")
                     .stringType()
@@ -174,7 +188,7 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         return new LinkedHashSet<>(List.of(
-                DEFAULT_LLM, MAX_MESSAGES, MAX_HISTORIES, MAX_TOOLS_INVOCATIONS,
+                DEFAULT_LLM, MAX_MESSAGES, MAX_HISTORIES, MAX_TOOLS_INVOCATIONS, DATA_PREVIEW, DATA_PREVIEW_LIMIT,
                 SQL_GENERATION_LLM, TEXT_TO_SQL_RULES, INSTRUCTION, EMAIL_SENDER, MCP_SERVERS,
                 HUMAN_IN_THE_LOOP, HUMAN_IN_THE_LOOP_ASK_USER, HUMAN_IN_THE_LOOP_TOOL_APPROVAL,
                 HUMAN_IN_THE_LOOP_TOOL_NOT_APPROVAL_AND_FEEDBACK
@@ -214,6 +228,7 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
         Integer maxToolsInvocations = config.get(MAX_TOOLS_INVOCATIONS);
         Integer maxMessages = config.get(MAX_MESSAGES);
         Integer maxHistories = config.get(MAX_HISTORIES);
+        boolean dataPreview = config.get(DATA_PREVIEW);
         Boolean humanInTheLoop = config.get(HUMAN_IN_THE_LOOP);
         Boolean humanInTheLoopAskUser = config.get(HUMAN_IN_THE_LOOP_ASK_USER);
         Boolean humanInTheLoopToolApproval = config.get(HUMAN_IN_THE_LOOP_TOOL_APPROVAL);
@@ -243,6 +258,9 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
         if (variables != null && !variables.isEmpty()) {
             builder.variables(variables);
         }
+        if (dataPreview) {
+            builder.semanticModelDataPreviewLimit(config.get(DATA_PREVIEW_LIMIT));
+        }
 
         config.getOptional(EMAIL_SENDER)
                 .ifPresent(configs -> builder.emailSender(
@@ -271,6 +289,9 @@ public class AgenticAskdataAgentFactory implements AskdataAgentFactory {
         config.getOptional(MAX_TOOLS_INVOCATIONS)
                 .ifPresent(n -> Preconditions.checkArgument(n <= 100 && n >= 1,
                         "'" + MAX_TOOLS_INVOCATIONS.key() + "' value must be between 1 and 100"));
+        config.getOptional(DATA_PREVIEW_LIMIT)
+                .ifPresent(n -> Preconditions.checkArgument(n >= 1 && n <= 20,
+                        "'" + DATA_PREVIEW_LIMIT.key() + "' value must be between 1 and 20"));
         String llmNames = String.join(", ", instances.keySet());
         String errorMessageFormat = "'%s' value must be one of [%s]";
         config.getOptional(DEFAULT_LLM)

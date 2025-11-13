@@ -80,6 +80,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
     private final String textToSqlRules;
     private final String instruction;
     private final Integer maxHistories;
+    private final Integer semanticModelDataPreviewLimit;
 
     private final Boolean humanInTheLoop;
     private final Boolean humanInTheLoopAskUser;
@@ -105,6 +106,7 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                                String instruction,
                                Integer maxMessages,
                                Integer maxHistories,
+                               Integer semanticModelDataPreviewLimit,
                                Boolean humanInTheLoop,
                                Boolean humanInTheLoopAskUser,
                                Boolean humanInTheLoopToolApproval,
@@ -126,6 +128,9 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
         this.maxHistories = Optional.ofNullable(maxHistories).orElse(0);
         Preconditions.checkArgument(this.maxHistories >= 0,
                 "maxHistories must be greater than or equal to 0");
+        this.semanticModelDataPreviewLimit = Optional.ofNullable(semanticModelDataPreviewLimit).orElse(0);
+        Preconditions.checkArgument(this.semanticModelDataPreviewLimit >= 0 && this.semanticModelDataPreviewLimit <= 20,
+                "semanticModelDataPreviewLimit must be between 0 and 20");
         this.humanInTheLoop = Optional.ofNullable(humanInTheLoop).orElse(true);
         this.humanInTheLoopAskUser = Optional.ofNullable(humanInTheLoopAskUser).orElse(true);
         this.humanInTheLoopToolApproval = Optional.ofNullable(humanInTheLoopToolApproval).orElse(false);
@@ -387,7 +392,8 @@ class AgenticAskdataAgent extends AbstractHitlAskdataAgent {
                         }).collect(Collectors.toList())
                 ))
                 .contentInjector(new Text2SqlContentInjector(
-                        contentStore, databaseAdapter, semanticModels, textToSqlRules))
+                        contentStore, databaseAdapter, semanticModels, variables, textToSqlRules,
+                        semanticModelDataPreviewLimit))
                 .build();
         return AiServices.builder(Text2SqlAgent.class)
                 .chatModel(text2sqlModel)

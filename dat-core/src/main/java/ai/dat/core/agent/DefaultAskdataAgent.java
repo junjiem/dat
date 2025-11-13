@@ -69,7 +69,6 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
     private final String textToSqlRules;
     private final Integer maxHistories;
     private final String instruction;
-
     private final Integer semanticModelDataPreviewLimit;
 
     private final Assistant streamingAssistant;
@@ -240,7 +239,7 @@ public class DefaultAskdataAgent extends AbstractAskdataAgent {
                     log.warn("SQL: " + sql + "\nException: " + e.getMessage());
                     throw new RuntimeException(e);
                 }
-                return "#### " + semanticModel.getName() + "\n\n" + MarkdownUtil.toTable(data) + "\n";
+                return "#### " + semanticModel.getName() + "\n\n" + MarkdownUtil.toTable(data);
             }).collect(Collectors.toList());
         }
 

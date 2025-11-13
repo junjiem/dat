@@ -6,6 +6,8 @@ import ai.dat.core.contentstore.data.WordSynonymPair;
 import ai.dat.core.contentstore.data.QuestionSqlPair;
 import ai.dat.core.contentstore.utils.ContentStoreUtil;
 import ai.dat.core.semantic.data.SemanticModel;
+import ai.dat.core.utils.JinjaTemplateUtil;
+import ai.dat.core.utils.MarkdownUtil;
 import ai.dat.core.utils.SemanticModelUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,10 +18,13 @@ import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.injector.ContentInjector;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.calcite.sql.parser.SqlParseException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -31,6 +36,7 @@ import static ai.dat.core.contentstore.DefaultContentStore.METADATA_CONTENT_TYPE
  * @Author JunjieM
  * @Date 2025/8/11
  */
+@Slf4j
 class Text2SqlContentInjector implements ContentInjector {
 
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
@@ -64,16 +70,22 @@ class Text2SqlContentInjector implements ContentInjector {
     private final ContentStore contentStore;
     private final DatabaseAdapter databaseAdapter;
     private final List<SemanticModel> semanticModels;
+    private final Map<String, Object> variables;
     private final String textToSqlRules;
+    private final Integer semanticModelDataPreviewLimit;
 
     public Text2SqlContentInjector(@NonNull ContentStore contentStore,
                                    @NonNull DatabaseAdapter databaseAdapter,
                                    List<SemanticModel> semanticModels,
-                                   String textToSqlRules) {
+                                   Map<String, Object> variables,
+                                   String textToSqlRules,
+                                   Integer semanticModelDataPreviewLimit) {
         this.contentStore = contentStore;
         this.databaseAdapter = databaseAdapter;
         this.semanticModels = semanticModels;
+        this.variables = variables;
         this.textToSqlRules = Optional.ofNullable(textToSqlRules).orElse(TEXT_TO_SQL_RULES);
+        this.semanticModelDataPreviewLimit = semanticModelDataPreviewLimit;
     }
 
     @Override
@@ -105,9 +117,43 @@ class Text2SqlContentInjector implements ContentInjector {
             List<String> docs = ContentStoreUtil.toDocs(docTextSegments);
             String query = ((dev.langchain4j.data.message.UserMessage) chatMessage).singleText();
 
+            List<String> dataSamples = Collections.emptyList();
+            if (semanticModelDataPreviewLimit > 0) {
+                List<SemanticModel> renderedSemanticModels = semanticModels.stream().map(m -> {
+                    try {
+                        SemanticModel semanticModel = JSON_MAPPER.readValue(
+                                JSON_MAPPER.writeValueAsString(m), SemanticModel.class);
+                        semanticModel.setModel(JinjaTemplateUtil.render(semanticModel.getModel(), variables));
+                        return semanticModel;
+                    } catch (JsonProcessingException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }).collect(Collectors.toList());
+                dataSamples = renderedSemanticModels.stream().map(semanticModel -> {
+                    String semanticModelSql;
+                    try {
+                        semanticModelSql = SemanticModelUtil.semanticModelSql(databaseAdapter.semanticAdapter(), semanticModel);
+                    } catch (SqlParseException e) {
+                        log.warn("Semantic model sql parse exception, Model SQL: " + semanticModel.getModel(), e);
+                        throw new RuntimeException(e);
+                    }
+                    String sql = "SELECT * FROM (" + semanticModelSql + ") AS __dat_semantic_model "
+                            + databaseAdapter.limitClause(semanticModelDataPreviewLimit);
+                    List<Map<String, Object>> data;
+                    try {
+                        data = databaseAdapter.executeQuery(sql);
+                    } catch (SQLException e) {
+                        log.warn("SQL: " + sql + "\nException: " + e.getMessage());
+                        throw new RuntimeException(e);
+                    }
+                    return "#### " + semanticModel.getName() + "\n\n" + MarkdownUtil.toTable(data);
+                }).collect(Collectors.toList());
+            }
+
             Map<String, Object> variables = new HashMap<>();
             variables.put("text_to_sql_rules", textToSqlRules);
             variables.put("semantic_models", semantics);
+            variables.put("data_samples", dataSamples);
             variables.put("sql_samples", sqlSamples);
             variables.put("synonyms", synonyms);
             variables.put("docs", docs);
