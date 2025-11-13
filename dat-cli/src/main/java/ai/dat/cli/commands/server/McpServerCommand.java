@@ -47,6 +47,30 @@ public class McpServerCommand implements Callable<Integer> {
             defaultValue = "8081")
     private int port;
 
+    public enum TransportType {
+        SSE("HTTP with SSE"),
+        STREAMABLE("Streamable HTTP"),
+        STATELESS("Stateless Streamable HTTP");
+
+        private final String value;
+
+        TransportType(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
+
+    @Option(names = {"-t", "--transport"},
+            description = "MCP transport type. " +
+                    "Supported: `SSE` - HTTP with SSE, `STREAMABLE` - Streamable HTTP, " +
+                    "`STATELESS` - Stateless Streamable HTTP. (default: SSE)",
+            defaultValue = "SSE")
+    private TransportType transport;
+
     @Option(names = {"-var", "--variable"},
             arity = "1..*",
             description = "Dynamic variable, key-value pairs in format key=value")
@@ -81,6 +105,9 @@ public class McpServerCommand implements Callable<Integer> {
             if (variables != null && !variables.isEmpty()) {
                 variables.forEach((k, v) -> argsList.add("--dat.server.variables." + k + "=" + v));
             }
+            if (TransportType.SSE != transport) {
+                argsList.add("--spring.ai.mcp.server.protocol=" + transport.name());
+            }
             String[] args = argsList.toArray(new String[0]);
 
             // 直接运行Spring Boot应用，它会阻塞当前线程
@@ -92,7 +119,7 @@ public class McpServerCommand implements Callable<Integer> {
                 // 验证应用是否成功启动
                 if (context.isActive()) {
                     System.out.println("✅ Server started successfully!");
-                    printUrls();
+                    printUrls(transport);
 
                     // 等待应用关闭
                     context.registerShutdownHook();
@@ -126,9 +153,11 @@ public class McpServerCommand implements Callable<Integer> {
         }
     }
 
-    private void printUrls() {
-        String baseUrl = "http://" + host + ":" + port;
-        System.out.println("📖 MCP SSE url: " + baseUrl + "/sse");
+    private void printUrls(TransportType transport) {
+        System.out.println("🧩 MCP Server type: " + transport.value);
+        String endpoint = TransportType.SSE == transport ? "/sse" : "/mcp";
+        String url = "http://" + host + ":" + port + endpoint;
+        System.out.println("📖 MCP Server url: " + url);
         System.out.println();
         System.out.println("Press Ctrl+C to stop");
     }
