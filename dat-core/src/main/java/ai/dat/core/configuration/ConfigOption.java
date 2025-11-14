@@ -48,13 +48,10 @@ public class ConfigOption<T> {
     @Getter
     private final Class<?> clazz;
 
+    @Getter
     private final boolean isList;
 
     // ------------------------------------------------------------------------
-
-    boolean isList() {
-        return isList;
-    }
 
     /**
      * Creates a new config option with fallback keys.

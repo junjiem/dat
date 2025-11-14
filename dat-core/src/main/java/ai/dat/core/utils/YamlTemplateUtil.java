@@ -132,8 +132,9 @@ public class YamlTemplateUtil {
             }
             defaultValueDescription = ", Default: " + defaultValue;
         }
+        String classSimpleName = configOption.getClazz().getSimpleName();
         String prefix = "("
-                + configOption.getClazz().getSimpleName() + ", "
+                + (configOption.isList() ? "List<" + classSimpleName + ">" : classSimpleName) + ", "
                 + (required ? "[Required]" : "[Optional]")
                 + defaultValueDescription
                 + ")";
