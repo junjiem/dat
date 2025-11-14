@@ -22,6 +22,7 @@
         <module>dat-embedder-ollama</module>
         <module>dat-embedder-jina</module>
         <module>dat-embedder-xinference</module>
+        <module>dat-embedder-azure-openai</module>
     </modules>
 
 </project>
