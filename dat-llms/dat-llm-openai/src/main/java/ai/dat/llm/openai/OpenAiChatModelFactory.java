@@ -28,7 +28,7 @@ import static dev.langchain4j.model.chat.Capability.RESPONSE_FORMAT_JSON_SCHEMA;
  * @Author JunjieM
  * @Date 2025/7/1
  */
-public class OpneAiChatModelFactory implements ChatModelFactory {
+public class OpenAiChatModelFactory implements ChatModelFactory {
 
     public static final String IDENTIFIER = "openai";
 
@@ -277,6 +277,7 @@ public class OpneAiChatModelFactory implements ChatModelFactory {
         config.getOptional(TOP_P).ifPresent(builder::topP);
         config.getOptional(TIMEOUT).ifPresent(builder::timeout);
         config.getOptional(MAX_TOKENS).ifPresent(builder::maxTokens);
+        config.getOptional(MAX_COMPLETION_TOKENS).ifPresent(builder::maxCompletionTokens);
         config.getOptional(RESPONSE_FORMAT).ifPresent(builder::responseFormat);
         config.getOptional(LOG_REQUESTS).ifPresent(builder::logRequests);
         config.getOptional(LOG_RESPONSES).ifPresent(builder::logResponses);
