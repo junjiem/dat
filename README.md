@@ -107,7 +107,7 @@ DAT 的核心驱动力，并非完全源于大语言模型自身的又一次智�
 
 ```bash
 # 下载最新版本
-wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.6.3-full.tar.gz
+wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.7.0-full.tar.gz
 
 # 解压并配置环境变量
 tar -xzf dat-cli-x.x.x.tar.gz
@@ -456,7 +456,7 @@ DAT提供了 `dat-sdk` 开发工具包，方便开发者在自己的Java应用�
 <dependency>
     <groupId>cn.datask</groupId>
     <artifactId>dat-sdk</artifactId>
-    <version>0.6.3</version>
+    <version>0.7.0</version>
 </dependency>
 ```
 
