@@ -4,12 +4,12 @@
 
     <parent>
         <groupId>cn.datask</groupId>
-        <artifactId>dat-llms</artifactId>
+        <artifactId>dat-embedders</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>dat-llm-openai</artifactId>
-    <name>DAT : LLMs : OpenAi</name>
+    <artifactId>dat-embedder-azure-openai</artifactId>
+    <name>DAT : Embedders : Azure OpenAi</name>
 
     <dependencies>
         <dependency>
@@ -19,12 +19,7 @@
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-open-ai</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-http-client-jdk</artifactId>
+            <artifactId>langchain4j-azure-open-ai</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
     </dependencies>

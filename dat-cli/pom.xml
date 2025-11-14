@@ -86,6 +86,11 @@
             <artifactId>dat-embedder-xinference</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>cn.datask</groupId>
+            <artifactId>dat-embedder-azure-openai</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- DAT Reranking Model -->
         <dependency>
