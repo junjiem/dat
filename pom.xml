@@ -66,7 +66,7 @@
         <revision>0.6.3</revision>
         <lombok.version>1.18.38</lombok.version>
         <jackson.version>2.18.3</jackson.version>
-        <langchain4j.vserion>1.4.0</langchain4j.vserion>
+        <langchain4j.version>1.4.0</langchain4j.version>
         <langchain4j-beta.version>1.4.0-beta10</langchain4j-beta.version>
         <langchain4j-community.version>1.4.0-beta10</langchain4j-community.version>
         <langchain4j-embeddings.version>1.4.0-beta10</langchain4j-embeddings.version>

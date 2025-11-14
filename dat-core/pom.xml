@@ -25,7 +25,7 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>${langchain4j.vserion}</version>
+            <version>${langchain4j.version}</version>
         </dependency>
 
         <!-- Jinjava -->
