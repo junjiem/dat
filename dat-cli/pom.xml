@@ -125,6 +125,11 @@
             <artifactId>dat-llm-xinference</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>cn.datask</groupId>
+            <artifactId>dat-llm-azure-openai</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- DAT Database Adapter -->
         <dependency>

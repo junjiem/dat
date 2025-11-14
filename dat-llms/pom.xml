@@ -18,6 +18,7 @@
         <module>dat-llm-ollama</module>
         <module>dat-llm-gemini</module>
         <module>dat-llm-xinference</module>
+        <module>dat-llm-azure-openai</module>
     </modules>
 
 </project>
