@@ -248,6 +248,26 @@ dat server openapi -p ./my-dat-project
 ✅ 查询结果: 北区上个月销售金额为 ¥1,234,567
 ```
 
+### 🌐 多种使用方式
+
+DAT 提供了多种使用方式（CLI主要用于开发与调试），满足不同场景的需求：
+
+#### 1️⃣ 通过 Dify 插件使用（WEB端问答）
+
+如果您需要通过 **WEB 界面**进行智能问答，无需自己开发前端，可以直接使用 **Dify 平台**的 DAT 插件。
+
+🔗 **插件地址**: [https://marketplace.dify.ai/plugins/junjiem/dat](https://marketplace.dify.ai/plugins/junjiem/dat)
+
+首先 [启动DAT的OpenAPI服务](#-dat-server---服务部署)，然后在 Dify 中安装 DAT 插件后配置 `DAT OpenAPI Base URL` 与其对接，即可在 Dify 的可视化界面中创建智能问数应用，提供友好的 WEB 交互体验。
+
+#### 2️⃣ 集成到自己的项目（流式问答API）
+
+如果您需要在**自己的 WEB 项目**中集成流式问答功能，可以 [启动DAT的OpenAPI服务](#-dat-server---服务部署) 进行对接。
+
+#### 3️⃣ 集成到Agent中（支持MCP工具）
+
+如果您使用的是支持 **MCP (Model Context Protocol)** 的 Agent（如 Claude Desktop、Cline 等），可以 [启动DAT的MCP服务](#-mcp-服务) 将智能问数能力集成到这些 Agent 中。
+
 
 ---
 
@@ -400,7 +420,8 @@ dat-parent/
 │   ├── dat-llm-gemini/
 │   ├── dat-llm-ollama/
 │   ├── dat-llm-openai/
-│   └── dat-llm-xinference/
+│   ├── dat-llm-xinference/
+│   └── dat-llm-azure-openai/
 ├── 📍 dat-embedders/     # 嵌入模型集成
 │   ├── dat-embedder-bge-small-zh/        # 【本地内置Embedding模型】
 │   ├── dat-embedder-bge-small-zh-q/      # 【本地内置Embedding模型】
@@ -409,7 +430,8 @@ dat-parent/
 │   ├── dat-embedder-jina/
 │   ├── dat-embedder-ollama/
 │   ├── dat-embedder-openai/
-│   └── dat-embedder-xinference/
+│   ├── dat-embedder-xinference/
+│   └── dat-embedder-azure-openai/
 ├── ⚖️ dat-rerankers/     # 重排模型集成
 │   ├── dat-reranker-onnx-builtin/
 │   ├── dat-reranker-ms-marco-minilm-l6-v2/      # 【本地内置Reranking模型】
@@ -579,6 +601,10 @@ public class DatProjectRunnerExample {
     <groupId>cn.datask</groupId>
     <artifactId>dat-embedder-xinference</artifactId>
 </dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-embedder-azure-openai</artifactId>
+</dependency>
 
 <!-- DAT Reranking Model -->
 <dependency>
@@ -630,6 +656,10 @@ public class DatProjectRunnerExample {
 <dependency>
     <groupId>cn.datask</groupId>
     <artifactId>dat-llm-xinference</artifactId>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-llm-azure-openai</artifactId>
 </dependency>
 
 <!-- DAT Database Adapter -->
