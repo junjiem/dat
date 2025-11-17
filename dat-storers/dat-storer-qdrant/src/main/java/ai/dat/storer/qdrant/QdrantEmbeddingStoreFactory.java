@@ -62,6 +62,12 @@ public class QdrantEmbeddingStoreFactory implements EmbeddingStoreFactory {
                     .withDescription("The dimensionality of the embedding vectors. " +
                             "This should match the embedding model being used.");
 
+    public static final ConfigOption<Boolean> USE_TLS =
+            ConfigOptions.key("use-tls")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Use Transport Layer Security");
+
     @Override
     public String factoryIdentifier() {
         return IDENTIFIER;
@@ -74,7 +80,7 @@ public class QdrantEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(API_KEY, COLLECTION_NAME_PREFIX));
+        return new LinkedHashSet<>(List.of(API_KEY, COLLECTION_NAME_PREFIX, USE_TLS));
     }
 
     @Override
@@ -91,24 +97,31 @@ public class QdrantEmbeddingStoreFactory implements EmbeddingStoreFactory {
         String host = config.get(HOST);
         Integer port = config.get(PORT);
         String collectionNamePrefix = config.get(COLLECTION_NAME_PREFIX);
+        Boolean useTls = config.get(USE_TLS);
 
         String collectionName = collectionNamePrefix + "_" + storeId + "_" + contentType.getValue();
 
         QdrantEmbeddingStore.Builder builder = QdrantEmbeddingStore.builder()
                 .host(host)
                 .port(port)
-                .collectionName(collectionName);
+                .collectionName(collectionName)
+                .useTls(useTls);
         config.getOptional(API_KEY).ifPresent(builder::apiKey);
 
-        QdrantClient client = new QdrantClient(QdrantGrpcClient
-                .newBuilder(host, port, false)
-                .build());
-        client.createCollectionAsync(collectionName,
-                io.qdrant.client.grpc.Collections.VectorParams.newBuilder()
-                        .setDistance(config.get(DISTANCE))
-                        .setSize(config.get(DIMENSION))
-                        .build());
-        client.close();
+        try {
+            QdrantGrpcClient.Builder clientBuilder = QdrantGrpcClient.newBuilder(host, port, useTls);
+            config.getOptional(API_KEY).ifPresent(clientBuilder::withApiKey);
+            QdrantClient client = new QdrantClient(clientBuilder.build());
+            client.createCollectionAsync(collectionName,
+                            io.qdrant.client.grpc.Collections.VectorParams.newBuilder()
+                                    .setDistance(config.get(DISTANCE))
+                                    .setSize(config.get(DIMENSION))
+                                    .build())
+                    .get();
+            client.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         return builder.build();
     }
