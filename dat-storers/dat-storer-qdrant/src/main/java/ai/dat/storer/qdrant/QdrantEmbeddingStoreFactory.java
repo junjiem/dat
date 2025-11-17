@@ -34,7 +34,7 @@ public class QdrantEmbeddingStoreFactory implements EmbeddingStoreFactory {
     public static final ConfigOption<Integer> PORT =
             ConfigOptions.key("port")
                     .intType()
-                    .defaultValue(6334)
+                    .defaultValue(6333)
                     .withDescription("Qdrant port");
 
     public static final ConfigOption<String> API_KEY =
@@ -75,12 +75,12 @@ public class QdrantEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
-        return new LinkedHashSet<>(List.of(HOST, PORT, DIMENSION));
+        return new LinkedHashSet<>(List.of(HOST, DIMENSION));
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(API_KEY, COLLECTION_NAME_PREFIX, USE_TLS));
+        return new LinkedHashSet<>(List.of(PORT, API_KEY, COLLECTION_NAME_PREFIX, DISTANCE, USE_TLS));
     }
 
     @Override
