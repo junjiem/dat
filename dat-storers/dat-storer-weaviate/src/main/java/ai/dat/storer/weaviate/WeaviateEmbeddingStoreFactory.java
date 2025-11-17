@@ -23,7 +23,7 @@ public class WeaviateEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     public static final String IDENTIFIER = "weaviate";
 
-    public static final String DEFAULT_CLASS_NAME_PREFIX = "dat_embeddings";
+    public static final String DEFAULT_CLASS_NAME_PREFIX = "DatEmbeddings";
 
     public static final ConfigOption<String> SCHEME =
             ConfigOptions.key("scheme")
@@ -53,7 +53,8 @@ public class WeaviateEmbeddingStoreFactory implements EmbeddingStoreFactory {
             ConfigOptions.key("class-name-prefix")
                     .stringType()
                     .defaultValue(DEFAULT_CLASS_NAME_PREFIX)
-                    .withDescription("Weaviate class name prefix");
+                    .withDescription("The object class prefix you want to store, e.g. \"MyGreatClass\". " +
+                            "Must start from an uppercase letter.");
 
     @Override
     public String factoryIdentifier() {
