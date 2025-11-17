@@ -75,12 +75,12 @@ public class QdrantEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
-        return new LinkedHashSet<>(List.of(HOST, DIMENSION));
+        return new LinkedHashSet<>(List.of(HOST, PORT, DIMENSION));
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(PORT, API_KEY, COLLECTION_NAME_PREFIX, DISTANCE, USE_TLS));
+        return new LinkedHashSet<>(List.of(API_KEY, COLLECTION_NAME_PREFIX, DISTANCE, USE_TLS));
     }
 
     @Override

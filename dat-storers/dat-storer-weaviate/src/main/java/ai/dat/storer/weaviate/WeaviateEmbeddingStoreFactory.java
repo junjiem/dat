@@ -63,12 +63,12 @@ public class WeaviateEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
-        return Collections.emptySet();
+        return new LinkedHashSet<>(List.of(SCHEME, HOST, PORT));
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(SCHEME, HOST, PORT, API_KEY, CLASS_NAME_PREFIX));
+        return new LinkedHashSet<>(List.of(API_KEY, CLASS_NAME_PREFIX));
     }
 
     @Override
