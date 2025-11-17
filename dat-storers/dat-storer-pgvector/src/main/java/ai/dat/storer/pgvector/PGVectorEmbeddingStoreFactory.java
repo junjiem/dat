@@ -96,12 +96,12 @@ public class PGVectorEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
-        return new LinkedHashSet<>(List.of(USER, PASSWORD, DATABASE, DIMENSION));
+        return new LinkedHashSet<>(List.of(HOST, PORT, USER, PASSWORD, DATABASE, DIMENSION));
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(HOST, PORT, TABLE_PREFIX, USE_INDEX, INDEX_LIST_SIZE));
+        return new LinkedHashSet<>(List.of(TABLE_PREFIX, USE_INDEX, INDEX_LIST_SIZE));
     }
 
     @Override

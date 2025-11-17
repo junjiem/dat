@@ -86,12 +86,12 @@ public class MilvusEmbeddingStoreFactory implements EmbeddingStoreFactory {
 
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
-        return new LinkedHashSet<>(List.of(USERNAME, PASSWORD, DIMENSION));
+        return new LinkedHashSet<>(List.of(HOST, PORT, USERNAME, PASSWORD, DIMENSION));
     }
 
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
-        return new LinkedHashSet<>(List.of(HOST, PORT, DATABASE_NAME, COLLECTION_NAME_PREFIX,
+        return new LinkedHashSet<>(List.of(DATABASE_NAME, COLLECTION_NAME_PREFIX,
                 CONSISTENCY_LEVEL, AUTO_FLUSH_ON_INSERT));
     }
 
