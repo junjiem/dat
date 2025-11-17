@@ -69,6 +69,11 @@
             <artifactId>dat-storer-qdrant</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>cn.datask</groupId>
+            <artifactId>dat-storer-milvus</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- DAT Embedding Model -->
         <dependency>

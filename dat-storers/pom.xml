@@ -17,6 +17,7 @@
         <module>dat-storer-weaviate</module>
         <module>dat-storer-pgvector</module>
         <module>dat-storer-qdrant</module>
+        <module>dat-storer-milvus</module>
     </modules>
 
 </project>
