@@ -444,7 +444,8 @@ dat-parent/
 ├── 💾 dat-storers/       # 向量存储后端
 │   ├── dat-storer-duckdb/    # 【本地内置向量存储】
 │   ├── dat-storer-pgvector/
-│   └── dat-storer-weaviate/
+│   ├── dat-storer-weaviate/
+│   └── dat-storer-qdrant/
 ├── 🤖 dat-agents/        # 智能代理实现
 │   └── dat-agent-agentic/
 ├── 🌐 dat-servers/       # 服务端组件
@@ -556,12 +557,14 @@ public class DatProjectRunnerExample {
 <dependency>
     <groupId>cn.datask</groupId>
     <artifactId>dat-storer-weaviate</artifactId>
-    <version>${project.version}</version>
 </dependency>
 <dependency>
     <groupId>cn.datask</groupId>
     <artifactId>dat-storer-pgvector</artifactId>
-    <version>${project.version}</version>
+</dependency>
+<dependency>
+    <groupId>cn.datask</groupId>
+    <artifactId>dat-storer-qdrant</artifactId>
 </dependency>
 
 <!-- DAT Embedding Model -->
