@@ -162,7 +162,8 @@ class PreBuildValidator {
             log.warn("Semantic model sql parse exception, Model SQL: " + semanticModel.getModel(), e);
             return new ValidationMessage(semanticModel.getName(), e);
         }
-        String sql = "SELECT 1 FROM (" + semanticModelSql + ") AS __dat_semantic_model WHERE 1=0";
+        String quotedName = semanticAdapter.quoteIdentifier(semanticModel.getName());
+        String sql = "WITH " + quotedName + " AS (" + semanticModelSql + ") SELECT 1 FROM " + quotedName + " WHERE 1=0";
         try {
             databaseAdapter.executeQuery(sql);
         } catch (SQLException e) {
