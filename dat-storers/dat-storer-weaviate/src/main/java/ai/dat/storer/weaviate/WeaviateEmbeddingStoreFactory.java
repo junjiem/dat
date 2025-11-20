@@ -10,7 +10,6 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.weaviate.WeaviateEmbeddingStore;
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -87,7 +86,10 @@ public class WeaviateEmbeddingStoreFactory implements EmbeddingStoreFactory {
         Integer port = config.get(PORT);
         String classNamePrefix = config.get(CLASS_NAME_PREFIX);
 
-        String className = classNamePrefix + "_" + storeId + "_" + contentType.getValue();
+        String className = String.join("_",
+                classNamePrefix,
+                storeId.replace('-', '_'),
+                contentType.getValue());
 
         WeaviateEmbeddingStore.WeaviateEmbeddingStoreBuilder builder = WeaviateEmbeddingStore.builder()
                 .scheme(scheme)

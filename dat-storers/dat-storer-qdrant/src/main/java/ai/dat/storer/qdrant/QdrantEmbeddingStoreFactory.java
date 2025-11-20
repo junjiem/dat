@@ -99,7 +99,10 @@ public class QdrantEmbeddingStoreFactory implements EmbeddingStoreFactory {
         String collectionNamePrefix = config.get(COLLECTION_NAME_PREFIX);
         Boolean useTls = config.get(USE_TLS);
 
-        String collectionName = collectionNamePrefix + "_" + storeId + "_" + contentType.getValue();
+        String collectionName = String.join("_",
+                collectionNamePrefix,
+                storeId.replace('-', '_'),
+                contentType.getValue());
 
         QdrantEmbeddingStore.Builder builder = QdrantEmbeddingStore.builder()
                 .host(host)
