@@ -31,6 +31,7 @@ public class LlmScoringModel implements ScoringModel {
     public Response<List<Double>> scoreAll(List<TextSegment> segments, String query) {
         List<Double> scores = segments.stream()
                 .map(segment -> assistant.scoring(query, segment.text()))
+                .map(score -> score != null ? score : 0)
                 .map(Double::valueOf)
                 .toList();
         return Response.from(scores);
