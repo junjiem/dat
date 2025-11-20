@@ -124,7 +124,10 @@ public class PGVectorEmbeddingStoreFactory implements EmbeddingStoreFactory {
         Integer dimension = config.get(DIMENSION);
         Boolean useIndex = config.get(USE_INDEX);
 
-        String tableName = tableNamePrefix + "_" + storeId + "_" + contentType.getValue();
+        String tableName = String.join("_",
+                tableNamePrefix,
+                storeId.replace('-', '_'),
+                contentType.getValue());
 
         PgVectorEmbeddingStore.PgVectorEmbeddingStoreBuilder builder = PgVectorEmbeddingStore.builder()
                 // Connection and table parameters

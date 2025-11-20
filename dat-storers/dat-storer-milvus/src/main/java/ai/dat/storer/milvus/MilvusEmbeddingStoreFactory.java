@@ -113,7 +113,10 @@ public class MilvusEmbeddingStoreFactory implements EmbeddingStoreFactory {
         String collectionNamePrefix = config.get(COLLECTION_NAME_PREFIX);
         Integer dimension = config.get(DIMENSION);
 
-        String collectionName = collectionNamePrefix + "_" + storeId + "_" + contentType.getValue();
+        String collectionName = String.join("_",
+                collectionNamePrefix,
+                storeId.replace('-', '_'),
+                contentType.getValue());
 
         MilvusEmbeddingStore.Builder builder = MilvusEmbeddingStore.builder()
                 .host(host)
