@@ -9,9 +9,11 @@ import ai.dat.core.contentstore.data.BusinessKnowledgeIndexingMethod;
 import ai.dat.core.contentstore.data.BusinessKnowledgeIndexingParentMode;
 import ai.dat.core.contentstore.data.SemanticModelIndexingMethod;
 import ai.dat.core.factories.data.ChatModelInstance;
+import ai.dat.core.scoring.LlmScoringModel;
 import ai.dat.core.utils.FactoryUtil;
 import com.google.common.base.Preconditions;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.scoring.ScoringModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -67,6 +69,19 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                     .doubleType()
                     .noDefaultValue()
                     .withDescription("Content store re-rank Score minimum value");
+
+    public static final ConfigOption<Boolean> USE_LLM_RERANKING =
+            ConfigOptions.key("use-llm-reranking")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Reranking using LLM will not use the scoring (reranking) model once enabled.");
+
+    public static final ConfigOption<String> RERANKING_LLM =
+            ConfigOptions.key("reranking-llm")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The name of the LLM model when reranking using LLM. " +
+                            "If not set, use the default-llm. (Note: score range [0, 10])");
 
     // -------------------------------------------- Semantic Model -------------------------------------------------
     public static final ConfigOption<SemanticModelIndexingMethod> SEMANTIC_MODEL_INDEXING_METHOD =
@@ -278,6 +293,7 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
         return new LinkedHashSet<>(List.of(
                 MAX_RESULTS, MIN_SCORE, DEFAULT_LLM,
                 RERANK_MODE, RERANK_MAX_RESULTS, RERANK_MIN_SCORE,
+                USE_LLM_RERANKING, RERANKING_LLM,
 
                 SEMANTIC_MODEL_INDEXING_METHOD,
                 SEMANTIC_MODEL_INDEXING_HYQE_LLM,
@@ -377,6 +393,13 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
         config.getOptional(RERANK_MODE).ifPresent(builder::rerankMode);
         config.getOptional(RERANK_MAX_RESULTS).ifPresent(builder::rerankMaxResults);
         config.getOptional(RERANK_MIN_SCORE).ifPresent(builder::rerankMinScore);
+        if (config.get(RERANK_MODE) && config.get(USE_LLM_RERANKING)) {
+            ChatModel rerankingChatModel = config.getOptional(RERANKING_LLM)
+                    .map(instances::get).orElse(defaultInstance).getChatModel();
+            builder.scoringModel(LlmScoringModel.builder()
+                    .chatModel(rerankingChatModel)
+                    .build());
+        }
 
         Optional<Integer> mdlMaxResultsOptional;
         Optional<Double> mdlMinScoreOptional;
@@ -471,8 +494,10 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
                 "'" + MIN_SCORE.key() + "' value must be between 0.0 and 1.0");
 
         Boolean rerankMode = config.get(RERANK_MODE);
-        Preconditions.checkArgument(!rerankMode || scoringModel != null,
-                "'" + RERANK_MODE.key() + "' is true, reranking has not been set yet");
+        Boolean useLlmReranking = config.get(USE_LLM_RERANKING);
+        Preconditions.checkArgument(!rerankMode || useLlmReranking || scoringModel != null,
+                "'" + RERANK_MODE.key() + "' is true and '" + USE_LLM_RERANKING.key() + "' is false, " +
+                        "reranking has not been set yet");
 
         Integer rerankMaxResults = config.get(RERANK_MAX_RESULTS);
         int rerankMaxResultsUpperLimit = Math.min(maxResults, 20);
@@ -483,6 +508,9 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
         config.getOptional(DEFAULT_LLM)
                 .ifPresent(n -> Preconditions.checkArgument(instances.containsKey(n),
                         String.format(ERROR_MESSAGE_FORMAT, DEFAULT_LLM.key(), llmNames)));
+        config.getOptional(RERANKING_LLM)
+                .ifPresent(n -> Preconditions.checkArgument(instances.containsKey(n),
+                        String.format(ERROR_MESSAGE_FORMAT, RERANKING_LLM.key(), llmNames)));
 
         config.getOptional(SEMANTIC_MODEL_INDEXING_HYQE_LLM)
                 .ifPresent(n -> Preconditions.checkArgument(instances.containsKey(n),
