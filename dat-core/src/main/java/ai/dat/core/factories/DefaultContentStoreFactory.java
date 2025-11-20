@@ -508,6 +508,9 @@ public class DefaultContentStoreFactory implements ContentStoreFactory {
         config.getOptional(DEFAULT_LLM)
                 .ifPresent(n -> Preconditions.checkArgument(instances.containsKey(n),
                         String.format(ERROR_MESSAGE_FORMAT, DEFAULT_LLM.key(), llmNames)));
+        config.getOptional(RERANKING_LLM)
+                .ifPresent(n -> Preconditions.checkArgument(instances.containsKey(n),
+                        String.format(ERROR_MESSAGE_FORMAT, RERANKING_LLM.key(), llmNames)));
 
         config.getOptional(SEMANTIC_MODEL_INDEXING_HYQE_LLM)
                 .ifPresent(n -> Preconditions.checkArgument(instances.containsKey(n),
