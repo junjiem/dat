@@ -18,6 +18,7 @@
         <module>dat-storer-pgvector</module>
         <module>dat-storer-qdrant</module>
         <module>dat-storer-milvus</module>
+        <module>dat-storer-elasticsearch</module>
     </modules>
 
 </project>
