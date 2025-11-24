@@ -4,7 +4,7 @@
 
     <parent>
         <artifactId>dat-parent</artifactId>
-        <groupId>cn.datask</groupId>
+        <groupId>cn.hexinfo</groupId>
         <version>${revision}</version>
     </parent>
 

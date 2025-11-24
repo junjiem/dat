@@ -1,13 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-parent</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>DAT :</name>
-    <url>https://github.com/junjiem/dat</url>
+    <url>https://github.com/hexinfo/dat</url>
     <description>
         Asking yours data in a natural language way through pre-modeling (data models and semantic models).
     </description>
@@ -15,9 +15,9 @@
     <!-- 开发者信息 -->
     <developers>
         <developer>
-            <name>Junjie.M</name>
-            <email>118170653@qq.com</email>
-            <organization>cn.datask</organization>
+            <name>hexinfo</name>
+            <email>rd@hexinfo.cn</email>
+            <organization>cn.hexinfo</organization>
             <roles>
                 <role>Project Manager</role>
                 <role>Architect</role>
@@ -35,15 +35,15 @@
 
     <!-- 版本控制仓库地址 -->
     <scm>
-        <connection>scm:git:https://github.com/junjiem/dat.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:junjiem/dat.git</developerConnection>
-        <url>https://github.com/junjiem/dat</url>
+        <connection>scm:git:https://github.com/hexinfo/dat.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:hexinfo/dat.git</developerConnection>
+        <url>https://github.com/hexinfo/dat</url>
         <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
         <system>github</system>
-        <url>https://github.com/junjiem/dat/issues</url>
+        <url>https://github.com/hexinfo/dat/issues</url>
     </issueManagement>
 
     <modules>
