@@ -478,7 +478,7 @@ DAT提供了 `dat-sdk` 开发工具包，方便开发者在自己的Java应用�
 
 ```xml
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-sdk</artifactId>
     <version>0.7.1</version>
 </dependency>
@@ -552,145 +552,145 @@ public class DatProjectRunnerExample {
 ```xml
 <!-- DAT Embedding Store -->
 <dependency>
-   <groupId>cn.datask</groupId>
+   <groupId>cn.hexinfo</groupId>
    <artifactId>dat-storer-duckdb</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-storer-weaviate</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-storer-pgvector</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-storer-qdrant</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-storer-milvus</artifactId>
 </dependency>
 
 <!-- DAT Embedding Model -->
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-bge-small-zh</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-bge-small-zh-q</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-bge-small-zh-v15</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-bge-small-zh-v15-q</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-onnx-local</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-openai</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-ollama</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-jina</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-xinference</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-embedder-azure-openai</artifactId>
 </dependency>
 
 <!-- DAT Reranking Model -->
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-reranker-ms-marco-minilm-l6-v2</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-reranker-ms-marco-minilm-l6-v2-q</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-reranker-ms-marco-tinybert-l2-v2</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-reranker-ms-marco-tinybert-l2-v2-q</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-reranker-onnx-local</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-reranker-jina</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-reranker-xinference</artifactId>
 </dependency>
 
 <!-- DAT Chat Model -->
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-llm-openai</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-llm-anthropic</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-llm-ollama</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-llm-gemini</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-llm-xinference</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-llm-azure-openai</artifactId>
 </dependency>
 
 <!-- DAT Database Adapter -->
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-adapter-duckdb</artifactId> <!-- In-process -->
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-adapter-mysql</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-adapter-oracle</artifactId>
 </dependency>
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-adapter-postgresql</artifactId>
 </dependency>
 
 <!-- DAT Askdata Agent -->
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-agent-agentic</artifactId>
 </dependency>
 ```
@@ -699,7 +699,7 @@ public class DatProjectRunnerExample {
 
 ```xml
 <dependency>
-    <groupId>cn.datask</groupId>
+    <groupId>cn.hexinfo</groupId>
     <artifactId>dat-core</artifactId>
 </dependency>
 ```

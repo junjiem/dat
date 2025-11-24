@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>cn.datask</groupId>
+        <groupId>cn.hexinfo</groupId>
         <artifactId>dat-adapters</artifactId>
         <version>${revision}</version>
     </parent>
@@ -18,7 +18,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>cn.datask</groupId>
+            <groupId>cn.hexinfo</groupId>
             <artifactId>dat-core</artifactId>
             <version>${project.version}</version>
         </dependency>

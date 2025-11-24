@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>cn.datask</groupId>
+        <groupId>cn.hexinfo</groupId>
         <artifactId>dat-servers</artifactId>
         <version>${revision}</version>
     </parent>
@@ -23,7 +23,7 @@
         </dependency>
 
         <dependency>
-            <groupId>cn.datask</groupId>
+            <groupId>cn.hexinfo</groupId>
             <artifactId>dat-sdk</artifactId>
             <version>${project.version}</version>
         </dependency>
