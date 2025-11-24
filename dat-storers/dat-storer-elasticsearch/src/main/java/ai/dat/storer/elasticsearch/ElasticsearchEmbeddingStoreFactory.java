@@ -64,7 +64,7 @@ public class ElasticsearchEmbeddingStoreFactory implements EmbeddingStoreFactory
 
     @Override
     public Set<ConfigOption<?>> fingerprintOptions() {
-        return Set.of(SERVER_URL);
+        return Set.of(SERVER_URL, INDEX_NAME_PREFIX);
     }
 
     @Override
