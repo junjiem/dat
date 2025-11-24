@@ -73,13 +73,18 @@ public class ElasticsearchEmbeddingStoreFactory implements EmbeddingStoreFactory
 
         String serverUrl = config.get(SERVER_URL);
 
-        RestClientBuilder builder = RestClient.builder(HttpHost.create(serverUrl));
-        config.getOptional(API_KEY).ifPresent(apiKey -> {
-            builder.setDefaultHeaders(new Header[]{
-                    new BasicHeader("Authorization", "ApiKey " + apiKey)
+        RestClient restClient;
+        try {
+            RestClientBuilder builder = RestClient.builder(HttpHost.create(serverUrl));
+            config.getOptional(API_KEY).ifPresent(apiKey -> {
+                builder.setDefaultHeaders(new Header[]{
+                        new BasicHeader("Authorization", "ApiKey " + apiKey)
+                });
             });
-        });
-        RestClient restClient = builder.build();
+            restClient = builder.build();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create Elasticsearch REST client for server URL: " + serverUrl, e);
+        }
 
         String indexNamePrefix = config.get(INDEX_NAME_PREFIX);
 
