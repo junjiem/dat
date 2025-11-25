@@ -25,6 +25,9 @@ Now you can edit the `dat_project.yaml` file to describe your Project, here is t
   - name (string, required): LLM's name
   - provider (string, required): Large language model factory identifier
   - configuration (object): Configuration options
+- reranking (object, optional): Scoring (reranking) model configuration
+  - provider (string, required): Scoring (reranking) model factory identifier
+  - configuration (object): Configuration options
 - content_store (object, optional): Content store configuration
   - provider (string, required): Content store factory identifier
   - configuration (object): Configuration options
@@ -53,21 +56,6 @@ Now you can edit the `dat_project.yaml` file to describe your Project, here is t
 
 [Seed Configuration Guide](./SEED_GUIDE.md)
 
-
-### Development the Project
-
-You must be developed under the `models` directory, where both data models and semantic models can be developed.
-
-
-### Build the Project
-
-After all, just build your Project by running the following command:
-
-```bash
-dat build -p ./ROOT_DIRECTORY_OF_YOUR_PROJECT
-```
-
-you will get a `.dat` directory and the build states file.
 
 ## Run Agent specified in the Project
 
