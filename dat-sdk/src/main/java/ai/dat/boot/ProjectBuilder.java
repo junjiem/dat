@@ -80,7 +80,7 @@ public class ProjectBuilder {
      *
      * @throws IOException
      */
-    public void forceRebuild(@NonNull Map<String, Object> variables) throws IOException {
+    public void forceRebuild(Map<String, Object> variables) throws IOException {
         log.info("Start force rebuild project ...");
         cleanState();
         build(variables);
