@@ -8,8 +8,8 @@ body:
       label: "Please confirm before submission 在提交之前，请确认"
       options:
         - label: |
-            I have searched for existing issues [search for existing issues](https://github.com/junjiem/dat/issues), including closed ones. 
-            我已经搜索了现有问题[搜索现有问题](https://github.com/junjiem/dat/issues)，包括已关闭的问题。"
+            I have searched for existing issues [search for existing issues](https://github.com/hexinfo/dat/issues), including closed ones. 
+            我已经搜索了现有问题[搜索现有问题](https://github.com/hexinfo/dat/issues)，包括已关闭的问题。"
           required: true
   - type: input
     attributes:

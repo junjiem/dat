@@ -39,7 +39,7 @@ public class Application {
                         .version(VersionUtil.getVersion())
                         .contact(new Contact()
                                 .name("DAT")
-                                .url("https://github.com/junjiem/dat")
+                                .url("https://github.com/hexinfo/dat")
                         )
                         .license(new License()
                                 .name("Apache 2.0")
