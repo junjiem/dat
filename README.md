@@ -7,13 +7,13 @@
 
 *Dating with your data*
 
-[![Latest release](https://img.shields.io/github/v/release/junjiem/dat)](https://github.com/junjiem/dat/releases/latest)
-[![Stars](https://img.shields.io/github/stars/junjiem/dat?color=%231890FF&style=flat-square)](https://github.com/junjiem/dat)
-[![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/junjiem/dat/total)](https://github.com/junjiem/dat/releases/latest)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/junjiem/dat/blob/main/LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/hexinfo/dat)](https://github.com/hexinfo/dat/releases/latest)
+[![Stars](https://img.shields.io/github/stars/hexinfo/dat?color=%231890FF&style=flat-square)](https://github.com/hexinfo/dat)
+[![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/hexinfo/dat/total)](https://github.com/hexinfo/dat/releases/latest)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/hexinfo/dat/blob/main/LICENSE)
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/projects/jdk/17/)
 [![Maven](https://img.shields.io/badge/Maven-3.6+-green.svg)](https://maven.apache.org/)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/junjiem/dat)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hexinfo/dat)
 
 ![DAT](./images/dat.png)
 
@@ -107,7 +107,7 @@ DAT 的核心驱动力，并非完全源于大语言模型自身的又一次智�
 
 ```bash
 # 下载最新版本
-wget https://github.com/junjiem/dat/releases/latest/download/dat-cli-0.7.1-full.tar.gz
+wget https://github.com/hexinfo/dat/releases/latest/download/dat-cli-0.7.1-full.tar.gz
 
 # 解压并配置环境变量
 tar -xzf dat-cli-x.x.x.tar.gz
@@ -117,7 +117,7 @@ export PATH=$PATH:$(pwd)/dat-cli/bin
 
 ##### 🪟 Windows 系统
 
-1. 访问 [Releases页面](https://github.com/junjiem/dat/releases/latest)
+1. 访问 [Releases页面](https://github.com/hexinfo/dat/releases/latest)
 2. 下载 `dat-cli-x.x.x.tar.gz` 文件
 3. 使用WinRAR、7-Zip或Windows内置解压工具解压
 4. 将解压后的 `dat-cli\bin` 目录添加到系统PATH环境变量中：
@@ -256,7 +256,7 @@ DAT 提供了多种使用方式（CLI主要用于开发与调试），满足不�
 
 如果您需要通过 **WEB 界面**进行智能问答，无需自己开发前端，可以直接使用 **Dify 平台**的 DAT 插件。
 
-🔗 **插件地址**: [https://marketplace.dify.ai/plugins/junjiem/dat](https://marketplace.dify.ai/plugins/junjiem/dat)
+🔗 **插件地址**: [https://marketplace.dify.ai/plugins/hexinfo/dat](https://marketplace.dify.ai/plugins/hexinfo/dat)
 
 首先 [启动DAT的OpenAPI服务](#-dat-server---服务部署)，然后在 Dify 中安装 DAT 插件后配置 `DAT OpenAPI Base URL` 与其对接，即可在 Dify 的可视化界面中创建智能问数应用，提供友好的 WEB 交互体验。
 
@@ -461,7 +461,7 @@ dat-parent/
 #### 环境准备
 ```bash
 # 克隆项目
-git clone https://github.com/junjiem/dat.git
+git clone https://github.com/hexinfo/dat.git
 cd dat
 
 # 安装依赖并编译
@@ -795,8 +795,8 @@ Closes #123"
 
 感谢所有为DAT项目做出贡献的开发者！
 
-<a href="https://github.com/junjiem/dat/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=junjiem/dat" />
+<a href="https://github.com/hexinfo/dat/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=hexinfo/dat" />
 </a>
 
 ---
@@ -805,13 +805,13 @@ Closes #123"
 
 ### ⭐ Star历史
 
-[![Star History Chart](https://api.star-history.com/svg?repos=junjiem/dat&type=Date)](https://star-history.com/#junjiem/dat&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=hexinfo/dat&type=Date)](https://star-history.com/#hexinfo/dat&Date)
 
 ---
 
 ## 📄 许可证
 
-本项目采用 Apache 2.0 许可证。详情请参阅 [LICENSE](https://github.com/junjiem/dat/blob/main/LICENSE) 文件。
+本项目采用 Apache 2.0 许可证。详情请参阅 [LICENSE](https://github.com/hexinfo/dat/blob/main/LICENSE) 文件。
 
 ---
 
@@ -821,7 +821,7 @@ Closes #123"
 
 **⭐ 如果这个项目对您有帮助，请给我们一个Star！**
 
-[🚀 快速开始](#-快速开始) • [📖 使用文档](https://github.com/junjiem/dat) • [💬 加入社区](#-社区与支持) • [🤝 参与贡献](#-贡献指南)
+[🚀 快速开始](#-快速开始) • [📖 使用文档](https://github.com/hexinfo/dat) • [💬 加入社区](#-社区与支持) • [🤝 参与贡献](#-贡献指南)
 
 ---
 
