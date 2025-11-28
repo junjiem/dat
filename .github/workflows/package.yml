@@ -34,7 +34,7 @@ jobs:
             maven_profile: os:linux-amd64,jar:built-in-small
             asset_suffix: linux-amd64
             package_type: unbundled
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             maven_profile: os:linux-arm64,jar:built-in-small
             asset_suffix: linux-arm64
             package_type: unbundled
@@ -51,7 +51,7 @@ jobs:
             maven_profile: os:linux-amd64,jar:built-in-small
             asset_suffix: linux-amd64
             package_type: bundled
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             maven_profile: os:linux-arm64,jar:built-in-small
             asset_suffix: linux-arm64
             package_type: bundled
