@@ -801,7 +801,7 @@ Closes #123"
 Thanks to all developers who have contributed to the DAT project!
 
 <a href="https://github.com/hexinfo/dat/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=hexinfo/dat" />
+  <img src="https://contrib.rocks/image?repo=hexinfo/dat" alt="DAT project contributor graph" />
 </a>
 
 ---
