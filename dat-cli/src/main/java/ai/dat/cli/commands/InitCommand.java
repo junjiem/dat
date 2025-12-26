@@ -9,6 +9,7 @@ import ai.dat.core.configuration.ConfigurationUtils;
 import ai.dat.core.data.project.EmbeddingConfig;
 import ai.dat.core.data.project.EmbeddingStoreConfig;
 import ai.dat.core.factories.*;
+import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.FactoryUtil;
 import ai.dat.core.utils.JinjaTemplateUtil;
 import lombok.Getter;
@@ -439,11 +440,10 @@ public class InitCommand implements Callable<Integer> {
      * @throws IOException
      */
     private void createProjectYamlFile(Path projectPath) throws IOException {
-        DatProjectFactory factory = new DatProjectFactory();
         Map<String, Object> variables = new HashMap<>();
         variables.put("project", projectConfig);
-        variables.put("project_configuration", factory.getProjectConfiguration());
-        variables.put("agent_configuration", factory.getDefaultAgentConfiguration());
+        variables.put("project_configuration", DatProjectUtil.getProjectConfiguration());
+        variables.put("agent_configuration", DatProjectUtil.getDefaultAgentConfiguration());
         String yamlContent = JinjaTemplateUtil.render(PROJECT_YAML_TEMPLATE_CONTENT, variables);
         Path projectYamlPath = projectPath.resolve(PROJECT_CONFIG_FILE_NAME);
         Files.write(projectYamlPath, yamlContent.getBytes());
@@ -457,7 +457,7 @@ public class InitCommand implements Callable<Integer> {
      * @throws IOException
      */
     private void createProjectYamlTemplateFile(Path projectPath) throws IOException {
-        String yamlContent = new DatProjectFactory().yamlTemplate();
+        String yamlContent = DatProjectUtil.yamlTemplate();
         Path projectYamlTemplatePath = projectPath.resolve(PROJECT_CONFIG_TEMPLATE_FILE_NAME);
         Files.write(projectYamlTemplatePath, yamlContent.getBytes());
         log.info("Create " + PROJECT_CONFIG_TEMPLATE_FILE_NAME + " file: {}", projectYamlTemplatePath);

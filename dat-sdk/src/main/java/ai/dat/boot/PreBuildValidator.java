@@ -9,10 +9,10 @@ import ai.dat.core.configuration.ConfigOption;
 import ai.dat.core.configuration.ReadableConfig;
 import ai.dat.core.data.project.DatProject;
 import ai.dat.core.exception.ValidationException;
-import ai.dat.core.factories.DatProjectFactory;
 import ai.dat.core.semantic.data.Dimension;
 import ai.dat.core.semantic.data.Element;
 import ai.dat.core.semantic.data.SemanticModel;
+import ai.dat.core.utils.DatProjectUtil;
 import ai.dat.core.utils.FactoryUtil;
 import ai.dat.core.utils.JinjaTemplateUtil;
 import ai.dat.core.utils.SemanticModelUtil;
@@ -29,7 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static ai.dat.core.factories.DatProjectFactory.*;
+import static ai.dat.core.utils.DatProjectUtil.*;
 
 /**
  * @Author JunjieM
@@ -53,9 +53,8 @@ class PreBuildValidator {
 
     public void validate() {
         ReadableConfig config = project.getConfiguration();
-        DatProjectFactory factory = new DatProjectFactory();
-        Set<ConfigOption<?>> requiredOptions = factory.projectRequiredOptions();
-        Set<ConfigOption<?>> optionalOptions = factory.projectOptionalOptions();
+        Set<ConfigOption<?>> requiredOptions = DatProjectUtil.projectRequiredOptions();
+        Set<ConfigOption<?>> optionalOptions = DatProjectUtil.projectOptionalOptions();
         FactoryUtil.validateFactoryOptions(requiredOptions, optionalOptions, config);
 
         Map<String, List<SemanticModel>> semanticModels = ChangeSemanticModelsCacheUtil.get(project.getName())
@@ -106,7 +105,7 @@ class PreBuildValidator {
             StringBuffer sb = new StringBuffer();
             validations.forEach((relativePath, validationMessages) -> {
                 sb.append("There has exceptions in the model SQL syntax validation of the semantic model, " +
-                        "in the YAML file relative path: ").append(relativePath).append("\n");
+                          "in the YAML file relative path: ").append(relativePath).append("\n");
                 validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
                         .append(": ").append(m.exception.getMessage()).append("\n"));
                 sb.append("\n");
@@ -143,7 +142,7 @@ class PreBuildValidator {
             StringBuffer sb = new StringBuffer();
             validations.forEach((relativePath, validationMessages) -> {
                 sb.append("There has exceptions in the semantic model SQL syntax validation of the semantic model, " +
-                        "in the YAML file relative path: ").append(relativePath).append("\n");
+                          "in the YAML file relative path: ").append(relativePath).append("\n");
                 validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
                         .append(": ").append(m.exception.getMessage()).append("\n"));
                 sb.append("\n");
@@ -189,7 +188,7 @@ class PreBuildValidator {
             StringBuffer sb = new StringBuffer();
             validations.forEach((relativePath, validationMessages) -> {
                 sb.append("There has exceptions in the dimension enum values validation of the semantic model, " +
-                        "in the YAML file relative path: ").append(relativePath).append("\n");
+                          "in the YAML file relative path: ").append(relativePath).append("\n");
                 validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
                         .append(": ").append(m.exception.getMessage()).append("\n"));
                 sb.append("\n");
@@ -228,11 +227,11 @@ class PreBuildValidator {
                     try {
                         if (dimensionDistinctCount(d, databaseAdapter, semanticModelSql) > 1000) {
                             return "Dimension '" + d.getName()
-                                    + "' -> The number of COUNT DISTINCT in this dimension field " +
-                                    "in the database exceeds 1000, and not recommended to set enum values";
+                                   + "' -> The number of COUNT DISTINCT in this dimension field " +
+                                   "in the database exceeds 1000, and not recommended to set enum values";
                         }
                         String sql = "SELECT DISTINCT " + d.getName()
-                                + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
+                                     + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
                         Set<String> values = databaseAdapter.executeQuery(sql).stream()
                                 .map(map -> map.entrySet().iterator().next().getValue())
                                 .filter(Objects::nonNull).map(Object::toString).collect(Collectors.toSet());
@@ -240,9 +239,9 @@ class PreBuildValidator {
                             return null;
                         }
                         return "Dimension '" + d.getName()
-                                + "' -> Enum values contain values that do not exist in the database. " +
-                                "\n  \t\tvalues: [" + String.join(", ", values) + "], " +
-                                "\n  \t\tenum_values: [" + String.join(", ", enumValues) + "]";
+                               + "' -> Enum values contain values that do not exist in the database. " +
+                               "\n  \t\tvalues: [" + String.join(", ", values) + "], " +
+                               "\n  \t\tenum_values: [" + String.join(", ", enumValues) + "]";
                     } catch (SQLException e) {
                         return "Dimension '" + d.getName() + "' -> " + e.getMessage();
                     }
@@ -259,14 +258,14 @@ class PreBuildValidator {
                                         DatabaseAdapter databaseAdapter,
                                         String semanticModelSql) throws SQLException {
         String sql = "SELECT COUNT(DISTINCT " + dimension.getName() + ") AS distinct_count"
-                + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
+                     + " FROM (" + semanticModelSql + ") AS __dat_semantic_model";
         Object value = databaseAdapter.executeQuery(sql).get(0)
                 .entrySet().iterator().next().getValue();
         if (value instanceof Number number) {
             return number.longValue();
         } else {
             throw new ValidationException("The type " + value.getClass().getSimpleName()
-                    + " cannot be converted to a numeric type");
+                                          + " cannot be converted to a numeric type");
         }
     }
 
@@ -286,7 +285,7 @@ class PreBuildValidator {
             StringBuffer sb = new StringBuffer();
             validations.forEach((relativePath, validationMessages) -> {
                 sb.append("There has exceptions in the data types validation of the semantic model, " +
-                        "in the YAML file relative path: ").append(relativePath).append("\n");
+                          "in the YAML file relative path: ").append(relativePath).append("\n");
                 validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
                         .append(": ").append(m.exception.getMessage()).append("\n"));
                 sb.append("\n");
@@ -354,7 +353,7 @@ class PreBuildValidator {
             StringBuffer sb = new StringBuffer();
             validations.forEach((relativePath, validationMessages) -> {
                 sb.append("There has exceptions in the data types validation of the semantic model, " +
-                        "in the YAML file relative path: ").append(relativePath).append("\n");
+                          "in the YAML file relative path: ").append(relativePath).append("\n");
                 validationMessages.forEach(m -> sb.append("  - ").append(m.semanticModelName)
                         .append(": ").append(m.exception.getMessage()).append("\n"));
                 sb.append("\n");
