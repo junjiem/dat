@@ -13,6 +13,7 @@ import lombok.Getter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -68,7 +69,7 @@ public class YamlTemplateUtil {
                         if (!config.isRequired()) {
                             sb.append("#");
                         }
-                        sb.append("  ").append(str).append("\n");
+                        sb.append(" ").append(str).append("\n");
                     }
                 } else {
                     sb.append(" ").append(value);
@@ -113,9 +114,15 @@ public class YamlTemplateUtil {
         }
         if (value instanceof Duration val) {
             return TimeUtils.formatWithHighestUnit(val);
+        } else if (value instanceof List || value instanceof Map) {
+            try {
+                return YAML_MAPPER.writeValueAsString(value);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             try {
-                return YAML_MAPPER.writeValueAsString(value).trim();
+                return YAML_MAPPER.writeValueAsString(value).stripTrailing();
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -134,10 +141,10 @@ public class YamlTemplateUtil {
         }
         String classSimpleName = configOption.getClazz().getSimpleName();
         String prefix = "("
-                + (configOption.isList() ? "List<" + classSimpleName + ">" : classSimpleName) + ", "
-                + (required ? "[Required]" : "[Optional]")
-                + defaultValueDescription
-                + ")";
+                        + (configOption.isList() ? "List<" + classSimpleName + ">" : classSimpleName) + ", "
+                        + (required ? "[Required]" : "[Optional]")
+                        + defaultValueDescription
+                        + ")";
         if (description.contains("\n")) {
             return prefix + "\n\n" + description;
         }
