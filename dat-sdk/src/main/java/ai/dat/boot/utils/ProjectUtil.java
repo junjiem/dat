@@ -64,8 +64,7 @@ public class ProjectUtil {
     }
 
     public static String contentStoreFingerprint(@NonNull DatProject project) {
-        DatProjectFactory projectFactory = new DatProjectFactory();
-        Map<String, String> projectFingerprintConfigs = projectFactory
+        Map<String, String> projectFingerprintConfigs = DatProjectUtil
                 .projectFingerprintConfigs(project.getConfiguration());
         EmbeddingConfig embedding = project.getEmbedding();
         EmbeddingStoreConfig embeddingStore = project.getEmbeddingStore();
@@ -84,11 +83,11 @@ public class ProjectUtil {
                 .fingerprintConfigs(contentStore.getConfiguration());
         try {
             String configStr = String.format("project:name=%s;" +
-                            "project:configuration=%s;" +
-                            "embedding:provider=%s;" +
-                            "embedding:configuration=%s;" +
-                            "embeddingStore:provider=%s;" +
-                            "embeddingStore:configuration=%s;",
+                                             "project:configuration=%s;" +
+                                             "embedding:provider=%s;" +
+                                             "embedding:configuration=%s;" +
+                                             "embeddingStore:provider=%s;" +
+                                             "embeddingStore:configuration=%s;",
                     project.getName(),
                     JSON_MAPPER.writeValueAsString(projectFingerprintConfigs),
                     embedding.getProvider(),
@@ -99,7 +98,7 @@ public class ProjectUtil {
             // For backward compatibility
             if (!contentStoreFingerprintConfigs.isEmpty()) {
                 configStr += String.format("contentStore:provider=%s;" +
-                                "contentStore:configuration=%s;",
+                                           "contentStore:configuration=%s;",
                         contentStore.getProvider(),
                         JSON_MAPPER.writeValueAsString(contentStoreFingerprintConfigs)
                 );
@@ -140,14 +139,14 @@ public class ProjectUtil {
     private static void adjustEmbeddingStoreConfig(@NonNull DatProject project, @NonNull Path projectPath) {
         EmbeddingStoreConfig embeddingStore = project.getEmbeddingStore();
         if (EmbeddingStoreConfig.DUCKDB_PROVIDER.equals(embeddingStore.getProvider())
-                && embeddingStore.getConfiguration().getOptional(EmbeddingStoreConfig.DUCKDB_FILE_PATH).isEmpty()) {
+            && embeddingStore.getConfiguration().getOptional(EmbeddingStoreConfig.DUCKDB_FILE_PATH).isEmpty()) {
             Path datDirPath = projectPath.resolve(DAT_DIR_NAME);
             if (!Files.exists(datDirPath)) {
                 try {
                     Files.createDirectories(datDirPath);
                 } catch (IOException e) {
-                    throw new RuntimeException(
-                            "The creation of the .dat directory under the project root directory failed", e);
+                    throw new RuntimeException("The creation of the " + DAT_DIR_NAME
+                                               + " directory under the project root directory failed", e);
                 }
             }
             String storeFileName = DUCKDB_EMBEDDING_STORE_FILE_PREFIX + contentStoreFingerprint(project);
@@ -195,7 +194,7 @@ public class ProjectUtil {
             validateAgent(agentConfig, allSemanticModels);
             semanticModels = allSemanticModels.stream()
                     .filter(model -> semanticModelNames.contains(model.getName())
-                            || model.getTags().stream().anyMatch(semanticModelTags::contains))
+                                     || model.getTags().stream().anyMatch(semanticModelTags::contains))
                     .collect(Collectors.toList());
         }
 
@@ -282,7 +281,7 @@ public class ProjectUtil {
     private static void adjustDatabaseConfig(@NonNull DatProject project, @NonNull Path projectPath) {
         DatabaseConfig databaseConfig = project.getDb();
         if (DatabaseConfig.DUCKDB_PROVIDER.equals(databaseConfig.getProvider())
-                && databaseConfig.getConfiguration().getOptional(DatabaseConfig.DUCKDB_FILE_PATH).isEmpty()) {
+            && databaseConfig.getConfiguration().getOptional(DatabaseConfig.DUCKDB_FILE_PATH).isEmpty()) {
             Path datDirPath = projectPath.resolve(DAT_DIR_NAME);
             if (!Files.exists(datDirPath)) {
                 try {
@@ -350,13 +349,13 @@ public class ProjectUtil {
             String message = Stream.of(
                     !missingNames.isEmpty() ?
                             String.format("There are non-existent semantic model names %s in the agent '%s'. " +
-                                            "Please check the semantic models YAML in your project!",
+                                          "Please check the semantic models YAML in your project!",
                                     missingNames.stream().map(n -> String.format("'%s'", n)).collect(joining(", ")),
                                     agentConfig.getName())
                             : null,
                     !missingTags.isEmpty() ?
                             String.format("There are non-existent semantic model tags %s in the agent '%s'. " +
-                                            "Please check the semantic models YAML in your project!",
+                                          "Please check the semantic models YAML in your project!",
                                     missingTags.stream().map(n -> String.format("'%s'", n)).collect(joining(", ")),
                                     agentConfig.getName())
                             : null
@@ -369,15 +368,15 @@ public class ProjectUtil {
         Path filePath = findProjectConfigFile(projectPath);
         if (filePath == null) {
             throw new RuntimeException("The project configuration file not found "
-                    + PROJECT_CONFIG_FILE_NAME_YAML + " or " + PROJECT_CONFIG_FILE_NAME_YML
-                    + ", please ensure that the project configuration file exists in the project root directory.");
+                                       + PROJECT_CONFIG_FILE_NAME_YAML + " or " + PROJECT_CONFIG_FILE_NAME_YML
+                                       + ", please ensure that the project configuration file exists in the project root directory.");
         }
         try {
             String yamlContent = Files.readString(filePath);
             return DatProjectUtil.datProject(yamlContent);
         } catch (Exception e) {
             throw new RuntimeException("The " + projectPath.relativize(filePath)
-                    + " YAML file content does not meet the requirements: \n" + e.getMessage(), e);
+                                       + " YAML file content does not meet the requirements: \n" + e.getMessage(), e);
         }
     }
 
@@ -405,7 +404,7 @@ public class ProjectUtil {
             return DatSchemaUtil.datSchema(content);
         } catch (Exception e) {
             throw new RuntimeException("The " + dirPath.relativize(filePath)
-                    + " YAML file content does not meet the requirements: \n" + e.getMessage(), e);
+                                       + " YAML file content does not meet the requirements: \n" + e.getMessage(), e);
         }
     }
 
@@ -474,7 +473,7 @@ public class ProjectUtil {
             return DatModel.from(name, content);
         } catch (Exception e) {
             throw new RuntimeException("The " + modelsPath.relativize(filePath)
-                    + " SQL file content does not meet the requirements: \n" + e.getMessage(), e);
+                                       + " SQL file content does not meet the requirements: \n" + e.getMessage(), e);
         }
     }
 
@@ -515,7 +514,7 @@ public class ProjectUtil {
             return DatSeed.from(name, content);
         } catch (Exception e) {
             throw new RuntimeException("The " + seedsPath.relativize(filePath)
-                    + " CSV file content does not meet the requirements: \n" + e.getMessage(), e);
+                                       + " CSV file content does not meet the requirements: \n" + e.getMessage(), e);
         }
     }
 
@@ -558,7 +557,8 @@ public class ProjectUtil {
                 }
             });
         } catch (IOException e) {
-            throw new RuntimeException("The scan for the YAML file in the 'models' directory failed", e);
+            throw new RuntimeException("The scan for the YAML file in the '"
+                                       + MODELS_DIR_NAME + "' directory failed", e);
         }
         return files;
     }
@@ -570,7 +570,7 @@ public class ProjectUtil {
     public static List<Path> scanSqlFiles(@NonNull Path modelsPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(modelsPath),
-                "There is no 'models' directory in the project root directory");
+                "There is no '" + MODELS_DIR_NAME + "' directory in the project root directory");
         try {
             Files.walkFileTree(modelsPath, new SimpleFileVisitor<>() {
                 @Override
@@ -583,7 +583,8 @@ public class ProjectUtil {
                 }
             });
         } catch (IOException e) {
-            throw new RuntimeException("The scan for the SQL file in the 'models' directory failed", e);
+            throw new RuntimeException("The scan for the SQL file in the '"
+                                       + MODELS_DIR_NAME + "' directory failed", e);
         }
         return files;
     }
@@ -595,7 +596,7 @@ public class ProjectUtil {
     private static List<Path> scanCsvFiles(@NonNull Path seedsPath) {
         List<Path> files = new ArrayList<>();
         Preconditions.checkArgument(Files.exists(seedsPath),
-                "There is no 'seeds' directory in the project root directory");
+                "There is no '" + SEEDS_DIR_NAME + "' directory in the project root directory");
         try {
             Files.walkFileTree(seedsPath, new SimpleFileVisitor<>() {
                 @Override
@@ -608,7 +609,7 @@ public class ProjectUtil {
                 }
             });
         } catch (IOException e) {
-            throw new RuntimeException("The scan for the CSV file in the 'seeds' directory failed", e);
+            throw new RuntimeException("The scan for the CSV file in the '" + SEEDS_DIR_NAME + "' directory failed", e);
         }
         return files;
     }
